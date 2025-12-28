@@ -3,7 +3,9 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { InputBlocker } from './native/inputBlocker';
 import { ServerConnection } from './serverConnection';
-import { RemoteControl } from './remoteControl';
+
+// RemoteControl import lazy per evitare crash se robotjs manca
+let RemoteControl: any = null;
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
@@ -410,19 +412,33 @@ function logoutClient() {
 function startRemoteControl() {
   console.log('[Main] Avvio remote control...');
 
-  if (!remoteControl) {
-    remoteControl = new RemoteControl();
+  try {
+    // Lazy load RemoteControl solo quando serve
+    if (!RemoteControl) {
+      console.log('[Main] Caricamento modulo RemoteControl...');
+      const remoteControlModule = require('./remoteControl');
+      RemoteControl = remoteControlModule.RemoteControl;
+      console.log('[Main] RemoteControl caricato con successo');
+    }
 
-    // Registra callback per inviare frame al server
-    remoteControl.onFrame((frame: string, width: number, height: number) => {
-      if (serverConnection) {
-        serverConnection.sendScreenFrame(frame, width, height);
-      }
-    });
+    if (!remoteControl) {
+      remoteControl = new RemoteControl();
+
+      // Registra callback per inviare frame al server
+      remoteControl.onFrame((frame: string, width: number, height: number) => {
+        if (serverConnection) {
+          serverConnection.sendScreenFrame(frame, width, height);
+        }
+      });
+    }
+
+    // Avvia cattura a 10 FPS
+    remoteControl.startCapture(10);
+    console.log('[Main] Remote control avviato con successo');
+  } catch (error) {
+    console.error('[Main] ERRORE avvio remote control:', error);
+    // Non crashare, semplicemente non disponibile
   }
-
-  // Avvia cattura a 10 FPS
-  remoteControl.startCapture(10);
 }
 
 function stopRemoteControl() {

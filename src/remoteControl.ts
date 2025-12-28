@@ -1,11 +1,18 @@
 import { desktopCapturer, screen } from 'electron';
+import * as path from 'path';
+import { execSync } from 'child_process';
 
-// robotjs import with fallback
+// robotjs import with fallback (solo per Mac/Linux)
 let robot: any = null;
-try {
-  robot = require('robotjs');
-} catch (error) {
-  console.warn('[RemoteControl] robotjs not available - input simulation disabled');
+const platform = process.platform;
+
+if (platform === 'darwin' || platform === 'linux') {
+  try {
+    robot = require('robotjs');
+    console.log('[RemoteControl] robotjs caricato per', platform);
+  } catch (error) {
+    console.warn('[RemoteControl] robotjs not available');
+  }
 }
 
 export class RemoteControl {
@@ -14,12 +21,15 @@ export class RemoteControl {
   private onFrameCallback: ((frame: string, width: number, height: number) => void) | null = null;
   private screenWidth = 0;
   private screenHeight = 0;
+  private platform = process.platform;
 
   constructor() {
     // Ottieni dimensioni schermo
     const primaryDisplay = screen.getPrimaryDisplay();
     this.screenWidth = primaryDisplay.size.width;
     this.screenHeight = primaryDisplay.size.height;
+
+    console.log(`[RemoteControl] Inizializzato per ${this.platform} - Screen: ${this.screenWidth}x${this.screenHeight}`);
   }
 
   // Avvia cattura schermo
@@ -95,11 +105,6 @@ export class RemoteControl {
 
   // Processa input remoto
   processRemoteInput(type: string, data: any) {
-    if (!robot) {
-      console.warn('[RemoteControl] Cannot process input - robotjs not available');
-      return;
-    }
-
     try {
       switch (type) {
         case 'mousemove':
@@ -138,74 +143,162 @@ export class RemoteControl {
     }
   }
 
-  // Mouse move
+  // ========== WINDOWS POWERSHELL INPUT ==========
+
+  private execPowerShellInput(command: string, ...args: any[]): boolean {
+    try {
+      const scriptPath = path.join(__dirname, '..', 'native', 'win', 'SimulateInput.ps1');
+      const psArgs = args.map(a => `"${a}"`).join(' ');
+      const result = execSync(
+        `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${command} ${psArgs}`,
+        { encoding: 'utf8', timeout: 1000 }
+      ).trim();
+      return result === 'OK';
+    } catch (error) {
+      console.error('[RemoteControl] PowerShell input error:', error);
+      return false;
+    }
+  }
+
+  // ========== MOUSE HANDLERS ==========
+
   private handleMouseMove(data: { x: number; y: number }) {
-    // Converti coordinate normalizzate (0-1) in coordinate assolute
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
 
-    robot.moveMouse(x, y);
+    if (this.platform === 'win32') {
+      this.execPowerShellInput('mousemove', x, y);
+    } else if (robot) {
+      robot.moveMouse(x, y);
+    }
   }
 
-  // Mouse down
   private handleMouseDown(data: { x: number; y: number; button: string }) {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
 
-    robot.moveMouse(x, y);
-    robot.mouseToggle('down', data.button === 'right' ? 'right' : 'left');
+    if (this.platform === 'win32') {
+      this.execPowerShellInput('mousemove', x, y);
+      this.execPowerShellInput('mousedown', data.button === 'right' ? 'right' : 'left');
+    } else if (robot) {
+      robot.moveMouse(x, y);
+      robot.mouseToggle('down', data.button === 'right' ? 'right' : 'left');
+    }
   }
 
-  // Mouse up
   private handleMouseUp(data: { x: number; y: number; button: string }) {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
 
-    robot.moveMouse(x, y);
-    robot.mouseToggle('up', data.button === 'right' ? 'right' : 'left');
+    if (this.platform === 'win32') {
+      this.execPowerShellInput('mousemove', x, y);
+      this.execPowerShellInput('mouseup', data.button === 'right' ? 'right' : 'left');
+    } else if (robot) {
+      robot.moveMouse(x, y);
+      robot.mouseToggle('up', data.button === 'right' ? 'right' : 'left');
+    }
   }
 
-  // Click
   private handleClick(data: { x: number; y: number; button: string }) {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
 
-    robot.moveMouse(x, y);
-    robot.mouseClick(data.button === 'right' ? 'right' : 'left');
+    if (this.platform === 'win32') {
+      this.execPowerShellInput('click', x, y, data.button === 'right' ? 'right' : 'left');
+    } else if (robot) {
+      robot.moveMouse(x, y);
+      robot.mouseClick(data.button === 'right' ? 'right' : 'left');
+    }
   }
 
-  // Key down
+  // ========== KEYBOARD HANDLERS ==========
+
   private handleKeyDown(data: { key: string; modifiers: string[] }) {
-    const key = this.mapKey(data.key);
-
-    if (data.modifiers && data.modifiers.length > 0) {
-      // Con modificatori
-      const modifiers = data.modifiers.map(m => this.mapKey(m));
-      robot.keyToggle(key, 'down', modifiers);
-    } else {
-      robot.keyToggle(key, 'down');
+    if (this.platform === 'win32') {
+      const vkCode = this.keyToVirtualKeyCode(data.key);
+      if (vkCode !== null) {
+        this.execPowerShellInput('keydown', vkCode);
+      }
+    } else if (robot) {
+      const key = this.mapKeyForRobot(data.key);
+      if (data.modifiers && data.modifiers.length > 0) {
+        const modifiers = data.modifiers.map(m => this.mapKeyForRobot(m));
+        robot.keyToggle(key, 'down', modifiers);
+      } else {
+        robot.keyToggle(key, 'down');
+      }
     }
   }
 
-  // Key up
   private handleKeyUp(data: { key: string; modifiers: string[] }) {
-    const key = this.mapKey(data.key);
-
-    if (data.modifiers && data.modifiers.length > 0) {
-      const modifiers = data.modifiers.map(m => this.mapKey(m));
-      robot.keyToggle(key, 'up', modifiers);
-    } else {
-      robot.keyToggle(key, 'up');
+    if (this.platform === 'win32') {
+      const vkCode = this.keyToVirtualKeyCode(data.key);
+      if (vkCode !== null) {
+        this.execPowerShellInput('keyup', vkCode);
+      }
+    } else if (robot) {
+      const key = this.mapKeyForRobot(data.key);
+      if (data.modifiers && data.modifiers.length > 0) {
+        const modifiers = data.modifiers.map(m => this.mapKeyForRobot(m));
+        robot.keyToggle(key, 'up', modifiers);
+      } else {
+        robot.keyToggle(key, 'up');
+      }
     }
   }
 
-  // Key press (tipo su stringa)
   private handleKeyPress(data: { text: string }) {
-    robot.typeString(data.text);
+    if (this.platform === 'win32') {
+      this.execPowerShellInput('typetext', data.text);
+    } else if (robot) {
+      robot.typeString(data.text);
+    }
+  }
+
+  // ========== KEY MAPPING ==========
+
+  // Mappa tasti web a Virtual Key Codes Windows
+  private keyToVirtualKeyCode(key: string): number | null {
+    const vkMap: { [key: string]: number } = {
+      'Enter': 0x0D,
+      'Backspace': 0x08,
+      'Tab': 0x09,
+      'Escape': 0x1B,
+      ' ': 0x20,
+      'ArrowLeft': 0x25,
+      'ArrowUp': 0x26,
+      'ArrowRight': 0x27,
+      'ArrowDown': 0x28,
+      'Delete': 0x2E,
+      'Control': 0x11,
+      'Shift': 0x10,
+      'Alt': 0x12,
+      'Home': 0x24,
+      'End': 0x23,
+      'PageUp': 0x21,
+      'PageDown': 0x22
+    };
+
+    if (vkMap[key] !== undefined) {
+      return vkMap[key];
+    }
+
+    // Per lettere singole A-Z
+    if (key.length === 1) {
+      const char = key.toUpperCase();
+      if (char >= 'A' && char <= 'Z') {
+        return char.charCodeAt(0);
+      }
+      if (char >= '0' && char <= '9') {
+        return char.charCodeAt(0);
+      }
+    }
+
+    return null;
   }
 
   // Mappa tasti web a robotjs
-  private mapKey(key: string): string {
+  private mapKeyForRobot(key: string): string {
     const keyMap: { [key: string]: string } = {
       'Control': 'control',
       'Alt': 'alt',
