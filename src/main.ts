@@ -1,7 +1,11 @@
 import { app, BrowserWindow, globalShortcut, screen } from 'electron';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
 import { InputBlocker } from './native/inputBlocker';
 import { ServerConnection } from './serverConnection';
+
+// Carica variabili d'ambiente dal file .env
+dotenv.config();
 
 let mainWindow: BrowserWindow | null = null;
 let inputBlocker: InputBlocker | null = null;
@@ -13,6 +17,9 @@ const EXIT_PASSWORD = process.env.EXIT_PASSWORD || 'admin123';
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 const STANDALONE_MODE = process.env.STANDALONE_MODE === 'true'; // Se true, non si connette al server
 let passwordBuffer = '';
+
+console.log('[Config] SERVER_URL:', SERVER_URL);
+console.log('[Config] STANDALONE_MODE:', STANDALONE_MODE);
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
