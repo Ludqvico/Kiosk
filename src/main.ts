@@ -413,6 +413,12 @@ function startRemoteControl() {
   console.log('[Main] Avvio remote control...');
 
   try {
+    // IMPORTANTE: Sblocca input per permettere remote control
+    if (inputBlocker) {
+      console.log('[Main] Sblocco input per remote control...');
+      inputBlocker.unblock();
+    }
+
     // Lazy load RemoteControl solo quando serve
     if (!RemoteControl) {
       console.log('[Main] Caricamento modulo RemoteControl...');
@@ -452,6 +458,18 @@ function stopRemoteControl() {
   try {
     if (remoteControl) {
       remoteControl.stopCapture();
+    }
+
+    // IMPORTANTE: Ri-blocca input dopo remote control
+    if (!inputBlocker) {
+      console.log('[Main] Ri-blocco input dopo remote control...');
+      inputBlocker = new InputBlocker();
+
+      if (process.platform === 'darwin') {
+        inputBlocker.blockMacInput();
+      } else if (process.platform === 'win32') {
+        inputBlocker.blockWindowsInput();
+      }
     }
   } catch (error) {
     console.error('[Main] Errore stop remote control:', error);
