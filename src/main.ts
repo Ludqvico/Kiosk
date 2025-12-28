@@ -61,13 +61,15 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Nascondi il cursore (opzionale, commentabile se serve vedere il cursore)
-  mainWindow.webContents.insertCSS('* { cursor: none !important; }');
+  // NON nascondere il cursore all'avvio - solo quando bloccato
+  // mainWindow.webContents.insertCSS('* { cursor: none !important; }');
 
   // Se in modalità standalone, blocca immediatamente
   if (STANDALONE_MODE) {
     console.log('[Main] Modalità STANDALONE - Blocco automatico');
     lockKiosk();
+  } else {
+    console.log('[Main] Modalità CLIENT-SERVER - In attesa comandi dal server (SBLOCCATO)');
   }
 
   registerSecretExit();
@@ -81,6 +83,30 @@ function lockKiosk() {
 
   console.log('[Main] 🔒 BLOCCO KIOSK');
 
+  // Nascondi il cursore quando bloccato
+  if (mainWindow) {
+    mainWindow.webContents.insertCSS('* { cursor: none !important; }');
+
+    // Mostra overlay rosso per feedback visivo
+    mainWindow.webContents.insertCSS(`
+      body::before {
+        content: 'LOCKED';
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 8px 16px;
+        background: #ef4444;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 4px;
+        z-index: 99999;
+      }
+    `);
+  }
+
+  // Blocca input nativo (se addon disponibili)
   inputBlocker = new InputBlocker();
   const platform = process.platform;
 
@@ -90,6 +116,7 @@ function lockKiosk() {
     inputBlocker.blockWindowsInput();
   }
 
+  // Blocca TUTTE le shortcut globali
   blockGlobalShortcuts();
 
   isLocked = true;
@@ -98,6 +125,8 @@ function lockKiosk() {
   if (serverConnection) {
     serverConnection.sendStatus(true);
   }
+
+  console.log('[Main] ✓ Kiosk BLOCCATO');
 }
 
 function unlockKiosk() {
@@ -108,11 +137,37 @@ function unlockKiosk() {
 
   console.log('[Main] 🔓 SBLOCCO KIOSK');
 
+  // Mostra il cursore quando sbloccato
+  if (mainWindow) {
+    mainWindow.webContents.insertCSS('* { cursor: auto !important; }');
+
+    // Rimuovi overlay e mostra verde per feedback
+    mainWindow.webContents.insertCSS(`
+      body::before {
+        content: 'UNLOCKED';
+        background: #22c55e !important;
+      }
+    `);
+
+    // Rimuovi overlay dopo 2 secondi
+    setTimeout(() => {
+      if (mainWindow) {
+        mainWindow.webContents.insertCSS(`
+          body::before {
+            display: none !important;
+          }
+        `);
+      }
+    }, 2000);
+  }
+
+  // Sblocca input nativo
   if (inputBlocker) {
     inputBlocker.unblock();
     inputBlocker = null;
   }
 
+  // Sblocca TUTTE le shortcut
   globalShortcut.unregisterAll();
 
   isLocked = false;
@@ -121,49 +176,74 @@ function unlockKiosk() {
   if (serverConnection) {
     serverConnection.sendStatus(false);
   }
+
+  console.log('[Main] ✓ Kiosk SBLOCCATO');
 }
 
 function blockGlobalShortcuts() {
-  // Blocca tutte le scorciatoie globali comuni
+  // Blocca TUTTE le scorciatoie globali comuni
   const shortcuts = [
+    // Chiusura e navigazione
     'CommandOrControl+Q',
     'CommandOrControl+W',
     'CommandOrControl+R',
     'CommandOrControl+T',
     'CommandOrControl+N',
     'CommandOrControl+Shift+Q',
-    'CommandOrControl+Alt+Esc',
-    'CommandOrControl+Tab',
     'Alt+F4',
+
+    // Task switching
+    'CommandOrControl+Tab',
+    'CommandOrControl+Shift+Tab',
     'Alt+Tab',
-    'Escape',
+    'Alt+Shift+Tab',
+
+    // Windows specific
+    'Control+Shift+Escape',  // Task Manager
+    'Win',                   // Start menu
+    'Super',                 // Start menu (Linux)
+
+    // Tasti funzione
     'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
-    'CommandOrControl+F1',
-    'CommandOrControl+F2',
-    'CommandOrControl+F3',
-    'CommandOrControl+F4',
-    'CommandOrControl+F5',
-    'CommandOrControl+F6',
-    'CommandOrControl+F7',
-    'CommandOrControl+F8',
-    'CommandOrControl+F9',
-    'CommandOrControl+F10',
-    'CommandOrControl+F11',
-    'CommandOrControl+F12',
+    'CommandOrControl+F1', 'CommandOrControl+F2', 'CommandOrControl+F3',
+    'CommandOrControl+F4', 'CommandOrControl+F5', 'CommandOrControl+F6',
+    'CommandOrControl+F7', 'CommandOrControl+F8', 'CommandOrControl+F9',
+    'CommandOrControl+F10', 'CommandOrControl+F11', 'CommandOrControl+F12',
+
+    // Escape
+    'Escape',
+    'CommandOrControl+Escape',
+    'CommandOrControl+Alt+Escape',
+
+    // Mac specific
+    'Command+H',             // Hide
+    'Command+M',             // Minimize
+    'Command+Option+H',      // Hide Others
+    'Command+Option+Escape', // Force Quit
+
+    // Zoom e altre funzioni
+    'CommandOrControl+Plus',
+    'CommandOrControl+Minus',
+    'CommandOrControl+0',
+
+    // Developer tools
+    'CommandOrControl+Shift+I',
+    'CommandOrControl+Shift+J',
+    'CommandOrControl+Shift+C',
+    'F12',
   ];
 
+  let blocked = 0;
   shortcuts.forEach(shortcut => {
-    globalShortcut.register(shortcut, () => {
+    const success = globalShortcut.register(shortcut, () => {
       // Blocca la shortcut non facendo nulla
+      console.log(`[Shortcut] Bloccato tentativo di usare: ${shortcut}`);
     });
+
+    if (success) blocked++;
   });
 
-  // Blocca Command+H su Mac (nascondi app)
-  if (process.platform === 'darwin') {
-    globalShortcut.register('Command+H', () => {});
-    globalShortcut.register('Command+M', () => {});
-    globalShortcut.register('Command+Option+H', () => {});
-  }
+  console.log(`[Shortcut] Bloccate ${blocked}/${shortcuts.length} scorciatoie globali`);
 }
 
 function registerSecretExit() {
