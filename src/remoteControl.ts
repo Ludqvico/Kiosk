@@ -24,30 +24,54 @@ export class RemoteControl {
   private platform = process.platform;
 
   constructor() {
-    // Ottieni dimensioni schermo
-    const primaryDisplay = screen.getPrimaryDisplay();
-    this.screenWidth = primaryDisplay.size.width;
-    this.screenHeight = primaryDisplay.size.height;
+    try {
+      console.log('[RemoteControl] Constructor START');
+      console.log('[RemoteControl] Platform:', this.platform);
 
-    console.log(`[RemoteControl] Inizializzato per ${this.platform} - Screen: ${this.screenWidth}x${this.screenHeight}`);
+      // Ottieni dimensioni schermo
+      console.log('[RemoteControl] Getting primary display...');
+      const primaryDisplay = screen.getPrimaryDisplay();
+      console.log('[RemoteControl] Primary display obtained');
+
+      this.screenWidth = primaryDisplay.size.width;
+      this.screenHeight = primaryDisplay.size.height;
+
+      console.log(`[RemoteControl] Constructor DONE - Screen: ${this.screenWidth}x${this.screenHeight}`);
+    } catch (error) {
+      console.error('[RemoteControl] ERRORE in constructor:', error);
+      // Valori di default se fallisce
+      this.screenWidth = 1920;
+      this.screenHeight = 1080;
+    }
   }
 
   // Avvia cattura schermo
   async startCapture(fps: number = 10) {
-    if (this.isCapturing) {
-      console.log('[RemoteControl] Screen capture già attivo');
-      return;
+    try {
+      console.log('[RemoteControl] startCapture() START');
+
+      if (this.isCapturing) {
+        console.log('[RemoteControl] Screen capture già attivo');
+        return;
+      }
+
+      this.isCapturing = true;
+      console.log(`[RemoteControl] Impostazione cattura a ${fps} FPS`);
+
+      // Cattura frame ogni 1000/fps millisecondi
+      const intervalMs = 1000 / fps;
+      console.log(`[RemoteControl] Interval: ${intervalMs}ms`);
+
+      console.log('[RemoteControl] Creazione setInterval...');
+      this.captureInterval = setInterval(async () => {
+        await this.captureFrame();
+      }, intervalMs);
+
+      console.log('[RemoteControl] startCapture() DONE - Cattura avviata');
+    } catch (error) {
+      console.error('[RemoteControl] ERRORE in startCapture():', error);
+      this.isCapturing = false;
     }
-
-    this.isCapturing = true;
-    console.log(`[RemoteControl] Avvio screen capture a ${fps} FPS`);
-
-    // Cattura frame ogni 1000/fps millisecondi
-    const intervalMs = 1000 / fps;
-
-    this.captureInterval = setInterval(async () => {
-      await this.captureFrame();
-    }, intervalMs);
   }
 
   // Ferma cattura schermo
@@ -68,6 +92,8 @@ export class RemoteControl {
   // Cattura singolo frame
   private async captureFrame() {
     try {
+      console.log('[RemoteControl] captureFrame() - Chiamata desktopCapturer.getSources()...');
+
       const sources = await desktopCapturer.getSources({
         types: ['screen'],
         thumbnailSize: {
@@ -76,23 +102,33 @@ export class RemoteControl {
         }
       });
 
+      console.log(`[RemoteControl] getSources() completato - ${sources.length} sorgenti`);
+
       if (sources.length === 0) {
         console.error('[RemoteControl] Nessuna sorgente schermo trovata');
         return;
       }
 
       // Prendi il primo schermo
+      console.log('[RemoteControl] Prendendo prima sorgente...');
       const source = sources[0];
+      console.log('[RemoteControl] Ottenendo thumbnail...');
       const thumbnail = source.thumbnail;
 
+      console.log('[RemoteControl] Convertendo in dataURL...');
       // Converti in base64 (formato PNG)
       const dataUrl = thumbnail.toDataURL();
 
+      console.log(`[RemoteControl] Frame pronto - ${dataUrl.length} bytes`);
+
       if (this.onFrameCallback) {
+        console.log('[RemoteControl] Chiamando callback...');
         this.onFrameCallback(dataUrl, thumbnail.getSize().width, thumbnail.getSize().height);
+        console.log('[RemoteControl] Callback completato');
       }
     } catch (error) {
-      console.error('[RemoteControl] ERRORE cattura frame (NON CRITICO):', error);
+      console.error('[RemoteControl] ERRORE cattura frame:', error);
+      console.error('[RemoteControl] Error stack:', (error as Error).stack);
       // NON fermare e NON crashare - continua a provare
     }
   }
