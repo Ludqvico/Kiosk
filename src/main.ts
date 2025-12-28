@@ -1,12 +1,17 @@
 import { app, BrowserWindow, globalShortcut, screen } from 'electron';
 import * as path from 'path';
 import { InputBlocker } from './native/inputBlocker';
+import { ServerConnection } from './serverConnection';
 
 let mainWindow: BrowserWindow | null = null;
 let inputBlocker: InputBlocker | null = null;
+let serverConnection: ServerConnection | null = null;
+let isLocked = false;
 
-// Password per uscire dalla modalità kiosk (modificabile)
-const EXIT_PASSWORD = 'admin123';
+// Configurazione
+const EXIT_PASSWORD = process.env.EXIT_PASSWORD || 'admin123';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+const STANDALONE_MODE = process.env.STANDALONE_MODE === 'true'; // Se true, non si connette al server
 let passwordBuffer = '';
 
 function createWindow() {
@@ -52,23 +57,66 @@ function createWindow() {
   // Nascondi il cursore (opzionale, commentabile se serve vedere il cursore)
   mainWindow.webContents.insertCSS('* { cursor: none !important; }');
 
-  blockAllInputs();
+  // Se in modalità standalone, blocca immediatamente
+  if (STANDALONE_MODE) {
+    console.log('[Main] Modalità STANDALONE - Blocco automatico');
+    lockKiosk();
+  }
+
   registerSecretExit();
 }
 
-function blockAllInputs() {
-  inputBlocker = new InputBlocker();
+function lockKiosk() {
+  if (isLocked) {
+    console.log('[Main] Kiosk già bloccato');
+    return;
+  }
 
+  console.log('[Main] 🔒 BLOCCO KIOSK');
+
+  inputBlocker = new InputBlocker();
   const platform = process.platform;
 
   if (platform === 'darwin') {
-    // Mac
     inputBlocker.blockMacInput();
   } else if (platform === 'win32') {
-    // Windows
     inputBlocker.blockWindowsInput();
   }
 
+  blockGlobalShortcuts();
+
+  isLocked = true;
+
+  // Notifica il server dello stato
+  if (serverConnection) {
+    serverConnection.sendStatus(true);
+  }
+}
+
+function unlockKiosk() {
+  if (!isLocked) {
+    console.log('[Main] Kiosk già sbloccato');
+    return;
+  }
+
+  console.log('[Main] 🔓 SBLOCCO KIOSK');
+
+  if (inputBlocker) {
+    inputBlocker.unblock();
+    inputBlocker = null;
+  }
+
+  globalShortcut.unregisterAll();
+
+  isLocked = false;
+
+  // Notifica il server dello stato
+  if (serverConnection) {
+    serverConnection.sendStatus(false);
+  }
+}
+
+function blockGlobalShortcuts() {
   // Blocca tutte le scorciatoie globali comuni
   const shortcuts = [
     'CommandOrControl+Q',
@@ -104,7 +152,7 @@ function blockAllInputs() {
   });
 
   // Blocca Command+H su Mac (nascondi app)
-  if (platform === 'darwin') {
+  if (process.platform === 'darwin') {
     globalShortcut.register('Command+H', () => {});
     globalShortcut.register('Command+M', () => {});
     globalShortcut.register('Command+Option+H', () => {});
@@ -113,7 +161,6 @@ function blockAllInputs() {
 
 function registerSecretExit() {
   // Modalità di uscita segreta: digita la password nascosta
-  // Ogni tasto viene aggiunto al buffer, se corrisponde alla password esce
   mainWindow?.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown') {
       if (input.key.length === 1) {
@@ -126,7 +173,7 @@ function registerSecretExit() {
 
         // Controlla se la password è corretta
         if (passwordBuffer === EXIT_PASSWORD) {
-          console.log('Password corretta, uscita dal kiosk mode');
+          console.log('[Main] Password corretta, uscita dal kiosk mode');
           quitApp();
         }
       } else if (input.key === 'Backspace') {
@@ -136,7 +183,37 @@ function registerSecretExit() {
   });
 }
 
+function connectToServer() {
+  if (STANDALONE_MODE) {
+    console.log('[Main] Modalità standalone - Connessione al server disabilitata');
+    return;
+  }
+
+  console.log('[Main] Connessione al server...', SERVER_URL);
+
+  serverConnection = new ServerConnection(SERVER_URL);
+
+  // Registra callback per comandi dal server
+  serverConnection.onLock(() => {
+    console.log('[Main] Ricevuto comando LOCK dal server');
+    lockKiosk();
+  });
+
+  serverConnection.onUnlock(() => {
+    console.log('[Main] Ricevuto comando UNLOCK dal server');
+    unlockKiosk();
+  });
+
+  // Connetti
+  serverConnection.connect();
+}
+
 function quitApp() {
+  // Disconnetti dal server
+  if (serverConnection) {
+    serverConnection.disconnect();
+  }
+
   // Sblocca l'input prima di uscire
   if (inputBlocker) {
     inputBlocker.unblock();
@@ -158,6 +235,9 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+
+  // Connetti al server (se non in modalità standalone)
+  connectToServer();
 });
 
 app.on('window-all-closed', () => {
@@ -177,6 +257,9 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   if (inputBlocker) {
     inputBlocker.unblock();
+  }
+  if (serverConnection) {
+    serverConnection.disconnect();
   }
 });
 

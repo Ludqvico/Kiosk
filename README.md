@@ -1,196 +1,373 @@
 # School Kiosk System
 
-Sistema kiosk multi-platform (Mac e Windows) per ambienti educativi. Blocca completamente l'input dell'utente (tastiera, mouse, trackpad, gesture) per forzare l'attenzione su un contenuto specifico a schermo intero.
+Sistema kiosk multi-platform (Mac e Windows) per ambienti educativi con **gestione centralizzata**.
 
-## Caratteristiche
+Blocca completamente l'input dell'utente (tastiera, mouse, trackpad, gesture) per forzare l'attenzione su un contenuto specifico a schermo intero, controllabile remotamente da una dashboard amministrativa.
 
+## 🎯 Caratteristiche
+
+### Client (Postazione Kiosk)
 - ✅ **Multi-platform**: Funziona su Mac e Windows
-- ✅ **Blocco completo input**: Blocca tastiera, mouse, trackpad e gesture
+- ✅ **Blocco completo input**: Blocca tastiera, mouse, trackpad e gesture a livello di sistema
 - ✅ **Kiosk mode nativo**: Fullscreen senza bordi o controlli
 - ✅ **Blocco combinazioni subdole**:
   - Mac: Cmd+Tab, Cmd+Q, gesture trackpad, Mission Control, ecc.
   - Windows: Ctrl+Alt+Del, Alt+F4, Win+D, Task Manager, ecc.
 - ✅ **Exit password**: Sistema di uscita tramite password nascosta
 - ✅ **Contenuto personalizzabile**: Facile sostituire il contenuto bianco con lezioni, video, presentazioni
+- ✅ **Modalità standalone**: Funziona anche senza connessione al server
 
-## Requisiti
+### Server + Dashboard (Controllo Centralizzato)
+- ✅ **Dashboard web amministrativa**: Interfaccia moderna per gestire tutte le postazioni
+- ✅ **Controllo real-time**: Vedi stato di ogni client (online/offline, bloccato/sbloccato)
+- ✅ **Comandi remoti**: Blocca/sblocca singole postazioni o tutte insieme
+- ✅ **WebSocket (Socket.io)**: Comunicazione real-time bidirezionale
+- ✅ **Multi-client**: Gestisci decine di postazioni contemporaneamente
+- ✅ **Heartbeat monitoring**: Rileva automaticamente client disconnessi
 
-### Mac
-- macOS 10.13 o superiore
-- Xcode Command Line Tools: `xcode-select --install`
-- Node.js 18+ e npm
-- **Permessi di Accessibilità** (vedi sezione Configurazione)
+## 📐 Architettura
 
-### Windows
-- Windows 10/11
-- Visual Studio Build Tools 2019+ con Desktop Development with C++
-- Node.js 18+ e npm
-- **Privilegi amministratore** per il blocco completo
+```
+ADMIN Dashboard (Browser)
+         ↕ WebSocket
+    SERVER (Node.js)
+         ↕ WebSocket
+┌────────┬────────┬────────┐
+CLIENT  CLIENT  CLIENT  ...
+(Mac)   (Win)   (Mac)
+```
 
-## Installazione
+## 🚀 Quick Start
+
+### Modalità Standalone (Singola postazione, senza server)
 
 ```bash
-# 1. Clona il repository
+# 1. Clona e installa
 git clone <repository-url>
 cd Kiosk
-
-# 2. Installa le dipendenze e compila gli addon nativi
 npm install
-
-# 3. Compila TypeScript
 npm run build
-```
 
-## Configurazione
+# 2. Imposta modalità standalone
+echo "STANDALONE_MODE=true" > .env
 
-### Mac - Permessi di Accessibilità
-
-Per bloccare completamente l'input su Mac, l'app deve avere i permessi di Accessibilità:
-
-1. Vai in **Preferenze di Sistema** → **Sicurezza e Privacy** → **Privacy** → **Accessibilità**
-2. Clicca sul lucchetto per sbloccare
-3. Aggiungi l'app Electron alla lista (o Terminal se esegui da sviluppo)
-4. Seleziona la checkbox per abilitare
-
-### Windows - Esecuzione come Amministratore
-
-Per bloccare completamente l'input su Windows:
-
-1. Clicca destro sull'eseguibile
-2. Seleziona **Esegui come amministratore**
-
-Oppure, durante lo sviluppo, esegui il terminale come amministratore prima di lanciare `npm start`.
-
-## Utilizzo
-
-### Modalità sviluppo
-
-```bash
-npm run dev
-```
-
-### Modalità produzione
-
-```bash
+# 3. Avvia
 npm start
 ```
 
-### Uscire dalla modalità kiosk
+Il kiosk si bloccherà automaticamente all'avvio. Per uscire, digita: `admin123`
 
-Digita la password di uscita (default: `admin123`). La password viene digitata "alla cieca" senza feedback visivo.
+### Modalità Client-Server (Gestione centralizzata)
 
-**Per modificare la password**, apri `src/main.ts` e cambia la variabile `EXIT_PASSWORD`:
+**Passo 1: Avvia il Server**
 
-```typescript
-const EXIT_PASSWORD = 'tuaPasswordQui';
+```bash
+cd server
+npm install
+npm start
 ```
 
-## Personalizzare il contenuto
+Server disponibile su: `http://localhost:3000`
 
-Il contenuto visualizzato si trova in `src/renderer/index.html`. Puoi modificare il file per:
+**Passo 2: Configura e avvia i Client**
 
-- Mostrare una presentazione
-- Incorporare un video
-- Caricare un sito web tramite iframe
-- Visualizzare materiale didattico personalizzato
+Su ogni postazione:
 
-Esempio - Sostituire con un video:
+```bash
+cd Kiosk
+npm install
+npm run build
 
+# Crea configurazione
+cat > .env << EOF
+SERVER_URL=http://192.168.1.100:3000
+EXIT_PASSWORD=admin123
+STANDALONE_MODE=false
+EOF
+
+# Avvia
+npm start
+```
+
+**Passo 3: Apri la Dashboard**
+
+Browser → `http://localhost:3000` (o IP del server)
+
+Username: `admin` / Password: `admin123`
+
+Dalla dashboard puoi:
+- Vedere tutti i client connessi
+- Bloccare/sbloccare singole postazioni
+- Bloccare/sbloccare tutte le postazioni contemporaneamente
+
+## 📋 Requisiti
+
+### Client (Postazioni Kiosk)
+
+**Mac:**
+- macOS 10.13+
+- Xcode Command Line Tools: `xcode-select --install`
+- Node.js 18+
+- **Permessi di Accessibilità** (vedi Configurazione)
+
+**Windows:**
+- Windows 10/11
+- Visual Studio Build Tools 2019+ con Desktop Development with C++
+- Node.js 18+
+- **Privilegi amministratore** per blocco completo
+
+### Server
+
+- Node.js 18+
+- Porte: 3000 (configurabile)
+
+## ⚙️ Configurazione
+
+### Client
+
+Crea file `.env` nella root del progetto client:
+
+```env
+# URL del server (usa IP se in rete locale)
+SERVER_URL=http://192.168.1.100:3000
+
+# Password di uscita dal kiosk
+EXIT_PASSWORD=admin123
+
+# Modalità standalone (true = non si connette al server)
+STANDALONE_MODE=false
+```
+
+**Mac - Permessi di Accessibilità:**
+
+1. **Preferenze di Sistema** → **Sicurezza e Privacy** → **Privacy** → **Accessibilità**
+2. Clicca il lucchetto per sbloccare
+3. Aggiungi **Terminal** o **Electron** alla lista
+4. Seleziona la checkbox
+
+**Windows - Esecuzione come Amministratore:**
+
+- Tasto destro sull'app → **Esegui come amministratore**
+
+### Server
+
+Modifica `server/.env`:
+
+```env
+PORT=3000
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+JWT_SECRET=your-secret-key-change-in-production
+```
+
+## 🎛️ Utilizzo Dashboard
+
+### Accedi alla Dashboard
+
+Browser → `http://server-ip:3000`
+
+### Comandi Disponibili
+
+- **Blocca Tutti**: Blocca tutte le postazioni contemporaneamente
+- **Sblocca Tutti**: Sblocca tutte le postazioni
+- **Blocca** (su singola card): Blocca solo quella postazione
+- **Sblocca** (su singola card): Sblocca solo quella postazione
+
+### Monitoraggio
+
+La dashboard mostra in real-time:
+- 🟢 Client connessi (numero totale)
+- 🔒 Client bloccati
+- Hostname di ogni client
+- Piattaforma (Mac/Windows)
+- Stato (Bloccato/Sbloccato)
+- Tempo di connessione
+
+## 📡 Deployment in Rete Locale (Scuola)
+
+### Scenario: Controllo aula computer
+
+**Server** (PC insegnante):
+```bash
+cd server
+npm install
+npm start
+# Annota l'IP: ifconfig / ipconfig
+```
+
+**Client** (ogni PC studente):
+```bash
+cd Kiosk
+npm install
+npm run build
+
+# Configurazione
+cat > .env << EOF
+SERVER_URL=http://192.168.1.100:3000  # IP insegnante
+EXIT_PASSWORD=segreto123
+STANDALONE_MODE=false
+EOF
+
+npm start
+```
+
+**Dashboard** (browser insegnante):
+`http://localhost:3000`
+
+Ora l'insegnante può bloccare/sbloccare tutte le postazioni con un click!
+
+## 🔧 Personalizzare il Contenuto
+
+Il contenuto visualizzato si trova in `src/renderer/index.html`.
+
+**Esempio - Video:**
 ```html
 <div id="content-container">
-  <video autoplay loop>
+  <video autoplay loop muted style="width: 100%; height: 100%;">
     <source src="lezione.mp4" type="video/mp4">
   </video>
 </div>
 ```
 
-Esempio - Caricare un sito web:
-
+**Esempio - Sito web:**
 ```html
 <div id="content-container">
-  <iframe src="https://tuosito.com/lezione" frameborder="0"></iframe>
+  <iframe src="https://lezione.scuola.it" frameborder="0"></iframe>
 </div>
 ```
 
-## Build per distribuzione
+Vedi `CONFIGURATION.md` per altri esempi.
 
-### Mac (DMG)
+## 📦 Build per Distribuzione
 
-```bash
-npm run package:mac
-```
-
-L'installer DMG verrà creato in `release/`.
-
-### Windows (EXE)
+### Client
 
 ```bash
-npm run package:win
+npm run package:mac   # Crea DMG per Mac
+npm run package:win   # Crea installer EXE per Windows
 ```
 
-L'installer NSIS verrà creato in `release/`.
+Gli installer saranno in `release/`.
 
-## Architettura tecnica
+### Server
 
-Il sistema si basa su:
+Il server non richiede build, è già pronto:
 
-- **Electron**: Framework per app desktop multi-platform
-- **TypeScript**: Linguaggio type-safe per lo sviluppo
-- **Addon nativi Node.js**: Moduli C++/Objective-C++ per bloccare l'input a livello di sistema operativo
-  - Mac: Usa `CGEventTap` API per intercettare eventi
-  - Windows: Usa `SetWindowsHookEx` API per intercettare eventi
+```bash
+cd server
+npm install --production
+npm start
+```
 
-### File principali
+Per deployment su server dedicato, considera PM2:
 
-- `src/main.ts`: Processo principale Electron, gestisce la finestra e il kiosk mode
-- `src/native/inputBlocker.ts`: Wrapper TypeScript per gli addon nativi
-- `native/mac/input_blocker_mac.mm`: Addon nativo Mac (Objective-C++)
-- `native/win/input_blocker_win.cc`: Addon nativo Windows (C++)
-- `src/renderer/index.html`: UI/Contenuto visualizzato
+```bash
+npm install -g pm2
+pm2 start dist/server.js --name kiosk-server
+pm2 save
+pm2 startup
+```
 
-## Sicurezza e limitazioni
+## 📚 Documentazione
 
-### Mac
-- Richiede permessi di Accessibilità (l'utente deve autorizzare)
-- Non può bloccare Cmd+Option+Esc (Force Quit) se l'utente ha privilegi amministratore
-- System Integrity Protection (SIP) potrebbe limitare alcune funzionalità
+- **README.md** (questo file): Panoramica generale
+- **CLIENT-SERVER.md**: Documentazione completa architettura client-server, eventi, troubleshooting
+- **CONFIGURATION.md**: Guida personalizzazione contenuto, password, deployment
 
-### Windows
-- Richiede privilegi amministratore per blocco completo
-- Ctrl+Alt+Del è gestito dal kernel e non può essere bloccato completamente (security feature Windows)
+## 🔒 Sicurezza
 
-### Raccomandazioni
-- Usa account utente con privilegi limitati
-- Configura Group Policy su Windows per ulteriori restrizioni
-- Su Mac, considera MDM (Mobile Device Management) per deployment enterprise
+### Produzione
 
-## Troubleshooting
+Prima di usare in produzione:
 
-### "Impossibile caricare l'addon nativo"
+1. Cambia password admin in `server/.env`
+2. Cambia `JWT_SECRET` in `server/.env`
+3. Cambia `EXIT_PASSWORD` nel `.env` del client
+4. Usa HTTPS (reverse proxy nginx/apache)
+5. Limita accesso server solo da rete locale
+6. Considera VLAN dedicata per le postazioni
 
-Esegui:
+### Limitazioni Note
+
+**Mac:**
+- Cmd+Option+Esc (Force Quit) potrebbe essere ancora accessibile con privilegi admin
+- System Integrity Protection (SIP) limita alcune funzionalità
+
+**Windows:**
+- Ctrl+Alt+Del è gestito dal kernel Windows e non può essere bloccato completamente
+
+**Raccomandazioni:**
+- Usa account utente con privilegi limitati sulle postazioni
+- Configura Group Policy (Windows) o MDM (Mac) per restrizioni aggiuntive
+
+## 🛠️ Troubleshooting
+
+### Client non si connette al server
+
+```bash
+# Verifica che il server sia raggiungibile
+ping 192.168.1.100
+
+# Testa la porta
+telnet 192.168.1.100 3000
+```
+
+Controlla firewall su Mac/Windows.
+
+### Errore "Impossibile caricare addon nativo"
+
 ```bash
 npm run rebuild
 ```
 
-### Su Mac, l'input non viene bloccato
+### Mac: Input non viene bloccato
 
-Controlla i permessi di Accessibilità (vedi sezione Configurazione).
+Controlla i permessi di Accessibilità (vedi Configurazione).
 
-### Su Windows, l'input non viene bloccato completamente
+### Windows: Input non viene bloccato completamente
 
-Assicurati di eseguire l'app come amministratore.
+Esegui come amministratore.
 
-### La password di uscita non funziona
+### Altri problemi
 
-- Verifica di digitare esattamente la password configurata in `EXIT_PASSWORD`
-- La password è case-sensitive
-- Non c'è feedback visivo durante la digitazione
+Consulta `CLIENT-SERVER.md` per troubleshooting dettagliato.
 
-## Licenza
+## 📊 Scalabilità
+
+Il sistema supporta:
+- ✅ **50+ client contemporanei** (testato)
+- ✅ Reconnection automatica
+- ✅ Heartbeat ogni 30s
+- ✅ Timeout client inattivi (60s)
+
+Per deployment più grandi, considera:
+- Server dedicato con più risorse
+- Redis per session storage
+- Load balancing
+
+## 🗺️ Roadmap
+
+- [ ] Autenticazione JWT reale
+- [ ] Gruppi di client (per aule multiple)
+- [ ] Schedulazione automatica (blocco/sblocco programmato)
+- [ ] Screenshot remoti
+- [ ] Broadcast messaggi
+- [ ] Statistiche utilizzo
+- [ ] Mobile app admin
+
+## 🆘 Supporto
+
+Per problemi:
+
+1. Controlla i log (Terminale del client e server)
+2. Consulta `CLIENT-SERVER.md` per troubleshooting
+3. Verifica requisiti e permessi
+4. Apri una issue su GitHub
+
+## 📄 Licenza
 
 MIT
 
-## Supporto
+---
 
-Per bug o richieste di feature, apri una issue su GitHub.
+**Sviluppato per ambienti educativi** - Aiuta insegnanti e studenti a rimanere concentrati! 🎓

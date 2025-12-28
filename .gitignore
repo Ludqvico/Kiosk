@@ -1,5 +1,10 @@
 node_modules/
 dist/
 release/
+build/
 *.log
 .DS_Store
+.env
+server/.env
+server/dist/
+server/node_modules/
