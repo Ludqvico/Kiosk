@@ -11,6 +11,9 @@ export class ServerConnection {
   private onRebootCallback: (() => void) | null = null;
   private onShutdownCallback: ((delay: number) => void) | null = null;
   private onLogoutCallback: (() => void) | null = null;
+  private onWebRTCStartCallback: (() => void) | null = null;
+  private onWebRTCStopCallback: (() => void) | null = null;
+  private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -109,7 +112,27 @@ export class ServerConnection {
       }
     });
 
-    // TODO: WebRTC signaling handlers
+    // WebRTC remote desktop handlers
+    this.socket.on('server:webrtc-start', () => {
+      console.log('[ServerConnection] Ricevuto comando START WEBRTC REMOTE DESKTOP dal server');
+      if (this.onWebRTCStartCallback) {
+        this.onWebRTCStartCallback();
+      }
+    });
+
+    this.socket.on('server:webrtc-stop', () => {
+      console.log('[ServerConnection] Ricevuto comando STOP WEBRTC REMOTE DESKTOP dal server');
+      if (this.onWebRTCStopCallback) {
+        this.onWebRTCStopCallback();
+      }
+    });
+
+    this.socket.on('server:webrtc-signal', (signal: any) => {
+      console.log('[ServerConnection] Ricevuto segnale WebRTC dal server:', signal.type);
+      if (this.onWebRTCSignalCallback) {
+        this.onWebRTCSignalCallback(signal);
+      }
+    });
   }
 
   private registerClient() {
@@ -222,5 +245,26 @@ export class ServerConnection {
   }
 
   // ========== REMOTE DESKTOP (WebRTC) ==========
-  // TODO: Implementare WebRTC peer connection
+
+  // Registra callback per avvio remote desktop
+  onWebRTCStart(callback: () => void) {
+    this.onWebRTCStartCallback = callback;
+  }
+
+  // Registra callback per stop remote desktop
+  onWebRTCStop(callback: () => void) {
+    this.onWebRTCStopCallback = callback;
+  }
+
+  // Registra callback per segnali WebRTC
+  onWebRTCSignal(callback: (signal: any) => void) {
+    this.onWebRTCSignalCallback = callback;
+  }
+
+  // Invia segnale WebRTC al server
+  sendWebRTCSignal(signal: any) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:webrtc-signal', signal);
+    }
+  }
 }

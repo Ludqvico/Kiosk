@@ -2,12 +2,16 @@ import { app, BrowserWindow, globalShortcut, screen } from 'electron';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { ServerConnection } from './serverConnection';
+import { WebRTCRemote } from './webrtcRemote';
+import { InputInjection } from './inputInjection';
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
 
 let mainWindow: BrowserWindow | null = null;
 let serverConnection: ServerConnection | null = null;
+let webrtcRemote: WebRTCRemote | null = null;
+let inputInjection: InputInjection | null = null;
 let isLocked = false;
 
 // Configurazione
@@ -289,6 +293,29 @@ function connectToServer() {
     logoutClient();
   });
 
+  // WebRTC remote desktop callbacks
+  serverConnection.onWebRTCStart(() => {
+    console.log('[Main] Ricevuto comando START REMOTE DESKTOP dal server');
+    startRemoteDesktop();
+  });
+
+  serverConnection.onWebRTCStop(() => {
+    console.log('[Main] Ricevuto comando STOP REMOTE DESKTOP dal server');
+    stopRemoteDesktop();
+  });
+
+  serverConnection.onWebRTCSignal((signal) => {
+    console.log('[Main] Ricevuto segnale WebRTC:', signal.type);
+
+    if (webrtcRemote) {
+      if (signal.type === 'answer' && signal.answer) {
+        webrtcRemote.handleAnswer(signal.answer);
+      } else if (signal.type === 'candidate' && signal.candidate) {
+        webrtcRemote.addIceCandidate(signal.candidate);
+      }
+    }
+  });
+
   // Connetti
   serverConnection.connect();
 }
@@ -351,8 +378,82 @@ function logoutClient() {
   app.quit();
 }
 
-// ========== REMOTE CONTROL ==========
-// TODO: Implementare WebRTC remote desktop
+// ========== REMOTE DESKTOP (WebRTC) ==========
+
+async function startRemoteDesktop() {
+  console.log('[Main] Starting WebRTC remote desktop...');
+
+  try {
+    // Inizializza WebRTC remote
+    if (!webrtcRemote) {
+      webrtcRemote = new WebRTCRemote();
+
+      // Setup event handlers
+      webrtcRemote.on('icecandidate', (candidate) => {
+        // Invia ICE candidate al server
+        if (serverConnection) {
+          serverConnection.sendWebRTCSignal({
+            type: 'candidate',
+            candidate
+          });
+        }
+      });
+
+      webrtcRemote.on('input', async (inputData) => {
+        // Gestisci input remoto
+        if (!inputInjection) {
+          const primaryDisplay = screen.getPrimaryDisplay();
+          inputInjection = new InputInjection(
+            primaryDisplay.size.width,
+            primaryDisplay.size.height
+          );
+        }
+
+        switch (inputData.type) {
+          case 'mousemove':
+            await inputInjection.moveMouse(inputData.x, inputData.y);
+            break;
+          case 'click':
+            await inputInjection.click(inputData.x, inputData.y, inputData.button);
+            break;
+          case 'keypress':
+            await inputInjection.keyPress(inputData.key);
+            break;
+        }
+      });
+
+      webrtcRemote.on('error', (error) => {
+        console.error('[Main] WebRTC error:', error);
+      });
+    }
+
+    // Avvia cattura schermo e WebRTC
+    await webrtcRemote.start();
+
+    // Crea offer e invialo al server
+    const offer = await webrtcRemote.createOffer();
+    if (serverConnection) {
+      serverConnection.sendWebRTCSignal({
+        type: 'offer',
+        offer
+      });
+    }
+
+    console.log('[Main] WebRTC remote desktop started');
+  } catch (error) {
+    console.error('[Main] Error starting WebRTC:', error);
+  }
+}
+
+function stopRemoteDesktop() {
+  console.log('[Main] Stopping WebRTC remote desktop...');
+
+  if (webrtcRemote) {
+    webrtcRemote.stop();
+  }
+
+  console.log('[Main] WebRTC remote desktop stopped');
+}
 
 function quitApp() {
   // Disconnetti dal server

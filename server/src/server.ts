@@ -45,7 +45,9 @@ const connectedClients = new Map<string, KioskClient>();
 const activityLog: ActivityEvent[] = [];
 let eventIdCounter = 0;
 
-// TODO: WebRTC signaling state
+// WebRTC signaling state
+// Map<clientId, adminSocketId> - tracks active remote desktop sessions
+const activeWebRTCSessions = new Map<string, string>();
 
 // Helper per loggare eventi
 function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>) {
@@ -393,9 +395,97 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ========== REMOTE CONTROL ==========
+  // ========== REMOTE DESKTOP (WebRTC) ==========
 
-  // TODO: WebRTC signaling handlers
+  // Admin avvia sessione remote desktop
+  socket.on('admin:start-remote-desktop', (clientId: string) => {
+    console.log(`[Admin] Richiesta WEBRTC REMOTE DESKTOP per client: ${clientId}`);
+
+    const client = connectedClients.get(clientId);
+    if (client) {
+      // Verifica se già in remote desktop
+      if (activeWebRTCSessions.has(clientId)) {
+        const existingAdminId = activeWebRTCSessions.get(clientId);
+        socket.emit('admin:remote-desktop-error', {
+          message: `Client già sotto controllo remoto da altro admin (${existingAdminId})`
+        });
+        return;
+      }
+
+      // Registra sessione
+      activeWebRTCSessions.set(clientId, socket.id);
+
+      // Avvia WebRTC sul client
+      io.to(clientId).emit('server:webrtc-start');
+      console.log(`[Server] WebRTC remote desktop avviato su ${client.hostname}`);
+
+      // Conferma all'admin
+      socket.emit('admin:remote-desktop-started', { clientId });
+
+      // Log activity
+      logActivity({
+        type: 'diagnostics',
+        clientId: clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `WebRTC remote desktop session started`
+      });
+    } else {
+      socket.emit('admin:remote-desktop-error', {
+        message: `Client ${clientId} non trovato`
+      });
+    }
+  });
+
+  // Admin ferma sessione remote desktop
+  socket.on('admin:stop-remote-desktop', (clientId: string) => {
+    console.log(`[Admin] Stop WEBRTC REMOTE DESKTOP per client: ${clientId}`);
+
+    const client = connectedClients.get(clientId);
+    if (client) {
+      // Rimuovi sessione
+      activeWebRTCSessions.delete(clientId);
+
+      // Ferma WebRTC sul client
+      io.to(clientId).emit('server:webrtc-stop');
+      console.log(`[Server] WebRTC remote desktop fermato su ${client.hostname}`);
+
+      // Log activity
+      logActivity({
+        type: 'diagnostics',
+        clientId: clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `WebRTC remote desktop session stopped`
+      });
+    }
+  });
+
+  // WebRTC signaling: Admin -> Client
+  socket.on('admin:webrtc-signal', (data: { clientId: string; signal: any }) => {
+    const client = connectedClients.get(data.clientId);
+
+    if (client && activeWebRTCSessions.get(data.clientId) === socket.id) {
+      // Inoltra segnale al client
+      io.to(data.clientId).emit('server:webrtc-signal', data.signal);
+      console.log(`[WebRTC] Segnale admin->client: ${data.signal.type}`);
+    }
+  });
+
+  // WebRTC signaling: Client -> Admin
+  socket.on('client:webrtc-signal', (signal: any) => {
+    const clientId = socket.id;
+    const adminId = activeWebRTCSessions.get(clientId);
+
+    if (adminId) {
+      // Inoltra segnale all'admin
+      io.to(adminId).emit('admin:webrtc-signal', {
+        clientId: clientId,
+        signal: signal
+      });
+      console.log(`[WebRTC] Segnale client->admin: ${signal.type}`);
+    }
+  });
 
   // Disconnessione
   socket.on('disconnect', () => {
@@ -417,7 +507,28 @@ io.on('connection', (socket) => {
       io.emit('admin:client-disconnected', { clientId: socket.id });
     }
 
-    // TODO: Cleanup WebRTC connections
+    // Cleanup WebRTC sessions
+    // Se era un admin che controllava un client, ferma il remote desktop
+    for (const [clientId, adminId] of activeWebRTCSessions.entries()) {
+      if (adminId === socket.id) {
+        console.log(`[Admin] Admin disconnesso, fermo WebRTC per client: ${clientId}`);
+        io.to(clientId).emit('server:webrtc-stop');
+        activeWebRTCSessions.delete(clientId);
+      }
+    }
+
+    // Se era un client sotto controllo, notifica l'admin
+    if (activeWebRTCSessions.has(socket.id)) {
+      const adminId = activeWebRTCSessions.get(socket.id);
+      console.log(`[Client] Client disconnesso durante sessione WebRTC`);
+      if (adminId) {
+        io.to(adminId).emit('admin:remote-desktop-disconnected', {
+          clientId: socket.id,
+          message: 'Client disconnected'
+        });
+      }
+      activeWebRTCSessions.delete(socket.id);
+    }
   });
 });
 

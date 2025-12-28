@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Desktop - WebRTC</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .remote-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .remote-header {
+            background: #2a2a2a;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .remote-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .remote-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-indicator.connecting {
+            background: #ffa500;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #4CAF50;
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .close-btn {
+            background: #f44336;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .close-btn:hover {
+            background: #d32f2f;
+        }
+
+        .remote-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        video.active {
+            display: block;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            gap: 16px;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 14px;
+            text-align: center;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="remote-container">
+        <div class="remote-header">
+            <div class="remote-title" id="remoteTitle">Remote Desktop - WebRTC</div>
+            <div class="remote-status">
+                <div class="status-indicator connecting" id="statusIndicator"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <button class="close-btn" onclick="closeRemote()">Close</button>
+        </div>
+        <div class="remote-screen">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loadingText">Connecting to client...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get client info from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('clientId');
+        const hostname = urlParams.get('hostname') || 'Unknown';
+
+        if (!clientId) {
+            alert('No client ID specified');
+            window.close();
+        }
+
+        // Setup
+        const socket = io();
+        const video = document.getElementById('remoteVideo');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const remoteTitle = document.getElementById('remoteTitle');
+
+        remoteTitle.textContent = `Remote Desktop - ${hostname}`;
+
+        let peerConnection = null;
+        let dataChannel = null;
+        let isConnected = false;
+
+        // WebRTC Configuration
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Socket.io events
+        socket.on('connect', () => {
+            console.log('[Remote] Connected to server');
+            updateStatus('connecting', 'Starting remote session...');
+
+            // Start remote desktop
+            socket.emit('admin:start-remote-desktop', clientId);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('[Remote] Disconnected from server');
+            updateStatus('disconnected', 'Disconnected');
+            showLoading('Connection lost', true);
+            cleanup();
+        });
+
+        socket.on('admin:remote-desktop-started', (data) => {
+            console.log('[Remote] Remote desktop started:', data);
+            updateStatus('connecting', 'Waiting for peer...');
+            loadingText.textContent = 'Waiting for client connection...';
+        });
+
+        socket.on('admin:remote-desktop-error', (data) => {
+            console.error('[Remote] Error:', data.message);
+            showLoading(data.message, true);
+            updateStatus('disconnected', 'Error');
+        });
+
+        socket.on('admin:remote-desktop-disconnected', (data) => {
+            console.log('[Remote] Client disconnected:', data.message);
+            showLoading('Client disconnected', true);
+            updateStatus('disconnected', 'Client disconnected');
+            cleanup();
+        });
+
+        // WebRTC signaling
+        socket.on('admin:webrtc-signal', async (data) => {
+            console.log('[WebRTC] Received signal:', data.signal.type);
+
+            if (!peerConnection) {
+                createPeerConnection();
+            }
+
+            const signal = data.signal;
+
+            if (signal.type === 'offer') {
+                // Client sent offer, create answer
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                // Send answer back to client
+                socket.emit('admin:webrtc-signal', {
+                    clientId: clientId,
+                    signal: {
+                        type: 'answer',
+                        answer: answer
+                    }
+                });
+            } else if (signal.type === 'candidate' && signal.candidate) {
+                // Add ICE candidate
+                await peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
+            }
+        });
+
+        // Create WebRTC PeerConnection
+        function createPeerConnection() {
+            console.log('[WebRTC] Creating peer connection');
+            peerConnection = new RTCPeerConnection(config);
+
+            // ICE candidate event
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    console.log('[WebRTC] Sending ICE candidate');
+                    socket.emit('admin:webrtc-signal', {
+                        clientId: clientId,
+                        signal: {
+                            type: 'candidate',
+                            candidate: event.candidate
+                        }
+                    });
+                }
+            };
+
+            // Track event - receive video stream
+            peerConnection.ontrack = (event) => {
+                console.log('[WebRTC] Received track:', event.track.kind);
+                if (event.track.kind === 'video') {
+                    video.srcObject = event.streams[0];
+                    video.classList.add('active');
+                    hideLoading();
+                    updateStatus('connected', 'Connected');
+                    isConnected = true;
+                }
+            };
+
+            // Connection state changes
+            peerConnection.onconnectionstatechange = () => {
+                const state = peerConnection.connectionState;
+                console.log('[WebRTC] Connection state:', state);
+
+                if (state === 'connected') {
+                    updateStatus('connected', 'Connected');
+                } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+                    updateStatus('disconnected', 'Disconnected');
+                    showLoading('Connection lost', true);
+                    cleanup();
+                }
+            };
+
+            // Create data channel for input
+            dataChannel = peerConnection.createDataChannel('input');
+            dataChannel.onopen = () => {
+                console.log('[WebRTC] Data channel opened');
+            };
+            dataChannel.onclose = () => {
+                console.log('[WebRTC] Data channel closed');
+            };
+        }
+
+        // Input handling
+        video.addEventListener('mousemove', (e) => {
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+
+            const rect = video.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+
+            dataChannel.send(JSON.stringify({
+                type: 'mousemove',
+                x: x,
+                y: y
+            }));
+        });
+
+        video.addEventListener('click', (e) => {
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+
+            const rect = video.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+
+            dataChannel.send(JSON.stringify({
+                type: 'click',
+                x: x,
+                y: y,
+                button: e.button === 2 ? 'right' : 'left'
+            }));
+        });
+
+        video.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+
+            dataChannel.send(JSON.stringify({
+                type: 'keypress',
+                key: e.key
+            }));
+        });
+
+        // UI helpers
+        function updateStatus(state, text) {
+            statusIndicator.className = `status-indicator ${state}`;
+            statusText.textContent = text;
+        }
+
+        function showLoading(text, isError = false) {
+            loadingText.textContent = text;
+            if (isError) {
+                loadingText.classList.add('error-message');
+            } else {
+                loadingText.classList.remove('error-message');
+            }
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function cleanup() {
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+
+            video.classList.remove('active');
+            isConnected = false;
+        }
+
+        function closeRemote() {
+            // Stop remote desktop
+            socket.emit('admin:stop-remote-desktop', clientId);
+            cleanup();
+            window.close();
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            socket.emit('admin:stop-remote-desktop', clientId);
+            cleanup();
+        });
+    </script>
+</body>
+</html>
