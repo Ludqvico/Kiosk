@@ -497,9 +497,6 @@ app.on('activate', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
-  if (inputBlocker) {
-    inputBlocker.unblock();
-  }
   if (serverConnection) {
     serverConnection.disconnect();
   }
