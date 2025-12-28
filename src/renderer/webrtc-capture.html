@@ -68,11 +68,25 @@
 
                 // Data channel for input
                 peerConnection.ondatachannel = (event) => {
-                    console.log('[WebRTC Renderer] Data channel received');
+                    console.log('[WebRTC Renderer] Data channel received:', event.channel.label);
                     dataChannel = event.channel;
 
+                    dataChannel.onopen = () => {
+                        console.log('[WebRTC Renderer] Data channel OPENED - ready to receive input');
+                    };
+
+                    dataChannel.onclose = () => {
+                        console.log('[WebRTC Renderer] Data channel CLOSED');
+                    };
+
+                    dataChannel.onerror = (error) => {
+                        console.error('[WebRTC Renderer] Data channel ERROR:', error);
+                    };
+
                     dataChannel.onmessage = (event) => {
+                        console.log('[WebRTC Renderer] Received input data:', event.data);
                         const message = JSON.parse(event.data);
+                        console.log('[WebRTC Renderer] Parsed input:', message.type, message);
                         ipcRenderer.send('webrtc:input', message);
                     };
                 };
