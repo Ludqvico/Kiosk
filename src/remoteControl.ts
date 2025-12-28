@@ -22,6 +22,7 @@ export class RemoteControl {
   private screenWidth = 0;
   private screenHeight = 0;
   private platform = process.platform;
+  private frameCount = 0;
 
   constructor() {
     try {
@@ -92,9 +93,18 @@ export class RemoteControl {
       const source = sources[0];
       const thumbnail = source.thumbnail;
       const dataUrl = thumbnail.toDataURL();
+      const size = thumbnail.getSize();
+
+      this.frameCount++;
+
+      // Log ogni 30 frame (~3 secondi a 10 FPS) per non spammare
+      if (this.frameCount % 30 === 0) {
+        const kb = Math.round(dataUrl.length / 1024);
+        console.log(`[RemoteControl] 📸 Frame #${this.frameCount}: ${size.width}x${size.height} (${kb} KB)`);
+      }
 
       if (this.onFrameCallback) {
-        this.onFrameCallback(dataUrl, thumbnail.getSize().width, thumbnail.getSize().height);
+        this.onFrameCallback(dataUrl, size.width, size.height);
       }
     } catch (error) {
       console.error('[RemoteControl] ERRORE cattura frame:', error);
@@ -155,13 +165,24 @@ export class RemoteControl {
     try {
       const scriptPath = path.join(__dirname, '..', 'native', 'win', 'SimulateInput.ps1');
       const psArgs = args.map(a => `"${a}"`).join(' ');
-      const result = execSync(
-        `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${command} ${psArgs}`,
-        { encoding: 'utf8', timeout: 1000 }
-      ).trim();
-      return result === 'OK';
+      const fullCommand = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${command} ${psArgs}`;
+
+      console.log(`[RemoteControl] 🎯 Executing: ${command} ${args.join(', ')}`);
+
+      const result = execSync(fullCommand, {
+        encoding: 'utf8',
+        timeout: 1000,
+        windowsHide: true
+      }).trim();
+
+      const success = result === 'OK';
+      if (!success) {
+        console.error(`[RemoteControl] ❌ PowerShell failed: ${result}`);
+      }
+
+      return success;
     } catch (error) {
-      console.error('[RemoteControl] PowerShell input error:', error);
+      console.error('[RemoteControl] ❌ PowerShell error:', error);
       return false;
     }
   }
@@ -171,6 +192,8 @@ export class RemoteControl {
   private handleMouseMove(data: { x: number; y: number }) {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
+
+    console.log(`[RemoteControl] 🖱️  MouseMove: ${data.x.toFixed(2)},${data.y.toFixed(2)} -> ${x},${y} (screen: ${this.screenWidth}x${this.screenHeight})`);
 
     if (this.platform === 'win32') {
       this.execPowerShellInput('mousemove', x, y);
@@ -182,13 +205,16 @@ export class RemoteControl {
   private handleMouseDown(data: { x: number; y: number; button: string }) {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
+    const button = data.button === 'right' ? 'right' : 'left';
+
+    console.log(`[RemoteControl] 🖱️  MouseDown: ${button} at ${x},${y}`);
 
     if (this.platform === 'win32') {
       this.execPowerShellInput('mousemove', x, y);
-      this.execPowerShellInput('mousedown', data.button === 'right' ? 'right' : 'left');
+      this.execPowerShellInput('mousedown', button);
     } else if (robot) {
       robot.moveMouse(x, y);
-      robot.mouseToggle('down', data.button === 'right' ? 'right' : 'left');
+      robot.mouseToggle('down', button);
     }
   }
 
@@ -208,12 +234,15 @@ export class RemoteControl {
   private handleClick(data: { x: number; y: number; button: string }) {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
+    const button = data.button === 'right' ? 'right' : 'left';
+
+    console.log(`[RemoteControl] 🖱️  Click: ${button} at ${x},${y}`);
 
     if (this.platform === 'win32') {
-      this.execPowerShellInput('click', x, y, data.button === 'right' ? 'right' : 'left');
+      this.execPowerShellInput('click', x, y, button);
     } else if (robot) {
       robot.moveMouse(x, y);
-      robot.mouseClick(data.button === 'right' ? 'right' : 'left');
+      robot.mouseClick(button);
     }
   }
 
