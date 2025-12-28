@@ -53,8 +53,8 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             return 1;
         }
 
-        // Blocca tutti gli altri input (opzionale - commentare se si vuole permettere digitazione)
-        // return 1;
+        // BLOCCA TUTTO L'INPUT TASTIERA
+        return 1;
     }
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
@@ -63,26 +63,8 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 // Hook per bloccare il mouse
 LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION && isBlocking) {
-        // Blocca tutti gli eventi del mouse (opzionale)
-        // Puoi decidere quali eventi bloccare:
-        // - WM_LBUTTONDOWN, WM_RBUTTONDOWN: click
-        // - WM_MOUSEMOVE: movimento
-        // - WM_MOUSEWHEEL: scroll
-
-        // Per ora permettiamo il movimento del mouse ma blocchiamo i click
-        switch (wParam) {
-            case WM_LBUTTONDOWN:
-            case WM_LBUTTONUP:
-            case WM_RBUTTONDOWN:
-            case WM_RBUTTONUP:
-            case WM_MBUTTONDOWN:
-            case WM_MBUTTONUP:
-                return 1; // Blocca
-
-            // Opzionale: blocca anche il movimento
-            // case WM_MOUSEMOVE:
-            //     return 1;
-        }
+        // BLOCCA TUTTI GLI EVENTI DEL MOUSE (movimento, click, scroll, tutto)
+        return 1;
     }
 
     return CallNextHookEx(mouseHook, nCode, wParam, lParam);

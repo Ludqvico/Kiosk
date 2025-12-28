@@ -27,6 +27,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width,
     height,
+    show: false, // Non mostrare all'avvio
     fullscreen: true,
     kiosk: true,
     alwaysOnTop: true,
@@ -61,15 +62,12 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // NON nascondere il cursore all'avvio - solo quando bloccato
-  // mainWindow.webContents.insertCSS('* { cursor: none !important; }');
-
   // Se in modalità standalone, blocca immediatamente
   if (STANDALONE_MODE) {
     console.log('[Main] Modalità STANDALONE - Blocco automatico');
     lockKiosk();
   } else {
-    console.log('[Main] Modalità CLIENT-SERVER - In attesa comandi dal server (SBLOCCATO)');
+    console.log('[Main] Modalità CLIENT-SERVER - In attesa comandi dal server (client nascosto)');
   }
 
   registerSecretExit();
@@ -81,32 +79,21 @@ function lockKiosk() {
     return;
   }
 
-  console.log('[Main] 🔒 BLOCCO KIOSK');
+  console.log('[Main] BLOCCO KIOSK');
 
-  // Nascondi il cursore quando bloccato
+  // Mostra la finestra fullscreen
   if (mainWindow) {
-    mainWindow.webContents.insertCSS('* { cursor: none !important; }');
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.setKiosk(true);
+    mainWindow.setFullScreen(true);
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
 
-    // Mostra overlay rosso per feedback visivo
-    mainWindow.webContents.insertCSS(`
-      body::before {
-        content: 'LOCKED';
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 8px 16px;
-        background: #ef4444;
-        color: white;
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        font-weight: 600;
-        border-radius: 4px;
-        z-index: 99999;
-      }
-    `);
+    // Nascondi cursore
+    mainWindow.webContents.insertCSS('* { cursor: none !important; }');
   }
 
-  // Blocca input nativo (se addon disponibili)
+  // Blocca input nativo a livello di sistema
   inputBlocker = new InputBlocker();
   const platform = process.platform;
 
@@ -126,7 +113,7 @@ function lockKiosk() {
     serverConnection.sendStatus(true);
   }
 
-  console.log('[Main] ✓ Kiosk BLOCCATO');
+  console.log('[Main] Kiosk BLOCCATO');
 }
 
 function unlockKiosk() {
@@ -135,30 +122,14 @@ function unlockKiosk() {
     return;
   }
 
-  console.log('[Main] 🔓 SBLOCCO KIOSK');
+  console.log('[Main] SBLOCCO KIOSK');
 
-  // Mostra il cursore quando sbloccato
+  // Nascondi la finestra completamente
   if (mainWindow) {
+    mainWindow.hide();
+
+    // Ripristina cursore (nel caso)
     mainWindow.webContents.insertCSS('* { cursor: auto !important; }');
-
-    // Rimuovi overlay e mostra verde per feedback
-    mainWindow.webContents.insertCSS(`
-      body::before {
-        content: 'UNLOCKED';
-        background: #22c55e !important;
-      }
-    `);
-
-    // Rimuovi overlay dopo 2 secondi
-    setTimeout(() => {
-      if (mainWindow) {
-        mainWindow.webContents.insertCSS(`
-          body::before {
-            display: none !important;
-          }
-        `);
-      }
-    }, 2000);
   }
 
   // Sblocca input nativo
@@ -177,7 +148,7 @@ function unlockKiosk() {
     serverConnection.sendStatus(false);
   }
 
-  console.log('[Main] ✓ Kiosk SBLOCCATO');
+  console.log('[Main] Kiosk SBLOCCATO');
 }
 
 function blockGlobalShortcuts() {
