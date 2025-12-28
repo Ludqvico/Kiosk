@@ -398,16 +398,22 @@
                 }
             };
 
-            // Create data channel for input
-            dataChannel = peerConnection.createDataChannel('input');
-            dataChannel.onopen = () => {
-                console.log('[WebRTC] Data channel OPENED - ready to send input');
-            };
-            dataChannel.onclose = () => {
-                console.log('[WebRTC] Data channel CLOSED');
-            };
-            dataChannel.onerror = (error) => {
-                console.error('[WebRTC] Data channel ERROR:', error);
+            // Receive data channel from client (client creates it with the offer)
+            peerConnection.ondatachannel = (event) => {
+                console.log('[WebRTC] Data channel received:', event.channel.label);
+                dataChannel = event.channel;
+
+                dataChannel.onopen = () => {
+                    console.log('[WebRTC] ✓✓✓ Data channel OPENED - ready to send input');
+                };
+
+                dataChannel.onclose = () => {
+                    console.log('[WebRTC] Data channel CLOSED');
+                };
+
+                dataChannel.onerror = (error) => {
+                    console.error('[WebRTC] Data channel ERROR:', error);
+                };
             };
         }
 
@@ -428,13 +434,11 @@
 
             // Only send if within bounds
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
-                const msg = {
+                dataChannel.send(JSON.stringify({
                     type: 'mousemove',
                     x: x,
                     y: y
-                };
-                console.log('[Remote] >>>> Sending:', msg);
-                dataChannel.send(JSON.stringify(msg));
+                }));
             }
         });
 
@@ -447,12 +451,14 @@
             const y = (e.clientY - rect.top) / rect.height;
 
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
-                dataChannel.send(JSON.stringify({
+                const msg = {
                     type: 'click',
                     x: x,
                     y: y,
                     button: e.button === 2 ? 'right' : (e.button === 1 ? 'middle' : 'left')
-                }));
+                };
+                console.log('[Remote] >>>> Sending CLICK:', msg.button, 'at', msg.x.toFixed(2), msg.y.toFixed(2));
+                dataChannel.send(JSON.stringify(msg));
             }
         });
 
@@ -469,6 +475,7 @@
             const y = (e.clientY - rect.top) / rect.height;
 
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
+                console.log('[Remote] >>>> Sending DOUBLE CLICK at', x.toFixed(2), y.toFixed(2));
                 dataChannel.send(JSON.stringify({
                     type: 'doubleclick',
                     x: x,
@@ -491,14 +498,16 @@
 
             e.preventDefault();
 
-            dataChannel.send(JSON.stringify({
+            const msg = {
                 type: 'keypress',
                 key: e.key,
                 ctrl: e.ctrlKey,
                 shift: e.shiftKey,
                 alt: e.altKey,
                 meta: e.metaKey
-            }));
+            };
+            console.log('[Remote] >>>> Sending KEY:', msg.key, msg);
+            dataChannel.send(JSON.stringify(msg));
         });
 
         // UI helpers

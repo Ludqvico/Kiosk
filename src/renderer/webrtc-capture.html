@@ -66,29 +66,33 @@
                     ipcRenderer.send('webrtc:connectionstate', peerConnection.connectionState);
                 };
 
-                // Data channel for input
-                peerConnection.ondatachannel = (event) => {
-                    console.log('[WebRTC Renderer] Data channel received:', event.channel.label);
-                    dataChannel = event.channel;
+                // Create data channel for input (client side creates it because we make the offer)
+                console.log('[WebRTC Renderer] Creating data channel...');
+                dataChannel = peerConnection.createDataChannel('input');
 
-                    dataChannel.onopen = () => {
-                        console.log('[WebRTC Renderer] Data channel OPENED - ready to receive input');
-                    };
+                dataChannel.onopen = () => {
+                    console.log('[WebRTC Renderer] ✓✓✓ Data channel OPENED - ready to receive input');
+                };
 
-                    dataChannel.onclose = () => {
-                        console.log('[WebRTC Renderer] Data channel CLOSED');
-                    };
+                dataChannel.onclose = () => {
+                    console.log('[WebRTC Renderer] Data channel CLOSED');
+                };
 
-                    dataChannel.onerror = (error) => {
-                        console.error('[WebRTC Renderer] Data channel ERROR:', error);
-                    };
+                dataChannel.onerror = (error) => {
+                    console.error('[WebRTC Renderer] Data channel ERROR:', error);
+                };
 
-                    dataChannel.onmessage = (event) => {
-                        console.log('[WebRTC Renderer] Received input data:', event.data);
+                dataChannel.onmessage = (event) => {
+                    try {
                         const message = JSON.parse(event.data);
-                        console.log('[WebRTC Renderer] Parsed input:', message.type, message);
+                        // Log only non-mousemove to reduce spam
+                        if (message.type !== 'mousemove') {
+                            console.log('[WebRTC Renderer] >>>> Received:', message.type, message);
+                        }
                         ipcRenderer.send('webrtc:input', message);
-                    };
+                    } catch (error) {
+                        console.error('[WebRTC Renderer] Error parsing input:', error);
+                    }
                 };
 
                 // Add video track

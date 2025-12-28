@@ -631,7 +631,10 @@ function setupWebRTCHandlers() {
 
   // Input from renderer (via data channel)
   ipcMain.on('webrtc:input', async (event, inputData) => {
-    console.log('[Main] <<<< Received input via IPC:', inputData.type, inputData);
+    // Log only non-mousemove to reduce spam
+    if (inputData.type !== 'mousemove') {
+      console.log('[Main] <<<< Received input via IPC:', inputData.type, inputData);
+    }
 
     if (!inputInjection) {
       console.error('[Main] InputInjection NOT initialized!');
@@ -642,26 +645,25 @@ function setupWebRTCHandlers() {
       switch (inputData.type) {
         case 'mousemove':
           // Coordinates are already normalized (0-1) from dashboard
-          console.log(`[Main] Moving mouse to (${inputData.x}, ${inputData.y})`);
           await inputInjection.moveMouse(inputData.x, inputData.y);
           break;
 
         case 'click':
           // Coordinates are already normalized (0-1) from dashboard
-          console.log(`[Main] Clicking at (${inputData.x}, ${inputData.y}) button: ${inputData.button}`);
+          console.log(`[Main] >>> CLICK ${inputData.button} at (${inputData.x.toFixed(2)}, ${inputData.y.toFixed(2)})`);
           await inputInjection.click(inputData.x, inputData.y, inputData.button);
           break;
 
         case 'doubleclick':
           // Simulate double click as two rapid clicks
-          console.log(`[Main] Double clicking at (${inputData.x}, ${inputData.y})`);
+          console.log(`[Main] >>> DOUBLE CLICK at (${inputData.x.toFixed(2)}, ${inputData.y.toFixed(2)})`);
           await inputInjection.click(inputData.x, inputData.y, 'left');
           await new Promise(resolve => setTimeout(resolve, 50));
           await inputInjection.click(inputData.x, inputData.y, 'left');
           break;
 
         case 'keypress':
-          console.log(`[Main] Key press: ${inputData.key} (ctrl=${inputData.ctrl}, shift=${inputData.shift})`);
+          console.log(`[Main] >>> KEY ${inputData.key} (ctrl=${inputData.ctrl}, shift=${inputData.shift}, alt=${inputData.alt})`);
           await inputInjection.keyPress(inputData.key, {
             ctrl: inputData.ctrl,
             shift: inputData.shift,
