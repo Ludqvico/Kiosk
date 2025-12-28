@@ -4,7 +4,6 @@
   "description": "Multi-platform kiosk system for schools",
   "main": "dist/main.js",
   "scripts": {
-    "install": "node-gyp rebuild",
     "rebuild": "node-gyp rebuild",
     "build": "tsc && npm run copy-renderer && npm run copy-native",
     "copy-renderer": "node -e \"require('fs').cpSync('src/renderer', 'renderer', {recursive: true})\"",
