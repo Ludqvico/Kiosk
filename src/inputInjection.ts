@@ -46,9 +46,11 @@ export class InputInjection {
   /**
    * Click del mouse
    */
-  async click(normalizedX: number, normalizedY: number, button: 'left' | 'right' = 'left'): Promise<void> {
+  async click(normalizedX: number, normalizedY: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<void> {
     const x = Math.round(normalizedX * this.screenWidth);
     const y = Math.round(normalizedY * this.screenHeight);
+
+    console.log(`[InputInjection] CLICK ${button} at (${x}, ${y})`);
 
     try {
       if (this.platform === 'darwin') {
@@ -58,8 +60,9 @@ export class InputInjection {
       } else if (this.platform === 'linux') {
         await this.linuxClick(x, y, button);
       }
+      console.log(`[InputInjection] CLICK ${button} DONE`);
     } catch (error) {
-      console.error('[InputInjection] Error clicking:', error);
+      console.error(`[InputInjection] Error clicking ${button} at (${x}, ${y}):`, error);
     }
   }
 
@@ -67,6 +70,14 @@ export class InputInjection {
    * Pressione tasto
    */
   async keyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
+    const mods = [];
+    if (modifiers?.ctrl) mods.push('Ctrl');
+    if (modifiers?.shift) mods.push('Shift');
+    if (modifiers?.alt) mods.push('Alt');
+    if (modifiers?.meta) mods.push('Meta');
+    const modsStr = mods.length > 0 ? mods.join('+') + '+' : '';
+    console.log(`[InputInjection] KEYPRESS ${modsStr}${key}`);
+
     try {
       if (this.platform === 'darwin') {
         await this.macKeyPress(key, modifiers);
@@ -75,8 +86,9 @@ export class InputInjection {
       } else if (this.platform === 'linux') {
         await this.linuxKeyPress(key, modifiers);
       }
+      console.log(`[InputInjection] KEYPRESS ${modsStr}${key} DONE`);
     } catch (error) {
-      console.error('[InputInjection] Error pressing key:', error);
+      console.error(`[InputInjection] Error pressing key ${modsStr}${key}:`, error);
     }
   }
 
@@ -91,12 +103,22 @@ export class InputInjection {
     await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
   }
 
-  private async macClick(x: number, y: number, button: 'left' | 'right'): Promise<void> {
-    const clickType = button === 'right' ? '{control down}' : '';
+  private async macClick(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    let clickCommand = 'click';
+    if (button === 'right') {
+      clickCommand = 'click at {' + x + ', ' + y + '} using {control down}';
+    } else if (button === 'middle') {
+      // Middle click not easily supported in AppleScript, skip
+      console.warn('[InputInjection] Middle click not supported on macOS');
+      return;
+    } else {
+      clickCommand = 'click at {' + x + ', ' + y + '}';
+    }
+
     const script = `
       tell application "System Events"
         set position of mouse to {${x}, ${y}}
-        click at {${x}, ${y}} ${clickType}
+        ${clickCommand}
       end tell
     `;
     await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
@@ -122,28 +144,46 @@ export class InputInjection {
 
   private async windowsMoveMouse(x: number, y: number): Promise<void> {
     const ps = `
-      Add-Type -AssemblyName System.Windows.Forms
+      Add-Type -AssemblyName System.Windows.Forms;
       [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x}, ${y})
     `;
-    await execAsync(`powershell -Command "${ps.replace(/"/g, '\\"')}"`);
+    await execAsync(`powershell -ExecutionPolicy Bypass -Command "${ps}"`);
   }
 
-  private async windowsClick(x: number, y: number, button: 'left' | 'right'): Promise<void> {
-    const mouseEvent = button === 'left' ? '0x0002, 0x0004' : '0x0008, 0x0010';
+  private async windowsClick(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    let mouseEvent: string;
+    if (button === 'left') {
+      mouseEvent = '0x0002, 0x0004'; // LEFTDOWN + LEFTUP
+    } else if (button === 'right') {
+      mouseEvent = '0x0008, 0x0010'; // RIGHTDOWN + RIGHTUP
+    } else {
+      mouseEvent = '0x0020, 0x0040'; // MIDDLEDOWN + MIDDLEUP
+    }
+
     const ps = `
-      Add-Type -AssemblyName System.Windows.Forms
-      [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x}, ${y})
-      Add-Type @"
+      Add-Type -AssemblyName System.Windows.Forms;
+      [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x}, ${y});
+      Start-Sleep -Milliseconds 50;
+      Add-Type @'
         using System;
         using System.Runtime.InteropServices;
         public class Mouse {
           [DllImport("user32.dll")]
           public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
         }
-"@
+'@;
       [Mouse]::mouse_event(${mouseEvent}, 0, 0, 0, [UIntPtr]::Zero)
     `;
-    await execAsync(`powershell -Command "${ps.replace(/"/g, '\\"')}"`);
+
+    try {
+      const result = await execAsync(`powershell -ExecutionPolicy Bypass -Command "${ps}"`);
+      if (result.stderr) {
+        console.error('[InputInjection] PowerShell stderr:', result.stderr);
+      }
+    } catch (error: any) {
+      console.error('[InputInjection] PowerShell error:', error.message);
+      throw error;
+    }
   }
 
   private async windowsKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
@@ -186,8 +226,15 @@ export class InputInjection {
     await execAsync(`xdotool mousemove ${x} ${y}`);
   }
 
-  private async linuxClick(x: number, y: number, button: 'left' | 'right'): Promise<void> {
-    const btn = button === 'left' ? '1' : '3';
+  private async linuxClick(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    let btn: string;
+    if (button === 'left') {
+      btn = '1';
+    } else if (button === 'right') {
+      btn = '3';
+    } else {
+      btn = '2'; // middle
+    }
     await execAsync(`xdotool mousemove ${x} ${y} click ${btn}`);
   }
 
