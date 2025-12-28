@@ -386,11 +386,10 @@ function logoutClient() {
   app.quit();
 }
 
-// ========== INPUT BLOCKING ==========
+// ========== INPUT BLOCKING (ALCATRAZ MODE - BRUTALE) ==========
 
 let inputBlocked = false;
-let inputBlockOverlay: BrowserWindow | null = null;
-let blockedShortcuts: string[] = [];
+let inputBlockProcess: any = null;
 
 function blockUserInput() {
   if (inputBlocked) {
@@ -398,72 +397,80 @@ function blockUserInput() {
     return;
   }
 
-  console.log('[Main] BLOCCO INPUT UTENTE');
+  console.log('[Main] ⛓️  BLOCCO INPUT UTENTE - MODALITÀ ALCATRAZ ⛓️');
   inputBlocked = true;
 
-  // 1. Block KEYBOARD with globalShortcut (register all possible key combinations)
-  const keys = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
-    'Space', 'Tab', 'Enter', 'Backspace', 'Delete', 'Escape',
-    'Up', 'Down', 'Left', 'Right',
-    'Home', 'End', 'PageUp', 'PageDown',
-    'Insert', 'Plus', 'Minus', '=', '-', '[', ']', '\\', ';', "'", ',', '.', '/',
-    '`', 'PrintScreen', 'ScrollLock', 'Pause', 'NumLock'
-  ];
+  const platform = process.platform;
 
-  const modifiers = ['', 'Ctrl+', 'Alt+', 'Shift+', 'Ctrl+Shift+', 'Ctrl+Alt+', 'Alt+Shift+', 'Ctrl+Alt+Shift+', 'CommandOrControl+'];
+  if (platform === 'win32') {
+    // Windows: USA LOW-LEVEL HOOKS per bloccare TUTTO a livello sistema
+    const { spawn } = require('child_process');
+    const path = require('path');
 
-  let blocked = 0;
-  for (const mod of modifiers) {
-    for (const key of keys) {
-      const combo = mod + key;
-      try {
-        const success = globalShortcut.register(combo, () => {
-          // Block - do nothing
-        });
-        if (success) {
-          blockedShortcuts.push(combo);
-          blocked++;
-        }
-      } catch (e) {
-        // Some combinations might not be valid, skip them
+    const scriptPath = path.join(__dirname, '../src/native/win/InputBlocker.ps1');
+
+    console.log('[Main] 🔒 Avvio blocco Windows con Low-Level Hooks...');
+    console.log('[Main] Script path:', scriptPath);
+
+    // Spawn PowerShell process che installa gli hook e resta attivo
+    inputBlockProcess = spawn('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', scriptPath,
+      'block'
+    ], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    inputBlockProcess.stdout?.on('data', (data: Buffer) => {
+      const output = data.toString().trim();
+      console.log('[InputBlocker] stdout:', output);
+
+      if (output === 'HOOKS_INSTALLED') {
+        console.log('[Main] ✅ HOOKS INSTALLATI - Input sistema BLOCCATO');
+      } else if (output === 'BLOCKED') {
+        console.log('[Main] ✅✅✅ INPUT COMPLETAMENTE BLOCCATO (Keyboard + Mouse Low-Level Hooks)');
+        console.log('[Main] 🔐 Modalità ALCATRAZ attiva - ZERO interazioni possibili');
+      } else if (output.startsWith('ERROR')) {
+        console.error('[Main] ❌ Errore blocco:', output);
       }
-    }
+    });
+
+    inputBlockProcess.stderr?.on('data', (data: Buffer) => {
+      console.error('[InputBlocker] stderr:', data.toString().trim());
+    });
+
+    inputBlockProcess.on('exit', (code: number) => {
+      console.log('[Main] 🔓 Processo InputBlocker terminato con codice:', code);
+      inputBlocked = false;
+      inputBlockProcess = null;
+    });
+
+  } else {
+    // Mac/Linux: usa overlay come fallback
+    console.warn('[Main] ⚠️  Blocco hook non supportato su questa piattaforma - uso overlay');
+    createInputBlockOverlay();
   }
+}
 
-  console.log(`[Main] ✓ Bloccate ${blocked} combinazioni tastiera via globalShortcut`);
-
-  // 2. Block MOUSE with transparent overlay
-  inputBlockOverlay = new BrowserWindow({
+function createInputBlockOverlay() {
+  // Overlay di fallback per piattaforme non-Windows
+  const overlay = new BrowserWindow({
     fullscreen: true,
     alwaysOnTop: true,
     frame: false,
     transparent: true,
     skipTaskbar: true,
-    hasShadow: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
     }
   });
 
-  inputBlockOverlay.setIgnoreMouseEvents(false); // Capture all mouse events
-  inputBlockOverlay.setOpacity(0.01); // Almost invisible
-
-  // Simple blocking page
-  inputBlockOverlay.loadURL('data:text/html,<body style="background:transparent;cursor:not-allowed;"></body>');
-
-  inputBlockOverlay.on('close', (e) => {
-    if (inputBlocked) {
-      e.preventDefault();
-    }
-  });
-
-  console.log('[Main] ✓ Overlay mouse creato');
-  console.log('[Main] ✓✓✓ Input COMPLETAMENTE bloccato (tastiera + mouse)');
+  overlay.setIgnoreMouseEvents(false);
+  overlay.setOpacity(0.01);
+  overlay.loadURL('data:text/html,<body style="background:transparent;cursor:not-allowed;"></body>');
+  console.log('[Main] ✓ Overlay di fallback creato');
 }
 
 function unblockUserInput() {
@@ -472,24 +479,42 @@ function unblockUserInput() {
     return;
   }
 
-  console.log('[Main] SBLOCCO INPUT UTENTE');
+  console.log('[Main] 🔓 SBLOCCO INPUT UTENTE');
   inputBlocked = false;
 
-  // 1. Unregister all blocked shortcuts
-  for (const shortcut of blockedShortcuts) {
-    globalShortcut.unregister(shortcut);
-  }
-  console.log(`[Main] ✓ Sbloccate ${blockedShortcuts.length} combinazioni tastiera`);
-  blockedShortcuts = [];
+  const platform = process.platform;
 
-  // 2. Destroy overlay window
-  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-    inputBlockOverlay.destroy();
-    inputBlockOverlay = null;
-    console.log('[Main] ✓ Overlay mouse rimosso');
+  if (platform === 'win32' && inputBlockProcess) {
+    // Windows: crea file di stop per far uscire il process dal loop
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+
+    const stopFile = path.join(os.tmpdir(), 'input_blocker_stop.flag');
+
+    try {
+      fs.writeFileSync(stopFile, 'STOP');
+      console.log('[Main] ✓ File di stop creato:', stopFile);
+
+      // Aspetta un po' e poi killa il processo se ancora attivo
+      setTimeout(() => {
+        if (inputBlockProcess && !inputBlockProcess.killed) {
+          inputBlockProcess.kill();
+          inputBlockProcess = null;
+          console.log('[Main] ✓ Processo InputBlocker terminato forzatamente');
+        }
+      }, 2000);
+    } catch (error) {
+      console.error('[Main] Errore durante sblocco:', error);
+      // Killa comunque il processo
+      if (inputBlockProcess) {
+        inputBlockProcess.kill();
+        inputBlockProcess = null;
+      }
+    }
   }
 
-  console.log('[Main] ✓✓✓ Input SBLOCCATO');
+  console.log('[Main] ✅✅✅ INPUT SBLOCCATO');
 }
 
 // ========== REMOTE DESKTOP (WebRTC) ==========

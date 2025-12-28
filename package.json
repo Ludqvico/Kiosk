@@ -5,10 +5,11 @@
   "main": "dist/main.js",
   "scripts": {
     "rebuild": "node-gyp rebuild",
-    "build": "tsc && npm run copy-renderer",
+    "build": "tsc && npm run copy-renderer && npm run copy-native",
     "copy-renderer": "node -e \"require('fs').cpSync('src/renderer', 'renderer', {recursive: true})\"",
+    "copy-native": "node -e \"require('fs').cpSync('src/native', 'dist/native', {recursive: true})\"",
     "start": "npm run build && electron .",
-    "dev": "tsc && npm run copy-renderer && electron .",
+    "dev": "tsc && npm run copy-renderer && npm run copy-native && electron .",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win"
   },
@@ -49,6 +50,7 @@
     "files": [
       "dist/**/*",
       "renderer/**/*",
+      "src/native/**/*",
       "node_modules/**/*",
       "package.json"
     ]
