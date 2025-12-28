@@ -34,7 +34,7 @@ interface KioskClient {
 interface ActivityEvent {
   id: string;
   timestamp: Date;
-  type: 'client_connected' | 'client_disconnected' | 'lock' | 'unlock' | 'lock_all' | 'unlock_all' | 'reboot' | 'diagnostics';
+  type: 'client_connected' | 'client_disconnected' | 'lock' | 'unlock' | 'lock_all' | 'unlock_all' | 'reboot' | 'shutdown' | 'logout' | 'diagnostics';
   clientId?: string;
   clientHostname?: string;
   adminId?: string;
@@ -347,6 +347,46 @@ io.on('connection', (socket) => {
         clientId: socket.id,
         clientHostname: client.hostname,
         details: `CPU: ${data.cpuUsage}%, RAM: ${data.memoryUsage}%, Uptime: ${data.uptime}s`
+      });
+    }
+  });
+
+  // Shutdown client
+  socket.on('admin:shutdown-client', (data: { clientId: string; delay: number }) => {
+    console.log(`[Admin] Richiesta SHUTDOWN per client: ${data.clientId} con delay: ${data.delay}s`);
+
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      io.to(data.clientId).emit('server:shutdown', { delay: data.delay });
+      console.log(`[Server] Comando SHUTDOWN inviato a ${client.hostname}`);
+
+      // Log activity
+      logActivity({
+        type: 'shutdown',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: data.delay > 0 ? `Shutdown scheduled in ${data.delay}s` : `Immediate shutdown`
+      });
+    }
+  });
+
+  // Logout client
+  socket.on('admin:logout-client', (clientId: string) => {
+    console.log(`[Admin] Richiesta LOGOUT per client: ${clientId}`);
+
+    const client = connectedClients.get(clientId);
+    if (client) {
+      io.to(clientId).emit('server:logout');
+      console.log(`[Server] Comando LOGOUT inviato a ${client.hostname}`);
+
+      // Log activity
+      logActivity({
+        type: 'logout',
+        clientId: clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Logout requested by admin`
       });
     }
   });

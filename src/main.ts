@@ -295,6 +295,16 @@ function connectToServer() {
     rebootClient();
   });
 
+  serverConnection.onShutdown((delay: number) => {
+    console.log(`[Main] Ricevuto comando SHUTDOWN dal server (delay: ${delay}s)`);
+    shutdownClient(delay);
+  });
+
+  serverConnection.onLogout(() => {
+    console.log('[Main] Ricevuto comando LOGOUT dal server');
+    logoutClient();
+  });
+
   // Connetti
   serverConnection.connect();
 }
@@ -316,6 +326,63 @@ function rebootClient() {
   // Riavvia l'app
   app.relaunch();
   app.exit(0);
+}
+
+function shutdownClient(delay: number) {
+  console.log(`[Main] SHUTDOWN CLIENT in corso (delay: ${delay}s)...`);
+
+  // Sblocca temporaneamente
+  if (inputBlocker) {
+    inputBlocker.unblock();
+    inputBlocker = null;
+  }
+
+  // Disconnetti dal server
+  if (serverConnection) {
+    serverConnection.disconnect();
+  }
+
+  const { exec } = require('child_process');
+  const platform = process.platform;
+
+  setTimeout(() => {
+    if (platform === 'win32') {
+      exec('shutdown /s /t 0');
+    } else if (platform === 'darwin') {
+      exec('sudo shutdown -h now');
+    } else if (platform === 'linux') {
+      exec('sudo shutdown -h now');
+    }
+    app.quit();
+  }, delay * 1000);
+}
+
+function logoutClient() {
+  console.log('[Main] LOGOUT CLIENT in corso...');
+
+  // Sblocca temporaneamente
+  if (inputBlocker) {
+    inputBlocker.unblock();
+    inputBlocker = null;
+  }
+
+  // Disconnetti dal server
+  if (serverConnection) {
+    serverConnection.disconnect();
+  }
+
+  const { exec } = require('child_process');
+  const platform = process.platform;
+
+  if (platform === 'win32') {
+    exec('shutdown /l');
+  } else if (platform === 'darwin') {
+    exec('osascript -e \'tell application "System Events" to log out\'');
+  } else if (platform === 'linux') {
+    exec('gnome-session-quit --logout --no-prompt');
+  }
+
+  app.quit();
 }
 
 function quitApp() {

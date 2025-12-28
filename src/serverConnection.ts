@@ -9,6 +9,8 @@ export class ServerConnection {
   private onLockCallback: (() => void) | null = null;
   private onUnlockCallback: (() => void) | null = null;
   private onRebootCallback: (() => void) | null = null;
+  private onShutdownCallback: ((delay: number) => void) | null = null;
+  private onLogoutCallback: (() => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -90,6 +92,22 @@ export class ServerConnection {
       console.log('[ServerConnection] 📊 Ricevuta richiesta DIAGNOSTICS dal server');
       this.sendDiagnostics();
     });
+
+    // Comando shutdown
+    this.socket.on('server:shutdown', (data: { delay: number }) => {
+      console.log(`[ServerConnection] 🔌 Ricevuto comando SHUTDOWN dal server (delay: ${data.delay}s)`);
+      if (this.onShutdownCallback) {
+        this.onShutdownCallback(data.delay);
+      }
+    });
+
+    // Comando logout
+    this.socket.on('server:logout', () => {
+      console.log('[ServerConnection] 🚪 Ricevuto comando LOGOUT dal server');
+      if (this.onLogoutCallback) {
+        this.onLogoutCallback();
+      }
+    });
   }
 
   private registerClient() {
@@ -135,6 +153,16 @@ export class ServerConnection {
   // Registra callback per comando reboot
   onReboot(callback: () => void) {
     this.onRebootCallback = callback;
+  }
+
+  // Registra callback per comando shutdown
+  onShutdown(callback: (delay: number) => void) {
+    this.onShutdownCallback = callback;
+  }
+
+  // Registra callback per comando logout
+  onLogout(callback: () => void) {
+    this.onLogoutCallback = callback;
   }
 
   // Invia diagnostica al server

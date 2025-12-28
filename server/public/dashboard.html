@@ -267,13 +267,13 @@
 
         .client-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
         }
 
         .client-actions button {
-            padding: 8px 12px;
-            font-size: 13px;
+            padding: 8px 10px;
+            font-size: 12px;
         }
 
         .client-actions button.primary {
@@ -440,6 +440,16 @@
             color: #b45309;
         }
 
+        .log-type.shutdown {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .log-type.logout {
+            background: #fef3c7;
+            color: #78350f;
+        }
+
         .log-type.diagnostics {
             background: #e0e7ff;
             color: #3730a3;
@@ -543,6 +553,64 @@
         .diagnostic-item.full-width {
             grid-column: 1 / -1;
         }
+
+        /* Shutdown Modal */
+        .shutdown-timer {
+            margin: 20px 0;
+        }
+
+        .timer-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--color-text-primary);
+        }
+
+        .timer-value {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--color-text-primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--color-border);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #000;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #000;
+            cursor: pointer;
+            border: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -631,6 +699,8 @@
                             <option value="lock_all">Lock All</option>
                             <option value="unlock_all">Unlock All</option>
                             <option value="reboot">Reboot</option>
+                            <option value="shutdown">Shutdown</option>
+                            <option value="logout">Logout</option>
                             <option value="diagnostics">Diagnostics</option>
                         </select>
                     </div>
@@ -692,6 +762,29 @@
                 <div class="diagnostic-item full-width">
                     <div class="diagnostic-label">Loading...</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shutdown Modal -->
+    <div class="modal-overlay" id="shutdownModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="shutdownTitle">Shutdown Station</h2>
+                <button class="modal-close" onclick="closeShutdownModal()">×</button>
+            </div>
+            <div class="shutdown-timer">
+                <div class="timer-label">Shutdown Timer</div>
+                <div class="timer-value" id="shutdownTimerValue">Immediate</div>
+                <input type="range" id="shutdownTimerSlider" min="0" max="300" value="0" step="15" oninput="updateShutdownTimer()">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); margin-top: 8px;">
+                    <span>Immediate</span>
+                    <span>5 minutes</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeShutdownModal()">Cancel</button>
+                <button onclick="confirmShutdown()">Shutdown</button>
             </div>
         </div>
     </div>
@@ -817,6 +910,8 @@
                         }
                         <button class="secondary" onclick="requestDiagnostics('${client.id}')">Diagnostics</button>
                         <button class="secondary" onclick="rebootClient('${client.id}')">Reboot</button>
+                        <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.hostname}')">Shutdown</button>
+                        <button class="secondary" onclick="logoutClient('${client.id}')">Logout</button>
                     </div>
                 </div>
             `).join('');
@@ -966,6 +1061,9 @@
         }
 
         // ===== Advanced Client Management =====
+        let diagnosticsInterval = null;
+        let currentDiagnosticsClientId = null;
+
         function rebootClient(clientId) {
             if (!confirm('Are you sure you want to reboot this station?')) {
                 return;
@@ -979,16 +1077,92 @@
         function requestDiagnostics(clientId) {
             const client = clients.get(clientId);
             console.log(`Requesting diagnostics from ${client?.hostname || clientId}`);
+
+            currentDiagnosticsClientId = clientId;
             socket.emit('admin:request-diagnostics', clientId);
 
             // Mostra modal con loading
             showDiagnosticsModal(client?.hostname || clientId, null);
+
+            // Auto-refresh ogni 3 secondi
+            if (diagnosticsInterval) {
+                clearInterval(diagnosticsInterval);
+            }
+            diagnosticsInterval = setInterval(() => {
+                socket.emit('admin:request-diagnostics', clientId);
+            }, 3000);
         }
+
+        function logoutClient(clientId) {
+            if (!confirm('Are you sure you want to logout this station?')) {
+                return;
+            }
+
+            const client = clients.get(clientId);
+            console.log(`Sending logout command to ${client?.hostname || clientId}`);
+            socket.emit('admin:logout-client', clientId);
+        }
+
+        // Shutdown modal
+        let currentShutdownClientId = null;
+
+        function showShutdownModal(clientId, hostname) {
+            currentShutdownClientId = clientId;
+            document.getElementById('shutdownTitle').textContent = `Shutdown - ${hostname}`;
+            document.getElementById('shutdownTimerSlider').value = 0;
+            document.getElementById('shutdownTimerValue').textContent = 'Immediate';
+            document.getElementById('shutdownModal').classList.add('active');
+        }
+
+        function closeShutdownModal() {
+            document.getElementById('shutdownModal').classList.remove('active');
+            currentShutdownClientId = null;
+        }
+
+        function updateShutdownTimer() {
+            const seconds = parseInt(document.getElementById('shutdownTimerSlider').value);
+            const valueEl = document.getElementById('shutdownTimerValue');
+
+            if (seconds === 0) {
+                valueEl.textContent = 'Immediate';
+            } else if (seconds < 60) {
+                valueEl.textContent = `${seconds} seconds`;
+            } else {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                if (remainingSeconds === 0) {
+                    valueEl.textContent = `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                } else {
+                    valueEl.textContent = `${minutes}m ${remainingSeconds}s`;
+                }
+            }
+        }
+
+        function confirmShutdown() {
+            const seconds = parseInt(document.getElementById('shutdownTimerSlider').value);
+
+            socket.emit('admin:shutdown-client', {
+                clientId: currentShutdownClientId,
+                delay: seconds
+            });
+
+            closeShutdownModal();
+        }
+
+        // Close shutdown modal when clicking outside
+        document.getElementById('shutdownModal').addEventListener('click', (e) => {
+            if (e.target.id === 'shutdownModal') {
+                closeShutdownModal();
+            }
+        });
 
         // Ricevi diagnostica dal server
         socket.on('admin:diagnostics-response', (data) => {
             console.log('Diagnostics received:', data);
-            showDiagnosticsModal(data.clientHostname, data.diagnostics);
+            // Solo aggiorna se è la diagnostica del client corrente
+            if (data.clientId === currentDiagnosticsClientId) {
+                showDiagnosticsModal(data.clientHostname, data.diagnostics);
+            }
         });
 
         function showDiagnosticsModal(hostname, diagnostics) {
@@ -996,7 +1170,7 @@
             const title = document.getElementById('diagnosticsTitle');
             const content = document.getElementById('diagnosticsContent');
 
-            title.textContent = `Diagnostics - ${hostname}`;
+            title.textContent = `Diagnostics - ${hostname} (Auto-refresh)`;
 
             if (!diagnostics) {
                 content.innerHTML = `
@@ -1059,6 +1233,13 @@
         function closeDiagnosticsModal() {
             const modal = document.getElementById('diagnosticsModal');
             modal.classList.remove('active');
+
+            // Ferma auto-refresh
+            if (diagnosticsInterval) {
+                clearInterval(diagnosticsInterval);
+                diagnosticsInterval = null;
+            }
+            currentDiagnosticsClientId = null;
         }
 
         function formatUptime(seconds) {
