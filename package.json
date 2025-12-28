@@ -36,10 +36,24 @@
     },
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.education"
+      "category": "public.app-category.education",
+      "extendInfo": {
+        "LSUIElement": 0
+      }
     },
     "win": {
-      "target": "nsis"
-    }
+      "target": "nsis",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "extraMetadata": {
+      "main": "dist/main.js"
+    },
+    "files": [
+      "dist/**/*",
+      "renderer/**/*",
+      "node_modules/**/*",
+      "build/Release/**/*",
+      "package.json"
+    ]
   }
 }

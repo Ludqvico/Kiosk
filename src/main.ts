@@ -48,18 +48,32 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
 
-  // Blocca il menu di contesto
-  mainWindow.webContents.on('context-menu', (e) => {
-    e.preventDefault();
-  });
-
-  // Previeni la navigazione
-  mainWindow.webContents.on('will-navigate', (e) => {
-    e.preventDefault();
+  // INTERCETTA E BLOCCA TUTTI I TENTATIVI DI CHIUSURA
+  mainWindow.on('close', (e) => {
+    if (isLocked) {
+      e.preventDefault();
+      console.log('[Main] Tentativo di chiusura BLOCCATO');
+      return false;
+    }
   });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // Blocca menu di contesto
+  mainWindow.webContents.on('context-menu', (e) => {
+    e.preventDefault();
+  });
+
+  // Previeni navigazione
+  mainWindow.webContents.on('will-navigate', (e) => {
+    e.preventDefault();
+  });
+
+  // Previeni nuove finestre
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
   });
 
   // Se in modalità standalone, blocca immediatamente
@@ -72,6 +86,21 @@ function createWindow() {
 
   registerSecretExit();
 }
+
+// INTERCETTA chiusura app a livello globale
+app.on('before-quit', (e) => {
+  if (isLocked) {
+    e.preventDefault();
+    console.log('[Main] Tentativo di quit BLOCCATO');
+  }
+});
+
+app.on('will-quit', (e) => {
+  if (isLocked) {
+    e.preventDefault();
+    console.log('[Main] Tentativo di quit BLOCCATO');
+  }
+});
 
 function lockKiosk() {
   if (isLocked) {
