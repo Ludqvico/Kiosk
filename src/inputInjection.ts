@@ -50,11 +50,13 @@ export class InputInjection {
     this.windowsPowerShell.stdout?.on('data', (data) => {
       const output = data.toString();
       stdoutBuffer += output;
-      console.log('[InputInjection] PowerShell stdout:', output.trim());
 
       if (output.includes('READY')) {
         this.psReady = true;
         console.log('[InputInjection] ✓ PowerShell process ready');
+      } else if (output.trim() !== 'True' && output.trim() !== '') {
+        // Log only meaningful output, skip "True" success returns
+        console.log('[InputInjection] PowerShell stdout:', output.trim());
       }
     });
 
@@ -74,7 +76,6 @@ export class InputInjection {
     });
 
     // Initialize C# types once - use simpler approach with direct command
-    console.log('[InputInjection] Sending init script...');
     const initScript = `Add-Type -AssemblyName System.Windows.Forms
 Add-Type @"
 using System;
