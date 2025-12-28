@@ -13,7 +13,7 @@ dotenv.config();
 let mainWindow: BrowserWindow | null = null;
 let inputBlocker: InputBlocker | null = null;
 let serverConnection: ServerConnection | null = null;
-let remoteControl: RemoteControl | null = null;
+let remoteControl: any = null;
 let isLocked = false;
 
 // Configurazione
