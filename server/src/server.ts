@@ -521,21 +521,21 @@ io.on('connection', (socket) => {
   });
 });
 
-// Pulizia client non attivi (opzionale)
-setInterval(() => {
-  const now = new Date();
-  const timeout = 60000; // 60 secondi
-
-  connectedClients.forEach((client, clientId) => {
-    const timeSinceLastSeen = now.getTime() - client.lastSeen.getTime();
-
-    if (timeSinceLastSeen > timeout) {
-      console.log(`[Server] Client timeout: ${client.hostname}`);
-      connectedClients.delete(clientId);
-      io.emit('admin:client-disconnected', { clientId });
-    }
-  });
-}, 30000); // Controlla ogni 30 secondi
+// Pulizia client non attivi - DISABILITATO (Socket.io gestisce già le disconnessioni)
+// setInterval(() => {
+//   const now = new Date();
+//   const timeout = 60000; // 60 secondi
+//
+//   connectedClients.forEach((client, clientId) => {
+//     const timeSinceLastSeen = now.getTime() - client.lastSeen.getTime();
+//
+//     if (timeSinceLastSeen > timeout) {
+//       console.log(`[Server] Client timeout: ${client.hostname}`);
+//       connectedClients.delete(clientId);
+//       io.emit('admin:client-disconnected', { clientId });
+//     }
+//   });
+// }, 30000); // Controlla ogni 30 secondi
 
 // Avvio server
 httpServer.listen(PORT, () => {

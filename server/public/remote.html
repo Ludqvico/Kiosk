@@ -207,15 +207,9 @@
         });
 
         socket.on('admin:screen-frame', (data) => {
-            console.log('[Remote] Received screen frame:', data.width, 'x', data.height, 'from client:', data.clientId);
-
-            if (data.clientId !== clientId) {
-                console.log('[Remote] Frame ignored - wrong clientId');
-                return;
-            }
+            if (data.clientId !== clientId) return;
 
             if (!isConnected) {
-                console.log('[Remote] First frame received - connection established!');
                 isConnected = true;
                 hideLoading();
                 updateStatus('connected', `Connected - ${data.width}x${data.height}`);
@@ -224,13 +218,17 @@
             screenWidth = data.width;
             screenHeight = data.height;
 
-            // Ridimensiona canvas
-            canvas.width = data.width;
-            canvas.height = data.height;
-
-            // Disegna frame
+            // Disegna frame SUBITO (non aspettare onload)
             const img = new Image();
             img.onload = () => {
+                // Ridimensiona canvas SOLO se size cambia
+                if (canvas.width !== data.width || canvas.height !== data.height) {
+                    canvas.width = data.width;
+                    canvas.height = data.height;
+                }
+
+                // Pulisci e disegna
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
             };
             img.onerror = (err) => {
@@ -256,8 +254,15 @@
             return { x, y };
         }
 
+        // Throttle mousemove per non inviare troppi eventi
+        let lastMouseMove = 0;
         canvas.addEventListener('mousemove', (e) => {
             if (!isConnected) return;
+
+            const now = Date.now();
+            if (now - lastMouseMove < 50) return; // Max 20 eventi/sec
+            lastMouseMove = now;
+
             const coords = getNormalizedCoords(e);
             socket.emit('admin:remote-input', {
                 clientId: clientId,
