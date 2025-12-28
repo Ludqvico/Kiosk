@@ -611,6 +611,38 @@
         .modal-actions button {
             flex: 1;
         }
+
+        /* Remote Control Modal */
+        .modal-remote-control {
+            max-width: 90vw;
+            max-height: 90vh;
+            width: auto;
+        }
+
+        .remote-control-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #remoteControlCanvas {
+            max-width: 100%;
+            max-height: 70vh;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            cursor: crosshair;
+            background: #000;
+        }
+
+        .remote-control-status {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            padding: 8px 16px;
+            background: var(--color-bg);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -789,6 +821,22 @@
         </div>
     </div>
 
+    <!-- Remote Control Modal -->
+    <div class="modal-overlay" id="remoteControlModal">
+        <div class="modal modal-remote-control">
+            <div class="modal-header">
+                <h2 class="modal-title" id="remoteControlTitle">Remote Control</h2>
+                <button class="modal-close" onclick="stopRemoteControlSession()">×</button>
+            </div>
+            <div class="remote-control-container">
+                <canvas id="remoteControlCanvas"></canvas>
+                <div class="remote-control-status" id="remoteControlStatus">
+                    Connecting...
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const clients = new Map();
@@ -912,6 +960,7 @@
                         <button class="secondary" onclick="rebootClient('${client.id}')">Reboot</button>
                         <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.hostname}')">Shutdown</button>
                         <button class="secondary" onclick="logoutClient('${client.id}')">Logout</button>
+                        <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.hostname}')">Remote Control</button>
                     </div>
                 </div>
             `).join('');
@@ -1153,6 +1202,212 @@
         document.getElementById('shutdownModal').addEventListener('click', (e) => {
             if (e.target.id === 'shutdownModal') {
                 closeShutdownModal();
+            }
+        });
+
+        // ========== REMOTE CONTROL ==========
+        let currentRemoteClientId = null;
+        let remoteCanvas = null;
+        let remoteCtx = null;
+        let remoteScreenWidth = 0;
+        let remoteScreenHeight = 0;
+
+        function startRemoteControl(clientId, hostname) {
+            currentRemoteClientId = clientId;
+
+            // Apri modal
+            const modal = document.getElementById('remoteControlModal');
+            const title = document.getElementById('remoteControlTitle');
+            const status = document.getElementById('remoteControlStatus');
+
+            title.textContent = `Remote Control - ${hostname}`;
+            status.textContent = 'Connecting...';
+
+            modal.classList.add('active');
+
+            // Setup canvas
+            remoteCanvas = document.getElementById('remoteControlCanvas');
+            remoteCtx = remoteCanvas.getContext('2d');
+
+            // Avvia remote control sul server
+            socket.emit('admin:start-remote-control', clientId);
+
+            // Registra event listeners per input
+            setupRemoteInputHandlers();
+        }
+
+        function stopRemoteControlSession() {
+            if (currentRemoteClientId) {
+                socket.emit('admin:stop-remote-control', currentRemoteClientId);
+            }
+
+            // Rimuovi event listeners
+            removeRemoteInputHandlers();
+
+            // Chiudi modal
+            document.getElementById('remoteControlModal').classList.remove('active');
+            currentRemoteClientId = null;
+            remoteCanvas = null;
+            remoteCtx = null;
+        }
+
+        function setupRemoteInputHandlers() {
+            if (!remoteCanvas) return;
+
+            remoteCanvas.addEventListener('mousemove', handleRemoteMouseMove);
+            remoteCanvas.addEventListener('mousedown', handleRemoteMouseDown);
+            remoteCanvas.addEventListener('mouseup', handleRemoteMouseUp);
+            remoteCanvas.addEventListener('click', handleRemoteClick);
+            remoteCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            document.addEventListener('keydown', handleRemoteKeyDown);
+            document.addEventListener('keyup', handleRemoteKeyUp);
+        }
+
+        function removeRemoteInputHandlers() {
+            if (!remoteCanvas) return;
+
+            remoteCanvas.removeEventListener('mousemove', handleRemoteMouseMove);
+            remoteCanvas.removeEventListener('mousedown', handleRemoteMouseDown);
+            remoteCanvas.removeEventListener('mouseup', handleRemoteMouseUp);
+            remoteCanvas.removeEventListener('click', handleRemoteClick);
+            document.removeEventListener('keydown', handleRemoteKeyDown);
+            document.removeEventListener('keyup', handleRemoteKeyUp);
+        }
+
+        function getNormalizedCoords(e) {
+            const rect = remoteCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            return { x, y };
+        }
+
+        function handleRemoteMouseMove(e) {
+            const coords = getNormalizedCoords(e);
+            socket.emit('admin:remote-input', {
+                clientId: currentRemoteClientId,
+                type: 'mousemove',
+                data: coords
+            });
+        }
+
+        function handleRemoteMouseDown(e) {
+            const coords = getNormalizedCoords(e);
+            socket.emit('admin:remote-input', {
+                clientId: currentRemoteClientId,
+                type: 'mousedown',
+                data: {
+                    ...coords,
+                    button: e.button === 2 ? 'right' : 'left'
+                }
+            });
+        }
+
+        function handleRemoteMouseUp(e) {
+            const coords = getNormalizedCoords(e);
+            socket.emit('admin:remote-input', {
+                clientId: currentRemoteClientId,
+                type: 'mouseup',
+                data: {
+                    ...coords,
+                    button: e.button === 2 ? 'right' : 'left'
+                }
+            });
+        }
+
+        function handleRemoteClick(e) {
+            const coords = getNormalizedCoords(e);
+            socket.emit('admin:remote-input', {
+                clientId: currentRemoteClientId,
+                type: 'click',
+                data: {
+                    ...coords,
+                    button: e.button === 2 ? 'right' : 'left'
+                }
+            });
+        }
+
+        function handleRemoteKeyDown(e) {
+            if (!currentRemoteClientId) return;
+
+            e.preventDefault();
+
+            const modifiers = [];
+            if (e.ctrlKey) modifiers.push('Control');
+            if (e.altKey) modifiers.push('Alt');
+            if (e.shiftKey) modifiers.push('Shift');
+            if (e.metaKey) modifiers.push('Meta');
+
+            socket.emit('admin:remote-input', {
+                clientId: currentRemoteClientId,
+                type: 'keydown',
+                data: {
+                    key: e.key,
+                    modifiers: modifiers
+                }
+            });
+        }
+
+        function handleRemoteKeyUp(e) {
+            if (!currentRemoteClientId) return;
+
+            e.preventDefault();
+
+            const modifiers = [];
+            if (e.ctrlKey) modifiers.push('Control');
+            if (e.altKey) modifiers.push('Alt');
+            if (e.shiftKey) modifiers.push('Shift');
+            if (e.metaKey) modifiers.push('Meta');
+
+            socket.emit('admin:remote-input', {
+                clientId: currentRemoteClientId,
+                type: 'keyup',
+                data: {
+                    key: e.key,
+                    modifiers: modifiers
+                }
+            });
+        }
+
+        // Ricevi frame schermo dal client
+        socket.on('admin:screen-frame', (data) => {
+            if (data.clientId !== currentRemoteClientId) return;
+
+            remoteScreenWidth = data.width;
+            remoteScreenHeight = data.height;
+
+            // Aggiorna canvas size
+            if (remoteCanvas) {
+                remoteCanvas.width = data.width;
+                remoteCanvas.height = data.height;
+
+                // Disegna frame
+                const img = new Image();
+                img.onload = () => {
+                    remoteCtx.drawImage(img, 0, 0);
+                };
+                img.src = data.frame;
+
+                // Aggiorna status
+                document.getElementById('remoteControlStatus').textContent = `Connected - ${data.width}x${data.height}`;
+            }
+        });
+
+        // Conferma avvio remote control
+        socket.on('admin:remote-control-started', (data) => {
+            console.log('Remote control started for client:', data.clientId);
+            document.getElementById('remoteControlStatus').textContent = 'Waiting for screen...';
+        });
+
+        // Errore remote control
+        socket.on('admin:remote-control-error', (data) => {
+            alert(`Remote Control Error: ${data.message}`);
+            stopRemoteControlSession();
+        });
+
+        // Close remote control modal when clicking outside
+        document.getElementById('remoteControlModal').addEventListener('click', (e) => {
+            if (e.target.id === 'remoteControlModal') {
+                stopRemoteControlSession();
             }
         });
 

@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { InputBlocker } from './native/inputBlocker';
 import { ServerConnection } from './serverConnection';
+import { RemoteControl } from './remoteControl';
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
@@ -10,6 +11,7 @@ dotenv.config();
 let mainWindow: BrowserWindow | null = null;
 let inputBlocker: InputBlocker | null = null;
 let serverConnection: ServerConnection | null = null;
+let remoteControl: RemoteControl | null = null;
 let isLocked = false;
 
 // Configurazione
@@ -305,6 +307,24 @@ function connectToServer() {
     logoutClient();
   });
 
+  // Remote control callbacks
+  serverConnection.onStartScreenCapture(() => {
+    console.log('[Main] Ricevuto comando START SCREEN CAPTURE dal server');
+    startRemoteControl();
+  });
+
+  serverConnection.onStopScreenCapture(() => {
+    console.log('[Main] Ricevuto comando STOP SCREEN CAPTURE dal server');
+    stopRemoteControl();
+  });
+
+  serverConnection.onRemoteInput((type: string, data: any) => {
+    console.log(`[Main] Ricevuto input remoto: ${type}`);
+    if (remoteControl) {
+      remoteControl.processRemoteInput(type, data);
+    }
+  });
+
   // Connetti
   serverConnection.connect();
 }
@@ -383,6 +403,34 @@ function logoutClient() {
   }
 
   app.quit();
+}
+
+// ========== REMOTE CONTROL ==========
+
+function startRemoteControl() {
+  console.log('[Main] Avvio remote control...');
+
+  if (!remoteControl) {
+    remoteControl = new RemoteControl();
+
+    // Registra callback per inviare frame al server
+    remoteControl.onFrame((frame: string, width: number, height: number) => {
+      if (serverConnection) {
+        serverConnection.sendScreenFrame(frame, width, height);
+      }
+    });
+  }
+
+  // Avvia cattura a 10 FPS
+  remoteControl.startCapture(10);
+}
+
+function stopRemoteControl() {
+  console.log('[Main] Stop remote control...');
+
+  if (remoteControl) {
+    remoteControl.stopCapture();
+  }
 }
 
 function quitApp() {

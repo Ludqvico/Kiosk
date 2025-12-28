@@ -29,6 +29,9 @@
     "socket.io-client": "^4.6.1",
     "dotenv": "^16.3.1"
   },
+  "optionalDependencies": {
+    "robotjs": "^0.6.0"
+  },
   "build": {
     "appId": "com.school.kiosk",
     "productName": "SchoolKiosk",
