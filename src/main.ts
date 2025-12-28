@@ -419,14 +419,112 @@ function blockUserInput() {
   inputBlockOverlay.setIgnoreMouseEvents(false); // Capture mouse events to block them
   inputBlockOverlay.setOpacity(0.01); // Almost invisible (1% opacity)
 
-  // Load empty page with not-allowed cursor
-  inputBlockOverlay.loadURL('data:text/html,<body style="background:transparent;cursor:not-allowed;margin:0;width:100vw;height:100vh;"></body>');
+  // Load HTML page that captures both mouse AND keyboard events
+  const blockPageHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        * { margin: 0; padding: 0; }
+        body {
+          background: transparent;
+          cursor: not-allowed;
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+        }
+        #blocker {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%;
+          height: 100%;
+          outline: none;
+          border: none;
+          background: transparent;
+          cursor: not-allowed;
+        }
+      </style>
+    </head>
+    <body>
+      <input type="text" id="blocker" autofocus />
+      <script>
+        // Capture and block ALL keyboard events
+        const blocker = document.getElementById('blocker');
+        blocker.focus();
+
+        // Keep focus on blocker
+        blocker.addEventListener('blur', () => {
+          setTimeout(() => blocker.focus(), 0);
+        });
+
+        // Block all keyboard events
+        document.addEventListener('keydown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }, true);
+
+        document.addEventListener('keyup', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }, true);
+
+        document.addEventListener('keypress', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }, true);
+
+        // Block mouse events too
+        document.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          blocker.focus(); // Re-focus after click
+          return false;
+        }, true);
+
+        document.addEventListener('mouseup', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }, true);
+
+        document.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }, true);
+
+        console.log('[InputBlocker] Overlay attivo - mouse e tastiera bloccati');
+      </script>
+    </body>
+    </html>
+  `;
+
+  inputBlockOverlay.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(blockPageHTML));
+
+  // Give focus to overlay window after it loads
+  inputBlockOverlay.webContents.once('did-finish-load', () => {
+    inputBlockOverlay?.focus();
+    inputBlockOverlay?.show();
+    console.log('[Main] ✓ Overlay attivo e focused');
+  });
 
   // Prevent closing the overlay
   inputBlockOverlay.on('close', (e) => {
     if (inputBlocked) {
       e.preventDefault();
       console.log('[Main] Tentativo di chiusura overlay input bloccato');
+    }
+  });
+
+  // Keep focus on overlay
+  inputBlockOverlay.on('blur', () => {
+    if (inputBlocked && inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
+      setTimeout(() => {
+        inputBlockOverlay?.focus();
+      }, 100);
     }
   });
 
