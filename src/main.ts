@@ -1,8 +1,7 @@
-import { app, BrowserWindow, globalShortcut, screen } from 'electron';
+import { app, BrowserWindow, globalShortcut, screen, desktopCapturer, ipcMain } from 'electron';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { ServerConnection } from './serverConnection';
-import { WebRTCRemote } from './webrtcRemote';
 import { InputInjection } from './inputInjection';
 
 // Carica variabili d'ambiente dal file .env
@@ -10,7 +9,7 @@ dotenv.config();
 
 let mainWindow: BrowserWindow | null = null;
 let serverConnection: ServerConnection | null = null;
-let webrtcRemote: WebRTCRemote | null = null;
+let webrtcWindow: BrowserWindow | null = null;
 let inputInjection: InputInjection | null = null;
 let isLocked = false;
 
@@ -307,11 +306,11 @@ function connectToServer() {
   serverConnection.onWebRTCSignal((signal) => {
     console.log('[Main] Ricevuto segnale WebRTC:', signal.type);
 
-    if (webrtcRemote) {
+    if (webrtcWindow && !webrtcWindow.isDestroyed()) {
       if (signal.type === 'answer' && signal.answer) {
-        webrtcRemote.handleAnswer(signal.answer);
+        webrtcWindow.webContents.send('webrtc:answer', signal.answer);
       } else if (signal.type === 'candidate' && signal.candidate) {
-        webrtcRemote.addIceCandidate(signal.candidate);
+        webrtcWindow.webContents.send('webrtc:candidate', signal.candidate);
       }
     }
   });
@@ -384,59 +383,48 @@ async function startRemoteDesktop() {
   console.log('[Main] Starting WebRTC remote desktop...');
 
   try {
-    // Inizializza WebRTC remote
-    if (!webrtcRemote) {
-      webrtcRemote = new WebRTCRemote();
+    // Get screen sources
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: 1920, height: 1080 }
+    });
 
-      // Setup event handlers
-      webrtcRemote.on('icecandidate', (candidate) => {
-        // Invia ICE candidate al server
-        if (serverConnection) {
-          serverConnection.sendWebRTCSignal({
-            type: 'candidate',
-            candidate
-          });
-        }
-      });
-
-      webrtcRemote.on('input', async (inputData) => {
-        // Gestisci input remoto
-        if (!inputInjection) {
-          const primaryDisplay = screen.getPrimaryDisplay();
-          inputInjection = new InputInjection(
-            primaryDisplay.size.width,
-            primaryDisplay.size.height
-          );
-        }
-
-        switch (inputData.type) {
-          case 'mousemove':
-            await inputInjection.moveMouse(inputData.x, inputData.y);
-            break;
-          case 'click':
-            await inputInjection.click(inputData.x, inputData.y, inputData.button);
-            break;
-          case 'keypress':
-            await inputInjection.keyPress(inputData.key);
-            break;
-        }
-      });
-
-      webrtcRemote.on('error', (error) => {
-        console.error('[Main] WebRTC error:', error);
-      });
+    if (sources.length === 0) {
+      throw new Error('No screen source available');
     }
 
-    // Avvia cattura schermo e WebRTC
-    await webrtcRemote.start();
+    const sourceId = sources[0].id;
+    console.log('[Main] Screen source ID:', sourceId);
 
-    // Crea offer e invialo al server
-    const offer = await webrtcRemote.createOffer();
-    if (serverConnection) {
-      serverConnection.sendWebRTCSignal({
-        type: 'offer',
-        offer
+    // Create hidden WebRTC window
+    if (!webrtcWindow) {
+      webrtcWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false
+        }
       });
+
+      webrtcWindow.loadFile(path.join(__dirname, '../renderer/webrtc-capture.html'));
+
+      // Setup IPC handlers for WebRTC window
+      setupWebRTCHandlers();
+    }
+
+    // Wait for window to load, then start capture
+    webrtcWindow.webContents.once('did-finish-load', () => {
+      console.log('[Main] Sending start command to WebRTC renderer');
+      webrtcWindow!.webContents.send('webrtc:start', sourceId);
+    });
+
+    // Initialize input injection
+    if (!inputInjection) {
+      const primaryDisplay = screen.getPrimaryDisplay();
+      inputInjection = new InputInjection(
+        primaryDisplay.size.width,
+        primaryDisplay.size.height
+      );
     }
 
     console.log('[Main] WebRTC remote desktop started');
@@ -448,11 +436,64 @@ async function startRemoteDesktop() {
 function stopRemoteDesktop() {
   console.log('[Main] Stopping WebRTC remote desktop...');
 
-  if (webrtcRemote) {
-    webrtcRemote.stop();
+  if (webrtcWindow) {
+    webrtcWindow.webContents.send('webrtc:stop');
+    webrtcWindow.close();
+    webrtcWindow = null;
   }
 
   console.log('[Main] WebRTC remote desktop stopped');
+}
+
+function setupWebRTCHandlers() {
+  // Offer created by renderer
+  ipcMain.on('webrtc:offer', (event, offer) => {
+    console.log('[Main] Received offer from renderer');
+    if (serverConnection) {
+      serverConnection.sendWebRTCSignal({
+        type: 'offer',
+        offer
+      });
+    }
+  });
+
+  // ICE candidate from renderer
+  ipcMain.on('webrtc:icecandidate', (event, candidate) => {
+    console.log('[Main] Received ICE candidate from renderer');
+    if (serverConnection) {
+      serverConnection.sendWebRTCSignal({
+        type: 'candidate',
+        candidate
+      });
+    }
+  });
+
+  // Input from renderer (via data channel)
+  ipcMain.on('webrtc:input', async (event, inputData) => {
+    if (!inputInjection) return;
+
+    switch (inputData.type) {
+      case 'mousemove':
+        await inputInjection.moveMouse(inputData.x, inputData.y);
+        break;
+      case 'click':
+        await inputInjection.click(inputData.x, inputData.y, inputData.button);
+        break;
+      case 'keypress':
+        await inputInjection.keyPress(inputData.key);
+        break;
+    }
+  });
+
+  // Connection state changes
+  ipcMain.on('webrtc:connectionstate', (event, state) => {
+    console.log('[Main] WebRTC connection state:', state);
+  });
+
+  // Errors
+  ipcMain.on('webrtc:error', (event, errorMessage) => {
+    console.error('[Main] WebRTC renderer error:', errorMessage);
+  });
 }
 
 function quitApp() {

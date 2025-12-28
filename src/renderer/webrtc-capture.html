@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WebRTC Capture</title>
+</head>
+<body>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        let peerConnection = null;
+        let dataChannel = null;
+        let mediaStream = null;
+
+        // WebRTC Configuration
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Start WebRTC capture
+        ipcRenderer.on('webrtc:start', async (event, sourceId) => {
+            console.log('[WebRTC Renderer] Starting with sourceId:', sourceId);
+
+            try {
+                // Get screen stream using desktopCapturer sourceId
+                const constraints = {
+                    audio: false,
+                    video: {
+                        mandatory: {
+                            chromeMediaSource: 'desktop',
+                            chromeMediaSourceId: sourceId,
+                            minWidth: 1280,
+                            maxWidth: 1920,
+                            minHeight: 720,
+                            maxHeight: 1080,
+                            minFrameRate: 15,
+                            maxFrameRate: 30
+                        }
+                    }
+                };
+
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('[WebRTC Renderer] Screen captured');
+
+                // Create PeerConnection
+                peerConnection = new RTCPeerConnection(config);
+
+                // ICE candidate event
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        ipcRenderer.send('webrtc:icecandidate', event.candidate);
+                    }
+                };
+
+                // Connection state
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('[WebRTC Renderer] Connection state:', peerConnection.connectionState);
+                    ipcRenderer.send('webrtc:connectionstate', peerConnection.connectionState);
+                };
+
+                // Data channel for input
+                peerConnection.ondatachannel = (event) => {
+                    console.log('[WebRTC Renderer] Data channel received');
+                    dataChannel = event.channel;
+
+                    dataChannel.onmessage = (event) => {
+                        const message = JSON.parse(event.data);
+                        ipcRenderer.send('webrtc:input', message);
+                    };
+                };
+
+                // Add video track
+                mediaStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, mediaStream);
+                });
+
+                // Create offer
+                const offer = await peerConnection.createOffer({
+                    offerToReceiveVideo: false,
+                    offerToReceiveAudio: false
+                });
+
+                await peerConnection.setLocalDescription(offer);
+
+                // Send offer to main process
+                ipcRenderer.send('webrtc:offer', offer);
+
+                console.log('[WebRTC Renderer] Offer created and sent');
+            } catch (error) {
+                console.error('[WebRTC Renderer] Error:', error);
+                ipcRenderer.send('webrtc:error', error.message);
+            }
+        });
+
+        // Handle answer from remote peer
+        ipcRenderer.on('webrtc:answer', async (event, answer) => {
+            console.log('[WebRTC Renderer] Received answer');
+
+            if (peerConnection) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+        });
+
+        // Handle ICE candidate from remote peer
+        ipcRenderer.on('webrtc:candidate', async (event, candidate) => {
+            console.log('[WebRTC Renderer] Received ICE candidate');
+
+            if (peerConnection) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        });
+
+        // Stop WebRTC
+        ipcRenderer.on('webrtc:stop', () => {
+            console.log('[WebRTC Renderer] Stopping...');
+
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+
+            console.log('[WebRTC Renderer] Stopped');
+        });
+
+        console.log('[WebRTC Renderer] Ready');
+    </script>
+</body>
+</html>
