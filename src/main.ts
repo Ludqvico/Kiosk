@@ -498,16 +498,36 @@ function setupWebRTCHandlers() {
   ipcMain.on('webrtc:input', async (event, inputData) => {
     if (!inputInjection) return;
 
-    switch (inputData.type) {
-      case 'mousemove':
-        await inputInjection.moveMouse(inputData.x, inputData.y);
-        break;
-      case 'click':
-        await inputInjection.click(inputData.x, inputData.y, inputData.button);
-        break;
-      case 'keypress':
-        await inputInjection.keyPress(inputData.key);
-        break;
+    try {
+      switch (inputData.type) {
+        case 'mousemove':
+          // Coordinates are already normalized (0-1) from dashboard
+          await inputInjection.moveMouse(inputData.x, inputData.y);
+          break;
+
+        case 'click':
+          // Coordinates are already normalized (0-1) from dashboard
+          await inputInjection.click(inputData.x, inputData.y, inputData.button);
+          break;
+
+        case 'doubleclick':
+          // Simulate double click as two rapid clicks
+          await inputInjection.click(inputData.x, inputData.y, 'left');
+          await new Promise(resolve => setTimeout(resolve, 50));
+          await inputInjection.click(inputData.x, inputData.y, 'left');
+          break;
+
+        case 'keypress':
+          await inputInjection.keyPress(inputData.key, {
+            ctrl: inputData.ctrl,
+            shift: inputData.shift,
+            alt: inputData.alt,
+            meta: inputData.meta
+          });
+          break;
+      }
+    } catch (error) {
+      console.error('[Main] Error handling input:', error);
     }
   });
 

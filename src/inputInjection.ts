@@ -66,14 +66,14 @@ export class InputInjection {
   /**
    * Pressione tasto
    */
-  async keyPress(key: string): Promise<void> {
+  async keyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
     try {
       if (this.platform === 'darwin') {
-        await this.macKeyPress(key);
+        await this.macKeyPress(key, modifiers);
       } else if (this.platform === 'win32') {
-        await this.windowsKeyPress(key);
+        await this.windowsKeyPress(key, modifiers);
       } else if (this.platform === 'linux') {
-        await this.linuxKeyPress(key);
+        await this.linuxKeyPress(key, modifiers);
       }
     } catch (error) {
       console.error('[InputInjection] Error pressing key:', error);
@@ -102,10 +102,17 @@ export class InputInjection {
     await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
   }
 
-  private async macKeyPress(key: string): Promise<void> {
+  private async macKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
+    const mods: string[] = [];
+    if (modifiers?.ctrl) mods.push('control down');
+    if (modifiers?.shift) mods.push('shift down');
+    if (modifiers?.alt) mods.push('option down');
+    if (modifiers?.meta) mods.push('command down');
+
+    const using = mods.length > 0 ? `using {${mods.join(', ')}}` : '';
     const script = `
       tell application "System Events"
-        keystroke "${key}"
+        keystroke "${key.replace(/"/g, '\\"')}" ${using}
       end tell
     `;
     await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
@@ -139,10 +146,36 @@ export class InputInjection {
     await execAsync(`powershell -Command "${ps.replace(/"/g, '\\"')}"`);
   }
 
-  private async windowsKeyPress(key: string): Promise<void> {
+  private async windowsKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
+    // Map special keys to SendKeys format
+    const keyMap: Record<string, string> = {
+      'Enter': '{ENTER}',
+      'Tab': '{TAB}',
+      'Backspace': '{BACKSPACE}',
+      'Delete': '{DELETE}',
+      'Escape': '{ESC}',
+      'ArrowUp': '{UP}',
+      'ArrowDown': '{DOWN}',
+      'ArrowLeft': '{LEFT}',
+      'ArrowRight': '{RIGHT}',
+      'Home': '{HOME}',
+      'End': '{END}',
+      'PageUp': '{PGUP}',
+      'PageDown': '{PGDN}',
+      ' ': ' '
+    };
+
+    let sendKey = keyMap[key] || key;
+
+    // Add modifiers (SendKeys format: ^ = Ctrl, + = Shift, % = Alt)
+    if (modifiers?.ctrl) sendKey = '^' + sendKey;
+    if (modifiers?.shift) sendKey = '+' + sendKey;
+    if (modifiers?.alt) sendKey = '%' + sendKey;
+    // Note: Windows meta key (Win key) is not easily supported via SendKeys
+
     const ps = `
       Add-Type -AssemblyName System.Windows.Forms
-      [System.Windows.Forms.SendKeys]::SendWait("${key}")
+      [System.Windows.Forms.SendKeys]::SendWait("${sendKey.replace(/"/g, '\\"')}")
     `;
     await execAsync(`powershell -Command "${ps.replace(/"/g, '\\"')}"`);
   }
@@ -158,8 +191,15 @@ export class InputInjection {
     await execAsync(`xdotool mousemove ${x} ${y} click ${btn}`);
   }
 
-  private async linuxKeyPress(key: string): Promise<void> {
-    await execAsync(`xdotool key ${key}`);
+  private async linuxKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
+    const mods: string[] = [];
+    if (modifiers?.ctrl) mods.push('ctrl');
+    if (modifiers?.shift) mods.push('shift');
+    if (modifiers?.alt) mods.push('alt');
+    if (modifiers?.meta) mods.push('super');
+
+    const keyStr = mods.length > 0 ? `${mods.join('+')}+${key}` : key;
+    await execAsync(`xdotool key ${keyStr}`);
   }
 
   /**
