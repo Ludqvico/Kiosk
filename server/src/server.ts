@@ -297,6 +297,60 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Reboot client
+  socket.on('admin:reboot-client', (clientId: string) => {
+    console.log(`[Admin] Richiesta REBOOT per client: ${clientId}`);
+
+    const client = connectedClients.get(clientId);
+    if (client) {
+      io.to(clientId).emit('server:reboot');
+      console.log(`[Server] Comando REBOOT inviato a ${client.hostname}`);
+
+      // Log activity
+      logActivity({
+        type: 'reboot',
+        clientId: clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Reboot requested by admin`
+      });
+    }
+  });
+
+  // Richiesta diagnostica client
+  socket.on('admin:request-diagnostics', (clientId: string) => {
+    console.log(`[Admin] Richiesta DIAGNOSTICS per client: ${clientId}`);
+
+    const client = connectedClients.get(clientId);
+    if (client) {
+      io.to(clientId).emit('server:request-diagnostics', { requesterId: socket.id });
+      console.log(`[Server] Richiesta diagnostics inviata a ${client.hostname}`);
+    }
+  });
+
+  // Risposta diagnostica dal client
+  socket.on('client:diagnostics', (data: any) => {
+    console.log(`[Client] Diagnostics ricevuti da: ${socket.id}`);
+
+    const client = connectedClients.get(socket.id);
+    if (client) {
+      // Inoltra diagnostica all'admin che l'ha richiesta
+      io.emit('admin:diagnostics-response', {
+        clientId: socket.id,
+        clientHostname: client.hostname,
+        diagnostics: data
+      });
+
+      // Log activity
+      logActivity({
+        type: 'diagnostics',
+        clientId: socket.id,
+        clientHostname: client.hostname,
+        details: `CPU: ${data.cpuUsage}%, RAM: ${data.memoryUsage}%, Uptime: ${data.uptime}s`
+      });
+    }
+  });
+
   // Disconnessione
   socket.on('disconnect', () => {
     const client = connectedClients.get(socket.id);

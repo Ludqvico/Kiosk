@@ -8,6 +8,7 @@ export class ServerConnection {
   private maxReconnectAttempts = 10;
   private onLockCallback: (() => void) | null = null;
   private onUnlockCallback: (() => void) | null = null;
+  private onRebootCallback: (() => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -75,6 +76,20 @@ export class ServerConnection {
         this.onUnlockCallback();
       }
     });
+
+    // Comando reboot
+    this.socket.on('server:reboot', () => {
+      console.log('[ServerConnection] 🔄 Ricevuto comando REBOOT dal server');
+      if (this.onRebootCallback) {
+        this.onRebootCallback();
+      }
+    });
+
+    // Richiesta diagnostica
+    this.socket.on('server:request-diagnostics', () => {
+      console.log('[ServerConnection] 📊 Ricevuta richiesta DIAGNOSTICS dal server');
+      this.sendDiagnostics();
+    });
   }
 
   private registerClient() {
@@ -115,6 +130,51 @@ export class ServerConnection {
   // Registra callback per comando unlock
   onUnlock(callback: () => void) {
     this.onUnlockCallback = callback;
+  }
+
+  // Registra callback per comando reboot
+  onReboot(callback: () => void) {
+    this.onRebootCallback = callback;
+  }
+
+  // Invia diagnostica al server
+  private sendDiagnostics() {
+    if (!this.socket || !this.socket.connected) return;
+
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
+    const memoryUsage = ((usedMemory / totalMemory) * 100).toFixed(2);
+
+    const cpus = os.cpus();
+    let totalIdle = 0;
+    let totalTick = 0;
+    cpus.forEach(cpu => {
+      for (let type in cpu.times) {
+        totalTick += cpu.times[type as keyof typeof cpu.times];
+      }
+      totalIdle += cpu.times.idle;
+    });
+    const cpuUsage = (100 - (100 * totalIdle / totalTick)).toFixed(2);
+
+    const diagnostics = {
+      hostname: os.hostname(),
+      platform: os.platform(),
+      arch: os.arch(),
+      cpuModel: cpus[0]?.model || 'Unknown',
+      cpuCores: cpus.length,
+      cpuUsage: parseFloat(cpuUsage),
+      totalMemoryMB: Math.round(totalMemory / 1024 / 1024),
+      usedMemoryMB: Math.round(usedMemory / 1024 / 1024),
+      freeMemoryMB: Math.round(freeMemory / 1024 / 1024),
+      memoryUsage: parseFloat(memoryUsage),
+      uptime: Math.round(os.uptime()),
+      nodeVersion: process.version,
+      timestamp: new Date().toISOString()
+    };
+
+    this.socket.emit('client:diagnostics', diagnostics);
+    console.log('[ServerConnection] Diagnostica inviata al server:', diagnostics);
   }
 
   // Disconnetti dal server

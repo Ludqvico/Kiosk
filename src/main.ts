@@ -290,8 +290,32 @@ function connectToServer() {
     unlockKiosk();
   });
 
+  serverConnection.onReboot(() => {
+    console.log('[Main] Ricevuto comando REBOOT dal server');
+    rebootClient();
+  });
+
   // Connetti
   serverConnection.connect();
+}
+
+function rebootClient() {
+  console.log('[Main] RIAVVIO CLIENT in corso...');
+
+  // Sblocca temporaneamente per permettere il reboot
+  if (inputBlocker) {
+    inputBlocker.unblock();
+    inputBlocker = null;
+  }
+
+  // Disconnetti dal server
+  if (serverConnection) {
+    serverConnection.disconnect();
+  }
+
+  // Riavvia l'app
+  app.relaunch();
+  app.exit(0);
 }
 
 function quitApp() {
