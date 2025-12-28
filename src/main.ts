@@ -389,7 +389,7 @@ function logoutClient() {
 // ========== INPUT BLOCKING ==========
 
 let inputBlocked = false;
-let inputBlockInterval: NodeJS.Timeout | null = null;
+let inputBlockOverlay: BrowserWindow | null = null;
 
 function blockUserInput() {
   if (inputBlocked) {
@@ -397,58 +397,40 @@ function blockUserInput() {
     return;
   }
 
-  console.log('[Main] BLOCCO INPUT UTENTE');
+  console.log('[Main] BLOCCO INPUT UTENTE - Creazione overlay trasparente');
   inputBlocked = true;
 
-  const { exec } = require('child_process');
-  const platform = process.platform;
+  // Create transparent fullscreen overlay window to block all input
+  // Similar approach to kiosk lock mode - more reliable than BlockInput API
+  inputBlockOverlay = new BrowserWindow({
+    fullscreen: true,
+    alwaysOnTop: true,
+    frame: false,
+    transparent: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
 
-  if (platform === 'win32') {
-    // Windows: Blocca input usando BlockInput API
-    // Nota: BlockInput può essere chiamato solo da processo con privilegi admin
-    // Alternativa: Disabilita periodicamente i device di input
-    const psScript = `
-      Add-Type @"
-        using System;
-        using System.Runtime.InteropServices;
-        public class InputBlocker {
-          [DllImport("user32.dll")]
-          public static extern bool BlockInput(bool fBlockIt);
-        }
-"@
-      [InputBlocker]::BlockInput($true)
-    `;
-    exec(`powershell -Command "${psScript.replace(/"/g, '\\"')}"`, (error) => {
-      if (error) {
-        console.error('[Main] Errore blocco input Windows:', error);
-      } else {
-        console.log('[Main] Input bloccato su Windows');
-      }
-    });
-  } else if (platform === 'darwin') {
-    // Mac: Non c'è modo semplice senza privilegi root
-    // Possiamo solo catturare e ignorare gli eventi
-    console.log('[Main] Blocco input su Mac non implementato (richiede privilegi root)');
-  } else if (platform === 'linux') {
-    // Linux: Disabilita xinput devices
-    exec('xinput list | grep -i "keyboard\\|mouse" | grep -o "id=[0-9]*" | grep -o "[0-9]*"', (error, stdout) => {
-      if (error) {
-        console.error('[Main] Errore blocco input Linux:', error);
-        return;
-      }
+  // Set very low opacity but still capture all events
+  inputBlockOverlay.setIgnoreMouseEvents(false); // Capture mouse events to block them
+  inputBlockOverlay.setOpacity(0.01); // Almost invisible (1% opacity)
 
-      const deviceIds = stdout.trim().split('\n');
-      deviceIds.forEach(id => {
-        exec(`xinput disable ${id}`, (err) => {
-          if (err) {
-            console.error(`[Main] Errore disabilitazione device ${id}:`, err);
-          } else {
-            console.log(`[Main] Device ${id} disabilitato`);
-          }
-        });
-      });
-    });
-  }
+  // Load empty page with not-allowed cursor
+  inputBlockOverlay.loadURL('data:text/html,<body style="background:transparent;cursor:not-allowed;margin:0;width:100vw;height:100vh;"></body>');
+
+  // Prevent closing the overlay
+  inputBlockOverlay.on('close', (e) => {
+    if (inputBlocked) {
+      e.preventDefault();
+      console.log('[Main] Tentativo di chiusura overlay input bloccato');
+    }
+  });
+
+  console.log('[Main] ✓ Input bloccato con overlay trasparente fullscreen');
 }
 
 function unblockUserInput() {
@@ -460,56 +442,14 @@ function unblockUserInput() {
   console.log('[Main] SBLOCCO INPUT UTENTE');
   inputBlocked = false;
 
-  if (inputBlockInterval) {
-    clearInterval(inputBlockInterval);
-    inputBlockInterval = null;
+  // Destroy overlay window
+  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
+    inputBlockOverlay.destroy();
+    inputBlockOverlay = null;
+    console.log('[Main] ✓ Overlay input rimosso');
   }
 
-  const { exec } = require('child_process');
-  const platform = process.platform;
-
-  if (platform === 'win32') {
-    // Windows: Sblocca input
-    const psScript = `
-      Add-Type @"
-        using System;
-        using System.Runtime.InteropServices;
-        public class InputBlocker {
-          [DllImport("user32.dll")]
-          public static extern bool BlockInput(bool fBlockIt);
-        }
-"@
-      [InputBlocker]::BlockInput($false)
-    `;
-    exec(`powershell -Command "${psScript.replace(/"/g, '\\"')}"`, (error) => {
-      if (error) {
-        console.error('[Main] Errore sblocco input Windows:', error);
-      } else {
-        console.log('[Main] Input sbloccato su Windows');
-      }
-    });
-  } else if (platform === 'darwin') {
-    console.log('[Main] Sblocco input su Mac (nessuna azione necessaria)');
-  } else if (platform === 'linux') {
-    // Linux: Riabilita xinput devices
-    exec('xinput list | grep -i "keyboard\\|mouse" | grep -o "id=[0-9]*" | grep -o "[0-9]*"', (error, stdout) => {
-      if (error) {
-        console.error('[Main] Errore sblocco input Linux:', error);
-        return;
-      }
-
-      const deviceIds = stdout.trim().split('\n');
-      deviceIds.forEach(id => {
-        exec(`xinput enable ${id}`, (err) => {
-          if (err) {
-            console.error(`[Main] Errore riabilitazione device ${id}:`, err);
-          } else {
-            console.log(`[Main] Device ${id} riabilitato`);
-          }
-        });
-      });
-    });
-  }
+  console.log('[Main] ✓ Input sbloccato');
 }
 
 // ========== REMOTE DESKTOP (WebRTC) ==========
@@ -597,6 +537,11 @@ function stopRemoteDesktop() {
   if (inputInjection) {
     inputInjection.cleanup();
     inputInjection = null;
+  }
+
+  // Unblock client input if it was blocked
+  if (inputBlocked) {
+    unblockUserInput();
   }
 
   console.log('[Main] WebRTC remote desktop stopped');
@@ -747,6 +692,9 @@ app.on('will-quit', () => {
   }
   if (inputInjection) {
     inputInjection.cleanup();
+  }
+  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
+    inputBlockOverlay.destroy();
   }
 });
 

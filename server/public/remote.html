@@ -496,6 +496,12 @@
             // Don't capture browser shortcuts
             if (e.ctrlKey && (e.key === 'w' || e.key === 't' || e.key === 'r')) return;
 
+            // IGNORE modifier keys when pressed alone (they should only work as modifiers)
+            const modifierKeys = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'NumLock', 'ScrollLock'];
+            if (modifierKeys.includes(e.key)) {
+                return; // Don't send modifier keys by themselves
+            }
+
             e.preventDefault();
 
             const msg = {
