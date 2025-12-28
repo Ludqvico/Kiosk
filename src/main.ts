@@ -426,8 +426,12 @@ function startRemoteControl() {
 
       // Registra callback per inviare frame al server
       remoteControl.onFrame((frame: string, width: number, height: number) => {
-        if (serverConnection) {
-          serverConnection.sendScreenFrame(frame, width, height);
+        try {
+          if (serverConnection && serverConnection.isConnected()) {
+            serverConnection.sendScreenFrame(frame, width, height);
+          }
+        } catch (err) {
+          console.error('[Main] Errore invio frame:', err);
         }
       });
     }
@@ -437,6 +441,7 @@ function startRemoteControl() {
     console.log('[Main] Remote control avviato con successo');
   } catch (error) {
     console.error('[Main] ERRORE avvio remote control:', error);
+    console.error('[Main] Stack:', (error as Error).stack);
     // Non crashare, semplicemente non disponibile
   }
 }
@@ -444,8 +449,12 @@ function startRemoteControl() {
 function stopRemoteControl() {
   console.log('[Main] Stop remote control...');
 
-  if (remoteControl) {
-    remoteControl.stopCapture();
+  try {
+    if (remoteControl) {
+      remoteControl.stopCapture();
+    }
+  } catch (error) {
+    console.error('[Main] Errore stop remote control:', error);
   }
 }
 

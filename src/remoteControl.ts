@@ -68,7 +68,6 @@ export class RemoteControl {
   // Cattura singolo frame
   private async captureFrame() {
     try {
-      console.log('[RemoteControl] Richiesta cattura screen...');
       const sources = await desktopCapturer.getSources({
         types: ['screen'],
         thumbnailSize: {
@@ -76,8 +75,6 @@ export class RemoteControl {
           height: 720
         }
       });
-
-      console.log(`[RemoteControl] Trovate ${sources.length} sorgenti schermo`);
 
       if (sources.length === 0) {
         console.error('[RemoteControl] Nessuna sorgente schermo trovata');
@@ -88,21 +85,15 @@ export class RemoteControl {
       const source = sources[0];
       const thumbnail = source.thumbnail;
 
-      console.log(`[RemoteControl] Thumbnail size: ${thumbnail.getSize().width}x${thumbnail.getSize().height}`);
-
       // Converti in base64 (formato PNG)
       const dataUrl = thumbnail.toDataURL();
-
-      console.log(`[RemoteControl] Frame convertito, size: ${dataUrl.length} bytes`);
 
       if (this.onFrameCallback) {
         this.onFrameCallback(dataUrl, thumbnail.getSize().width, thumbnail.getSize().height);
       }
     } catch (error) {
-      console.error('[RemoteControl] ERRORE CRITICO cattura frame:', error);
-      // Ferma cattura se errore persistente
-      this.stopCapture();
-      throw error; // Rilancia per far vedere l'errore completo
+      console.error('[RemoteControl] ERRORE cattura frame (NON CRITICO):', error);
+      // NON fermare e NON crashare - continua a provare
     }
   }
 
