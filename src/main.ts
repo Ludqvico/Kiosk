@@ -775,8 +775,8 @@ app.on('will-quit', () => {
   if (inputInjection) {
     inputInjection.cleanup();
   }
-  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-    inputBlockOverlay.destroy();
+  if (inputBlockProcess) {
+    inputBlockProcess.kill();
   }
 });
 
