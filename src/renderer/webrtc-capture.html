@@ -51,7 +51,12 @@
                 // ICE candidate event
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
-                        ipcRenderer.send('webrtc:icecandidate', event.candidate);
+                        // Serialize candidate to plain object
+                        ipcRenderer.send('webrtc:icecandidate', {
+                            candidate: event.candidate.candidate,
+                            sdpMLineIndex: event.candidate.sdpMLineIndex,
+                            sdpMid: event.candidate.sdpMid
+                        });
                     }
                 };
 
@@ -85,8 +90,11 @@
 
                 await peerConnection.setLocalDescription(offer);
 
-                // Send offer to main process
-                ipcRenderer.send('webrtc:offer', offer);
+                // Send offer to main process (serialize to plain object)
+                ipcRenderer.send('webrtc:offer', {
+                    type: offer.type,
+                    sdp: offer.sdp
+                });
 
                 console.log('[WebRTC Renderer] Offer created and sent');
             } catch (error) {
@@ -100,7 +108,13 @@
             console.log('[WebRTC Renderer] Received answer');
 
             if (peerConnection) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                try {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                    console.log('[WebRTC Renderer] Remote description set');
+                } catch (error) {
+                    console.error('[WebRTC Renderer] Error setting remote description:', error);
+                    ipcRenderer.send('webrtc:error', error.message);
+                }
             }
         });
 
@@ -109,7 +123,13 @@
             console.log('[WebRTC Renderer] Received ICE candidate');
 
             if (peerConnection) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    console.log('[WebRTC Renderer] ICE candidate added');
+                } catch (error) {
+                    console.error('[WebRTC Renderer] Error adding ICE candidate:', error);
+                    ipcRenderer.send('webrtc:error', error.message);
+                }
             }
         });
 
