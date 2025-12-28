@@ -36,13 +36,11 @@
             line-height: 1.5;
         }
 
-        /* Layout */
         .app-container {
             display: flex;
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
             background: var(--color-surface);
@@ -89,23 +87,20 @@
             font-weight: 500;
         }
 
-        /* Main Content */
         .main-content {
             flex: 1;
             padding: 32px 40px;
             overflow-y: auto;
         }
 
-        /* Header */
         .page-header {
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
 
         .page-title {
             font-size: 24px;
             font-weight: 600;
-            color: var(--color-text-primary);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .page-subtitle {
@@ -113,9 +108,9 @@
             color: var(--color-text-secondary);
         }
 
-        /* Stats Bar */
         .stats-bar {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -125,23 +120,19 @@
             border: 1px solid var(--color-border);
             border-radius: 4px;
             padding: 16px 20px;
-            flex: 1;
-            min-width: 0;
         }
 
         .stat-label {
             font-size: 13px;
             color: var(--color-text-secondary);
-            margin-bottom: 4px;
+            margin-bottom: 8px;
         }
 
         .stat-value {
             font-size: 28px;
             font-weight: 600;
-            color: var(--color-text-primary);
         }
 
-        /* Controls */
         .controls {
             display: flex;
             gap: 12px;
@@ -149,22 +140,32 @@
         }
 
         button {
-            padding: 10px 16px;
+            background: #000;
+            color: white;
             border: none;
+            padding: 10px 16px;
             border-radius: 4px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.15s;
-            background: var(--color-text-primary);
-            color: white;
+            font-family: inherit;
         }
 
         button:hover {
-            background: #404040;
+            opacity: 0.85;
         }
 
-        /* Clients Grid */
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.secondary {
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
         .clients-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -180,66 +181,69 @@
         }
 
         .client-card:hover {
-            border-color: var(--color-text-tertiary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
 
         .client-card.locked {
-            border-left: 3px solid var(--color-danger);
-        }
-
-        .client-card.unlocked {
-            border-left: 3px solid var(--color-success);
+            border-color: var(--color-danger);
+            background: #fef2f2;
         }
 
         .client-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: start;
             margin-bottom: 16px;
         }
 
-        .client-name {
-            font-size: 15px;
+        .client-title {
+            font-size: 16px;
             font-weight: 600;
-            color: var(--color-text-primary);
+            margin-bottom: 4px;
         }
 
-        .client-status {
+        .client-id {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-badge {
             padding: 4px 10px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
+            text-transform: uppercase;
         }
 
-        .client-status.locked {
-            background: #fee2e2;
-            color: var(--color-danger);
+        .status-badge.locked {
+            background: var(--color-danger);
+            color: white;
         }
 
-        .client-status.unlocked {
-            background: #dcfce7;
-            color: var(--color-success);
+        .status-badge.unlocked {
+            background: var(--color-success);
+            color: white;
         }
 
-        .client-info {
+        .client-meta {
             display: flex;
             flex-direction: column;
             gap: 8px;
             margin-bottom: 16px;
         }
 
-        .info-row {
+        .client-meta-item {
             display: flex;
             justify-content: space-between;
             font-size: 13px;
         }
 
-        .info-label {
+        .client-meta-label {
             color: var(--color-text-secondary);
         }
 
-        .info-value {
-            color: var(--color-text-primary);
+        .client-meta-value {
             font-weight: 500;
         }
 
@@ -272,7 +276,6 @@
             font-size: 13px;
         }
 
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -291,7 +294,6 @@
             color: var(--color-text-secondary);
         }
 
-        /* Connection Status */
         .connection-status {
             position: fixed;
             top: 16px;
@@ -318,6 +320,123 @@
         .status-indicator.disconnected {
             background: var(--color-danger);
         }
+
+        /* Activity Log Styles */
+        .filters-bar {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 160px;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+        }
+
+        select, input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        .log-table {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--color-bg);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .log-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .log-type.client_connected {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .log-type.client_disconnected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .log-type.lock, .log-type.lock_all {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .log-type.unlock, .log-type.unlock_all {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .log-timestamp {
+            color: var(--color-text-secondary);
+            font-size: 13px;
+        }
+
+        .page-view {
+            display: none;
+        }
+
+        .page-view.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -327,25 +446,19 @@
             <div class="logo">Kiosk Manager</div>
 
             <nav class="nav-section">
-                <div class="nav-item active">
+                <div class="nav-item active" data-page="stations">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <rect x="2" y="3" width="12" height="10" rx="1"/>
                         <line x1="2" y1="6" x2="14" y2="6"/>
                     </svg>
                     Active Stations
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" data-page="activity">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <circle cx="8" cy="8" r="6"/>
                         <path d="M8 4v4l2 2"/>
                     </svg>
                     Activity Log
-                </div>
-                <div class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M8 2v12M2 8h12"/>
-                    </svg>
-                    Settings
                 </div>
             </nav>
         </aside>
@@ -357,36 +470,104 @@
                 <span>Connecting...</span>
             </div>
 
-            <div class="page-header">
-                <h1 class="page-title">Active Stations</h1>
-                <p class="page-subtitle">Manage and monitor all kiosk stations</p>
+            <!-- Stations Page -->
+            <div class="page-view active" id="stationsPage">
+                <div class="page-header">
+                    <h1 class="page-title">Active Stations</h1>
+                    <p class="page-subtitle">Manage and monitor all kiosk stations</p>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Stations</div>
+                        <div class="stat-value" id="totalCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Locked</div>
+                        <div class="stat-value" id="lockedCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active</div>
+                        <div class="stat-value" id="activeCount">0</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button onclick="lockAll()">Lock All Stations</button>
+                    <button onclick="unlockAll()">Unlock All Stations</button>
+                    <button class="secondary" onclick="refreshStations()">Refresh</button>
+                </div>
+
+                <div id="clientsContainer" class="clients-grid">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No stations connected</div>
+                        <div class="empty-state-text">Stations will appear here when they connect to the server</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="stats-bar">
-                <div class="stat-card">
-                    <div class="stat-label">Total Stations</div>
-                    <div class="stat-value" id="totalCount">0</div>
+            <!-- Activity Log Page -->
+            <div class="page-view" id="activityPage">
+                <div class="page-header">
+                    <h1 class="page-title">Activity Log</h1>
+                    <p class="page-subtitle">View and export system activity history</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Locked</div>
-                    <div class="stat-value" id="lockedCount">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Active</div>
-                    <div class="stat-value" id="activeCount">0</div>
-                </div>
-            </div>
 
-            <div class="controls">
-                <button onclick="lockAll()">Lock All Stations</button>
-                <button onclick="unlockAll()">Unlock All Stations</button>
-                <button onclick="location.reload()">Refresh</button>
-            </div>
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label class="filter-label">Event Type</label>
+                        <select id="filterType" onchange="loadActivityLog()">
+                            <option value="all">All Types</option>
+                            <option value="client_connected">Connected</option>
+                            <option value="client_disconnected">Disconnected</option>
+                            <option value="lock">Lock</option>
+                            <option value="unlock">Unlock</option>
+                            <option value="lock_all">Lock All</option>
+                            <option value="unlock_all">Unlock All</option>
+                        </select>
+                    </div>
 
-            <div id="clientsContainer" class="clients-grid">
-                <div class="empty-state">
-                    <div class="empty-state-title">No stations connected</div>
-                    <div class="empty-state-text">Stations will appear here when they connect to the server</div>
+                    <div class="filter-group">
+                        <label class="filter-label">Client</label>
+                        <select id="filterClient" onchange="loadActivityLog()">
+                            <option value="all">All Clients</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Start Date</label>
+                        <input type="date" id="filterStartDate" onchange="loadActivityLog()">
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">End Date</label>
+                        <input type="date" id="filterEndDate" onchange="loadActivityLog()">
+                    </div>
+
+                    <div class="filter-group" style="margin-left: auto;">
+                        <label class="filter-label">&nbsp;</label>
+                        <button onclick="exportActivityLog()">Export CSV</button>
+                    </div>
+                </div>
+
+                <div class="log-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Type</th>
+                                <th>Client</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--color-text-secondary); padding: 40px;">
+                                    Loading activity log...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
@@ -396,6 +577,7 @@
         const socket = io();
         const clients = new Map();
 
+        // ===== Connection Status =====
         socket.on('connect', () => {
             updateConnectionStatus(true);
         });
@@ -403,98 +585,6 @@
         socket.on('disconnect', () => {
             updateConnectionStatus(false);
         });
-
-        socket.on('admin:client-connected', (client) => {
-            clients.set(client.id, client);
-            renderClients();
-        });
-
-        socket.on('admin:client-disconnected', ({ clientId }) => {
-            clients.delete(clientId);
-            renderClients();
-        });
-
-        socket.on('admin:client-status', ({ clientId, locked }) => {
-            const client = clients.get(clientId);
-            if (client) {
-                client.locked = locked;
-                renderClients();
-            }
-        });
-
-        function lockClient(clientId) {
-            socket.emit('admin:lock-client', clientId);
-        }
-
-        function unlockClient(clientId) {
-            socket.emit('admin:unlock-client', clientId);
-        }
-
-        function lockAll() {
-            if (confirm('Lock all stations?')) {
-                socket.emit('admin:lock-all');
-            }
-        }
-
-        function unlockAll() {
-            if (confirm('Unlock all stations?')) {
-                socket.emit('admin:unlock-all');
-            }
-        }
-
-        function renderClients() {
-            const container = document.getElementById('clientsContainer');
-            const clientArray = Array.from(clients.values());
-
-            if (clientArray.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-title">No stations connected</div>
-                        <div class="empty-state-text">Stations will appear here when they connect to the server</div>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = clientArray.map(client => `
-                    <div class="client-card ${client.locked ? 'locked' : 'unlocked'}">
-                        <div class="client-header">
-                            <div class="client-name">${client.hostname}</div>
-                            <div class="client-status ${client.locked ? 'locked' : 'unlocked'}">
-                                ${client.locked ? 'Locked' : 'Active'}
-                            </div>
-                        </div>
-                        <div class="client-info">
-                            <div class="info-row">
-                                <span class="info-label">Platform</span>
-                                <span class="platform-badge ${client.platform}">${client.platform}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">ID</span>
-                                <span class="info-value">${client.id.substring(0, 8)}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Connected</span>
-                                <span class="info-value">${formatTime(client.connectedAt)}</span>
-                            </div>
-                        </div>
-                        <div class="client-actions">
-                            <button onclick="lockClient('${client.id}')">Lock</button>
-                            <button onclick="unlockClient('${client.id}')">Unlock</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            updateStats(clientArray);
-        }
-
-        function updateStats(clientArray) {
-            const lockedCount = clientArray.filter(c => c.locked).length;
-            const activeCount = clientArray.filter(c => !c.locked).length;
-
-            document.getElementById('totalCount').textContent = clientArray.length;
-            document.getElementById('lockedCount').textContent = lockedCount;
-            document.getElementById('activeCount').textContent = activeCount;
-        }
 
         function updateConnectionStatus(connected) {
             const statusEl = document.getElementById('connectionStatus');
@@ -510,27 +600,256 @@
             }
         }
 
-        function formatTime(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
+        // ===== Navigation =====
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.getAttribute('data-page');
+                switchPage(page);
+            });
+        });
 
-            if (diff < 60) return `${diff}s ago`;
+        function switchPage(page) {
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-page') === page) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Update page view
+            document.querySelectorAll('.page-view').forEach(view => {
+                view.classList.remove('active');
+            });
+
+            if (page === 'stations') {
+                document.getElementById('stationsPage').classList.add('active');
+            } else if (page === 'activity') {
+                document.getElementById('activityPage').classList.add('active');
+                loadActivityLog();
+                updateClientFilter();
+            }
+        }
+
+        // ===== Stations Management =====
+        socket.on('admin:client-connected', (client) => {
+            clients.set(client.id, client);
+            renderClients();
+            updateClientFilter();
+        });
+
+        socket.on('admin:client-disconnected', ({ clientId }) => {
+            clients.delete(clientId);
+            renderClients();
+        });
+
+        socket.on('admin:client-status', ({ clientId, locked }) => {
+            const client = clients.get(clientId);
+            if (client) {
+                client.locked = locked;
+                renderClients();
+            }
+        });
+
+        function renderClients() {
+            const container = document.getElementById('clientsContainer');
+
+            if (clients.size === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-title">No stations connected</div>
+                        <div class="empty-state-text">Stations will appear here when they connect to the server</div>
+                    </div>
+                `;
+                updateStats();
+                return;
+            }
+
+            const clientsArray = Array.from(clients.values());
+            container.innerHTML = clientsArray.map(client => `
+                <div class="client-card ${client.locked ? 'locked' : ''}">
+                    <div class="client-header">
+                        <div>
+                            <div class="client-title">${client.hostname}</div>
+                            <div class="client-id">${client.id.substring(0, 12)}...</div>
+                        </div>
+                        <span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">
+                            ${client.locked ? 'Locked' : 'Unlocked'}
+                        </span>
+                    </div>
+                    <div class="client-meta">
+                        <div class="client-meta-item">
+                            <span class="client-meta-label">Platform</span>
+                            <span class="platform-badge ${client.platform}">${client.platform}</span>
+                        </div>
+                        <div class="client-meta-item">
+                            <span class="client-meta-label">Connected</span>
+                            <span class="client-meta-value">${formatTime(client.connectedAt)}</span>
+                        </div>
+                    </div>
+                    <div class="client-actions">
+                        ${client.locked
+                            ? `<button onclick="unlockClient('${client.id}')">Unlock</button>`
+                            : `<button onclick="lockClient('${client.id}')">Lock</button>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const total = clients.size;
+            const locked = Array.from(clients.values()).filter(c => c.locked).length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('lockedCount').textContent = locked;
+            document.getElementById('activeCount').textContent = total;
+        }
+
+        function lockClient(clientId) {
+            socket.emit('admin:lock-client', clientId);
+        }
+
+        function unlockClient(clientId) {
+            socket.emit('admin:unlock-client', clientId);
+        }
+
+        function lockAll() {
+            socket.emit('admin:lock-all');
+        }
+
+        function unlockAll() {
+            socket.emit('admin:unlock-all');
+        }
+
+        function refreshStations() {
+            location.reload();
+        }
+
+        // ===== Activity Log =====
+        socket.on('admin:activity-event', (event) => {
+            // Real-time event - reload log if on activity page
+            if (document.getElementById('activityPage').classList.contains('active')) {
+                loadActivityLog();
+            }
+        });
+
+        async function loadActivityLog() {
+            const type = document.getElementById('filterType').value;
+            const clientId = document.getElementById('filterClient').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            const params = new URLSearchParams();
+            if (type !== 'all') params.append('type', type);
+            if (clientId !== 'all') params.append('clientId', clientId);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            try {
+                const response = await fetch(`/api/activity-log?${params.toString()}`);
+                const events = await response.json();
+                renderActivityLog(events);
+            } catch (error) {
+                console.error('Failed to load activity log:', error);
+            }
+        }
+
+        function renderActivityLog(events) {
+            const tbody = document.getElementById('activityTableBody');
+
+            if (events.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--color-text-secondary); padding: 40px;">
+                            No activity found matching the filters
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = events.map(event => `
+                <tr>
+                    <td class="log-timestamp">${formatTimestamp(event.timestamp)}</td>
+                    <td><span class="log-type ${event.type}">${formatEventType(event.type)}</span></td>
+                    <td>${event.clientHostname || '-'}</td>
+                    <td>${event.details || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateClientFilter() {
+            const select = document.getElementById('filterClient');
+            const currentValue = select.value;
+
+            select.innerHTML = '<option value="all">All Clients</option>';
+
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.hostname;
+                select.appendChild(option);
+            });
+
+            select.value = currentValue;
+        }
+
+        function exportActivityLog() {
+            const type = document.getElementById('filterType').value;
+            const clientId = document.getElementById('filterClient').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            const params = new URLSearchParams();
+            if (type !== 'all') params.append('type', type);
+            if (clientId !== 'all') params.append('clientId', clientId);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            window.location.href = `/api/activity-log/export?${params.toString()}`;
+        }
+
+        // ===== Utility Functions =====
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = (now - date) / 1000;
+
+            if (diff < 60) return 'Just now';
             if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
             if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
             return date.toLocaleDateString();
         }
 
-        // Load initial clients
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('it-IT', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function formatEventType(type) {
+            return type.replace(/_/g, ' ');
+        }
+
+        // ===== Initial Load =====
         fetch('/api/clients')
             .then(res => res.json())
-            .then(data => {
-                data.forEach(client => {
+            .then(clientsData => {
+                clientsData.forEach(client => {
                     clients.set(client.id, client);
                 });
                 renderClients();
             })
-            .catch(err => console.error('Error loading clients:', err));
+            .catch(error => console.error('Failed to load clients:', error));
     </script>
 </body>
 </html>
