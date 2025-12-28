@@ -81,17 +81,8 @@ function lockKiosk() {
 
   console.log('[Main] BLOCCO KIOSK');
 
-  // Mostra la finestra fullscreen
-  if (mainWindow) {
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.setKiosk(true);
-    mainWindow.setFullScreen(true);
-    mainWindow.setAlwaysOnTop(true, 'screen-saver');
-
-    // Nascondi cursore
-    mainWindow.webContents.insertCSS('* { cursor: none !important; }');
-  }
+  // Blocca TUTTE le shortcut globali PRIMA di mostrare la finestra
+  blockGlobalShortcuts();
 
   // Blocca input nativo a livello di sistema
   inputBlocker = new InputBlocker();
@@ -103,8 +94,15 @@ function lockKiosk() {
     inputBlocker.blockWindowsInput();
   }
 
-  // Blocca TUTTE le shortcut globali
-  blockGlobalShortcuts();
+  // Mostra la finestra fullscreen DOPO aver bloccato tutto
+  if (mainWindow) {
+    mainWindow.setKiosk(true);
+    mainWindow.setFullScreen(true);
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.moveTop();
+  }
 
   isLocked = true;
 
@@ -124,15 +122,7 @@ function unlockKiosk() {
 
   console.log('[Main] SBLOCCO KIOSK');
 
-  // Nascondi la finestra completamente
-  if (mainWindow) {
-    mainWindow.hide();
-
-    // Ripristina cursore (nel caso)
-    mainWindow.webContents.insertCSS('* { cursor: auto !important; }');
-  }
-
-  // Sblocca input nativo
+  // Sblocca input nativo PRIMA di nascondere
   if (inputBlocker) {
     inputBlocker.unblock();
     inputBlocker = null;
@@ -140,6 +130,13 @@ function unlockKiosk() {
 
   // Sblocca TUTTE le shortcut
   globalShortcut.unregisterAll();
+
+  // Nascondi la finestra completamente
+  if (mainWindow) {
+    mainWindow.setKiosk(false);
+    mainWindow.setFullScreen(false);
+    mainWindow.hide();
+  }
 
   isLocked = false;
 
@@ -171,8 +168,6 @@ function blockGlobalShortcuts() {
 
     // Windows specific
     'Control+Shift+Escape',  // Task Manager
-    'Win',                   // Start menu
-    'Super',                 // Start menu (Linux)
 
     // Tasti funzione
     'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
@@ -206,12 +201,16 @@ function blockGlobalShortcuts() {
 
   let blocked = 0;
   shortcuts.forEach(shortcut => {
-    const success = globalShortcut.register(shortcut, () => {
-      // Blocca la shortcut non facendo nulla
-      console.log(`[Shortcut] Bloccato tentativo di usare: ${shortcut}`);
-    });
-
-    if (success) blocked++;
+    try {
+      const success = globalShortcut.register(shortcut, () => {
+        // Blocca la shortcut non facendo nulla
+        console.log(`[Shortcut] Bloccato tentativo di usare: ${shortcut}`);
+      });
+      if (success) blocked++;
+    } catch (error) {
+      // Ignora errori per shortcut non supportati
+      console.log(`[Shortcut] Impossibile registrare: ${shortcut}`);
+    }
   });
 
   console.log(`[Shortcut] Bloccate ${blocked}/${shortcuts.length} scorciatoie globali`);
