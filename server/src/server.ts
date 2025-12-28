@@ -505,6 +505,19 @@ io.on('connection', (socket) => {
       // Notifica gli admin
       io.emit('admin:client-disconnected', { clientId: socket.id });
     }
+
+    // Se era un admin che controllava un client, ferma il remote control
+    for (const [clientId, adminId] of activeRemoteSessions.entries()) {
+      if (adminId === socket.id) {
+        console.log(`[Admin] Admin disconnesso, fermo remote control per client: ${clientId}`);
+
+        // Ferma screen capture sul client
+        io.to(clientId).emit('server:stop-screen-capture');
+
+        // Rimuovi sessione
+        activeRemoteSessions.delete(clientId);
+      }
+    }
   });
 });
 
