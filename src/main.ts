@@ -386,18 +386,21 @@ async function startRemoteDesktop() {
     // Get screen sources
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
-      thumbnailSize: { width: 1920, height: 1080 }
+      thumbnailSize: { width: 150, height: 150 } // Smaller thumbnail to reduce memory
     });
 
     if (sources.length === 0) {
       throw new Error('No screen source available');
     }
 
-    const sourceId = sources[0].id;
-    console.log('[Main] Screen source ID:', sourceId);
+    // Extract ONLY the string ID, nothing else
+    const sourceId = String(sources[0].id);
+    console.log('[Main] Screen source ID:', sourceId, 'Type:', typeof sourceId);
 
-    // Create hidden WebRTC window
-    if (!webrtcWindow) {
+    // Create hidden WebRTC window if not exists
+    if (!webrtcWindow || webrtcWindow.isDestroyed()) {
+      console.log('[Main] Creating WebRTC window...');
+
       webrtcWindow = new BrowserWindow({
         show: false,
         webPreferences: {
@@ -408,15 +411,21 @@ async function startRemoteDesktop() {
 
       webrtcWindow.loadFile(path.join(__dirname, '../renderer/webrtc-capture.html'));
 
-      // Setup IPC handlers for WebRTC window
+      // Setup IPC handlers for WebRTC window (only once)
       setupWebRTCHandlers();
+
+      // Wait for window to be ready
+      await new Promise<void>((resolve) => {
+        webrtcWindow!.webContents.once('did-finish-load', () => {
+          console.log('[Main] WebRTC window loaded');
+          resolve();
+        });
+      });
     }
 
-    // Wait for window to load, then start capture
-    webrtcWindow.webContents.once('did-finish-load', () => {
-      console.log('[Main] Sending start command to WebRTC renderer');
-      webrtcWindow!.webContents.send('webrtc:start', sourceId);
-    });
+    // Send start command with only the string ID
+    console.log('[Main] Sending start command to WebRTC renderer with sourceId:', sourceId);
+    webrtcWindow.webContents.send('webrtc:start', sourceId);
 
     // Initialize input injection
     if (!inputInjection) {
@@ -427,9 +436,16 @@ async function startRemoteDesktop() {
       );
     }
 
-    console.log('[Main] WebRTC remote desktop started');
+    console.log('[Main] WebRTC remote desktop initialization complete');
   } catch (error) {
     console.error('[Main] Error starting WebRTC:', error);
+
+    if (serverConnection) {
+      serverConnection.sendWebRTCSignal({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 }
 
@@ -445,7 +461,17 @@ function stopRemoteDesktop() {
   console.log('[Main] WebRTC remote desktop stopped');
 }
 
+let webrtcHandlersSetup = false;
+
 function setupWebRTCHandlers() {
+  // Prevent duplicate handler registration
+  if (webrtcHandlersSetup) {
+    console.log('[Main] WebRTC handlers already set up');
+    return;
+  }
+
+  console.log('[Main] Setting up WebRTC IPC handlers');
+
   // Offer created by renderer
   ipcMain.on('webrtc:offer', (event, offer) => {
     console.log('[Main] Received offer from renderer');
@@ -494,6 +520,9 @@ function setupWebRTCHandlers() {
   ipcMain.on('webrtc:error', (event, errorMessage) => {
     console.error('[Main] WebRTC renderer error:', errorMessage);
   });
+
+  webrtcHandlersSetup = true;
+  console.log('[Main] WebRTC IPC handlers setup complete');
 }
 
 function quitApp() {
