@@ -1,101 +1,49 @@
 #include <windows.h>
 #include <winuser.h>
+#include <tlhelp32.h>
 #include "input_blocker_win.h"
 
-static HHOOK keyboardHook = NULL;
-static HHOOK mouseHook = NULL;
 static bool isBlocking = false;
+static HANDLE explorerProcessHandle = NULL;
 
-// Hook per bloccare la tastiera
-LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-    if (nCode == HC_ACTION && isBlocking) {
-        KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
-
-        // Blocca tutte le combinazioni pericolose
-        bool ctrlPressed = GetAsyncKeyState(VK_CONTROL) & 0x8000;
-        bool altPressed = GetAsyncKeyState(VK_MENU) & 0x8000;
-        bool winPressed = GetAsyncKeyState(VK_LWIN) & 0x8000 || GetAsyncKeyState(VK_RWIN) & 0x8000;
-        bool shiftPressed = GetAsyncKeyState(VK_SHIFT) & 0x8000;
-
-        // Blocca Ctrl+Alt+Del (non direttamente bloccabile, ma possiamo bloccare i singoli tasti)
-        // Blocca Alt+F4
-        if (altPressed && pKeyboard->vkCode == VK_F4) {
-            return 1; // Blocca
-        }
-
-        // Blocca Alt+Tab
-        if (altPressed && pKeyboard->vkCode == VK_TAB) {
-            return 1;
-        }
-
-        // Blocca Ctrl+Esc (Start menu)
-        if (ctrlPressed && pKeyboard->vkCode == VK_ESCAPE) {
-            return 1;
-        }
-
-        // Blocca Win key
-        if (pKeyboard->vkCode == VK_LWIN || pKeyboard->vkCode == VK_RWIN) {
-            return 1;
-        }
-
-        // Blocca Win+D, Win+E, Win+L, ecc.
-        if (winPressed) {
-            return 1;
-        }
-
-        // Blocca Ctrl+Shift+Esc (Task Manager)
-        if (ctrlPressed && shiftPressed && pKeyboard->vkCode == VK_ESCAPE) {
-            return 1;
-        }
-
-        // Blocca F1-F12 (help, refresh, ecc.)
-        if (pKeyboard->vkCode >= VK_F1 && pKeyboard->vkCode <= VK_F12) {
-            return 1;
-        }
-
-        // BLOCCA TUTTO L'INPUT TASTIERA
-        return 1;
-    }
-
-    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
-}
-
-// Hook per bloccare il mouse
-LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
-    if (nCode == HC_ACTION && isBlocking) {
-        // BLOCCA TUTTI GLI EVENTI DEL MOUSE (movimento, click, scroll, tutto)
-        return 1;
-    }
-
-    return CallNextHookEx(mouseHook, nCode, wParam, lParam);
-}
-
+// METODO AGGRESSIVO: USA BlockInput() DI WINDOWS
 Napi::Value BlockInput(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
     if (isBlocking) {
-        return Napi::Boolean::New(env, false); // Già bloccato
+        return Napi::Boolean::New(env, false);
     }
 
-    // Installa gli hook
-    keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, GetModuleHandle(NULL), 0);
-    mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, GetModuleHandle(NULL), 0);
+    // 1. USA BlockInput() - BLOCCA TUTTO MOUSE E TASTIERA A LIVELLO DI SISTEMA
+    BOOL blockResult = BlockInput(TRUE);
 
-    if (!keyboardHook || !mouseHook) {
-        if (keyboardHook) UnhookWindowsHookEx(keyboardHook);
-        if (mouseHook) UnhookWindowsHookEx(mouseHook);
-
-        Napi::Error::New(env, "Impossibile installare gli hook. L'app deve essere eseguita come amministratore.")
+    if (!blockResult) {
+        Napi::Error::New(env, "BlockInput fallito. DEVI eseguire come AMMINISTRATORE.")
             .ThrowAsJavaScriptException();
         return Napi::Boolean::New(env, false);
     }
 
-    isBlocking = true;
+    // 2. KILLA EXPLORER.EXE per disabilitare taskbar, Alt+Tab, Win key
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        PROCESSENTRY32 pe32;
+        pe32.dwSize = sizeof(PROCESSENTRY32);
 
-    // Nascondi il cursore (opzionale)
-    ShowCursor(FALSE);
+        if (Process32First(hSnapshot, &pe32)) {
+            do {
+                if (_wcsicmp(pe32.szExeFile, L"explorer.exe") == 0) {
+                    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
+                    if (hProcess) {
+                        TerminateProcess(hProcess, 0);
+                        CloseHandle(hProcess);
+                    }
+                }
+            } while (Process32Next(hSnapshot, &pe32));
+        }
+        CloseHandle(hSnapshot);
+    }
 
-    // Disabilita Task Manager tramite registro (richiede privilegi amministratore)
+    // 3. DISABILITA TASK MANAGER via registro
     HKEY hKey;
     DWORD dwDisposition;
     if (RegCreateKeyEx(HKEY_CURRENT_USER,
@@ -106,6 +54,10 @@ Napi::Value BlockInput(const Napi::CallbackInfo& info) {
         RegCloseKey(hKey);
     }
 
+    // 4. NASCONDI CURSORE
+    ShowCursor(FALSE);
+
+    isBlocking = true;
     return Napi::Boolean::New(env, true);
 }
 
@@ -113,26 +65,20 @@ Napi::Value UnblockInput(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
     if (!isBlocking) {
-        return Napi::Boolean::New(env, false); // Non era bloccato
+        return Napi::Boolean::New(env, false);
     }
 
-    // Rimuovi gli hook
-    if (keyboardHook) {
-        UnhookWindowsHookEx(keyboardHook);
-        keyboardHook = NULL;
-    }
+    // 1. SBLOCCA INPUT
+    BlockInput(FALSE);
 
-    if (mouseHook) {
-        UnhookWindowsHookEx(mouseHook);
-        mouseHook = NULL;
-    }
+    // 2. RIAVVIA EXPLORER.EXE
+    STARTUPINFO si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    CreateProcess(TEXT("C:\\Windows\\explorer.exe"), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
 
-    isBlocking = false;
-
-    // Mostra il cursore
-    ShowCursor(TRUE);
-
-    // Riabilita Task Manager
+    // 3. RIABILITA TASK MANAGER
     HKEY hKey;
     if (RegOpenKeyEx(HKEY_CURRENT_USER,
                      TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"),
@@ -141,6 +87,10 @@ Napi::Value UnblockInput(const Napi::CallbackInfo& info) {
         RegCloseKey(hKey);
     }
 
+    // 4. MOSTRA CURSORE
+    ShowCursor(TRUE);
+
+    isBlocking = false;
     return Napi::Boolean::New(env, true);
 }
 
