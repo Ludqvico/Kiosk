@@ -1,0 +1,42 @@
+{
+  "name": "school-kiosk",
+  "version": "1.0.0",
+  "description": "Multi-platform kiosk system for schools",
+  "main": "dist/main.js",
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "rebuild": "node-gyp rebuild",
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dev": "tsc && electron .",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win"
+  },
+  "keywords": ["kiosk", "electron", "school"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "node-gyp": "^10.0.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.school.kiosk",
+    "productName": "SchoolKiosk",
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
