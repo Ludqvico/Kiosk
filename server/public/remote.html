@@ -417,9 +417,12 @@
             };
         }
 
-        // Input handling with throttling
+        // Input handling with throttling and drag support
         let lastMouseMove = 0;
         const MOUSE_THROTTLE = 16; // ~60fps
+        let mouseButtonPressed = null; // Track which button is currently pressed (for drag)
+        let lastMouseDownTime = 0;
+        const CLICK_THRESHOLD = 200; // ms - if mouseup within this time, it's a click, not a drag
 
         video.addEventListener('mousemove', (e) => {
             if (!isConnected || !dataChannel || dataChannel.readyState !== 'open' || !mouseEnabled) return;
@@ -434,11 +437,22 @@
 
             // Only send if within bounds
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
-                dataChannel.send(JSON.stringify({
-                    type: 'mousemove',
-                    x: x,
-                    y: y
-                }));
+                // If a button is pressed, this is a DRAG operation
+                if (mouseButtonPressed !== null) {
+                    dataChannel.send(JSON.stringify({
+                        type: 'mousedrag',
+                        x: x,
+                        y: y,
+                        button: mouseButtonPressed
+                    }));
+                } else {
+                    // Normal mouse move (no button pressed)
+                    dataChannel.send(JSON.stringify({
+                        type: 'mousemove',
+                        x: x,
+                        y: y
+                    }));
+                }
             }
         });
 
@@ -451,14 +465,56 @@
             const y = (e.clientY - rect.top) / rect.height;
 
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
+                const button = e.button === 2 ? 'right' : (e.button === 1 ? 'middle' : 'left');
+                mouseButtonPressed = button;
+                lastMouseDownTime = Date.now();
+
                 const msg = {
-                    type: 'click',
+                    type: 'mousedown',
                     x: x,
                     y: y,
-                    button: e.button === 2 ? 'right' : (e.button === 1 ? 'middle' : 'left')
+                    button: button
                 };
-                console.log('[Remote] >>>> Sending CLICK:', msg.button, 'at', msg.x.toFixed(2), msg.y.toFixed(2));
+                console.log('[Remote] >>>> Sending MOUSEDOWN:', msg.button, 'at', msg.x.toFixed(2), msg.y.toFixed(2));
                 dataChannel.send(JSON.stringify(msg));
+            }
+        });
+
+        video.addEventListener('mouseup', (e) => {
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open' || !mouseEnabled) return;
+            e.preventDefault();
+
+            const rect = video.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+
+            if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
+                const button = e.button === 2 ? 'right' : (e.button === 1 ? 'middle' : 'left');
+                const timeSinceDown = Date.now() - lastMouseDownTime;
+
+                // If released quickly, it's a CLICK. Otherwise it was a DRAG (already sent during mousemove)
+                if (timeSinceDown < CLICK_THRESHOLD) {
+                    const msg = {
+                        type: 'click',
+                        x: x,
+                        y: y,
+                        button: button
+                    };
+                    console.log('[Remote] >>>> Sending CLICK:', msg.button, 'at', msg.x.toFixed(2), msg.y.toFixed(2));
+                    dataChannel.send(JSON.stringify(msg));
+                }
+
+                // Always send mouseup to release the button on remote
+                const upMsg = {
+                    type: 'mouseup',
+                    x: x,
+                    y: y,
+                    button: button
+                };
+                console.log('[Remote] >>>> Sending MOUSEUP:', upMsg.button);
+                dataChannel.send(JSON.stringify(upMsg));
+
+                mouseButtonPressed = null; // Release button
             }
         });
 

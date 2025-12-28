@@ -390,6 +390,7 @@ function logoutClient() {
 
 let inputBlocked = false;
 let inputBlockOverlay: BrowserWindow | null = null;
+let blockedShortcuts: string[] = [];
 
 function blockUserInput() {
   if (inputBlocked) {
@@ -397,11 +398,45 @@ function blockUserInput() {
     return;
   }
 
-  console.log('[Main] BLOCCO INPUT UTENTE - Creazione overlay trasparente');
+  console.log('[Main] BLOCCO INPUT UTENTE');
   inputBlocked = true;
 
-  // Create transparent fullscreen overlay window to block all input
-  // Similar approach to kiosk lock mode - more reliable than BlockInput API
+  // 1. Block KEYBOARD with globalShortcut (register all possible key combinations)
+  const keys = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+    'Space', 'Tab', 'Enter', 'Backspace', 'Delete', 'Escape',
+    'Up', 'Down', 'Left', 'Right',
+    'Home', 'End', 'PageUp', 'PageDown',
+    'Insert', 'Plus', 'Minus', '=', '-', '[', ']', '\\', ';', "'", ',', '.', '/',
+    '`', 'PrintScreen', 'ScrollLock', 'Pause', 'NumLock'
+  ];
+
+  const modifiers = ['', 'Ctrl+', 'Alt+', 'Shift+', 'Ctrl+Shift+', 'Ctrl+Alt+', 'Alt+Shift+', 'Ctrl+Alt+Shift+', 'CommandOrControl+'];
+
+  let blocked = 0;
+  for (const mod of modifiers) {
+    for (const key of keys) {
+      const combo = mod + key;
+      try {
+        const success = globalShortcut.register(combo, () => {
+          // Block - do nothing
+        });
+        if (success) {
+          blockedShortcuts.push(combo);
+          blocked++;
+        }
+      } catch (e) {
+        // Some combinations might not be valid, skip them
+      }
+    }
+  }
+
+  console.log(`[Main] ✓ Bloccate ${blocked} combinazioni tastiera via globalShortcut`);
+
+  // 2. Block MOUSE with transparent overlay
   inputBlockOverlay = new BrowserWindow({
     fullscreen: true,
     alwaysOnTop: true,
@@ -415,120 +450,20 @@ function blockUserInput() {
     }
   });
 
-  // Set very low opacity but still capture all events
-  inputBlockOverlay.setIgnoreMouseEvents(false); // Capture mouse events to block them
-  inputBlockOverlay.setOpacity(0.01); // Almost invisible (1% opacity)
+  inputBlockOverlay.setIgnoreMouseEvents(false); // Capture all mouse events
+  inputBlockOverlay.setOpacity(0.01); // Almost invisible
 
-  // Load HTML page that captures both mouse AND keyboard events
-  const blockPageHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        * { margin: 0; padding: 0; }
-        body {
-          background: transparent;
-          cursor: not-allowed;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden;
-        }
-        #blocker {
-          position: absolute;
-          top: 0; left: 0;
-          width: 100%;
-          height: 100%;
-          outline: none;
-          border: none;
-          background: transparent;
-          cursor: not-allowed;
-        }
-      </style>
-    </head>
-    <body>
-      <input type="text" id="blocker" autofocus />
-      <script>
-        // Capture and block ALL keyboard events
-        const blocker = document.getElementById('blocker');
-        blocker.focus();
+  // Simple blocking page
+  inputBlockOverlay.loadURL('data:text/html,<body style="background:transparent;cursor:not-allowed;"></body>');
 
-        // Keep focus on blocker
-        blocker.addEventListener('blur', () => {
-          setTimeout(() => blocker.focus(), 0);
-        });
-
-        // Block all keyboard events
-        document.addEventListener('keydown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }, true);
-
-        document.addEventListener('keyup', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }, true);
-
-        document.addEventListener('keypress', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }, true);
-
-        // Block mouse events too
-        document.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          blocker.focus(); // Re-focus after click
-          return false;
-        }, true);
-
-        document.addEventListener('mouseup', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }, true);
-
-        document.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }, true);
-
-        console.log('[InputBlocker] Overlay attivo - mouse e tastiera bloccati');
-      </script>
-    </body>
-    </html>
-  `;
-
-  inputBlockOverlay.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(blockPageHTML));
-
-  // Give focus to overlay window after it loads
-  inputBlockOverlay.webContents.once('did-finish-load', () => {
-    inputBlockOverlay?.focus();
-    inputBlockOverlay?.show();
-    console.log('[Main] ✓ Overlay attivo e focused');
-  });
-
-  // Prevent closing the overlay
   inputBlockOverlay.on('close', (e) => {
     if (inputBlocked) {
       e.preventDefault();
-      console.log('[Main] Tentativo di chiusura overlay input bloccato');
     }
   });
 
-  // Keep focus on overlay
-  inputBlockOverlay.on('blur', () => {
-    if (inputBlocked && inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-      setTimeout(() => {
-        inputBlockOverlay?.focus();
-      }, 100);
-    }
-  });
-
-  console.log('[Main] ✓ Input bloccato con overlay trasparente fullscreen');
+  console.log('[Main] ✓ Overlay mouse creato');
+  console.log('[Main] ✓✓✓ Input COMPLETAMENTE bloccato (tastiera + mouse)');
 }
 
 function unblockUserInput() {
@@ -540,14 +475,21 @@ function unblockUserInput() {
   console.log('[Main] SBLOCCO INPUT UTENTE');
   inputBlocked = false;
 
-  // Destroy overlay window
+  // 1. Unregister all blocked shortcuts
+  for (const shortcut of blockedShortcuts) {
+    globalShortcut.unregister(shortcut);
+  }
+  console.log(`[Main] ✓ Sbloccate ${blockedShortcuts.length} combinazioni tastiera`);
+  blockedShortcuts = [];
+
+  // 2. Destroy overlay window
   if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
     inputBlockOverlay.destroy();
     inputBlockOverlay = null;
-    console.log('[Main] ✓ Overlay input rimosso');
+    console.log('[Main] ✓ Overlay mouse rimosso');
   }
 
-  console.log('[Main] ✓ Input sbloccato');
+  console.log('[Main] ✓✓✓ Input SBLOCCATO');
 }
 
 // ========== REMOTE DESKTOP (WebRTC) ==========
@@ -680,8 +622,8 @@ function setupWebRTCHandlers() {
 
   // Input from renderer (via data channel)
   ipcMain.on('webrtc:input', async (event, inputData) => {
-    // Log only non-mousemove to reduce spam
-    if (inputData.type !== 'mousemove') {
+    // Log only non-mousemove and non-mousedrag to reduce spam
+    if (inputData.type !== 'mousemove' && inputData.type !== 'mousedrag') {
       console.log('[Main] <<<< Received input via IPC:', inputData.type, inputData);
     }
 
@@ -697,8 +639,25 @@ function setupWebRTCHandlers() {
           await inputInjection.moveMouse(inputData.x, inputData.y);
           break;
 
+        case 'mousedown':
+          // Mouse button pressed (start of potential drag)
+          console.log(`[Main] >>> MOUSEDOWN ${inputData.button} at (${inputData.x.toFixed(2)}, ${inputData.y.toFixed(2)})`);
+          await inputInjection.mouseDown(inputData.x, inputData.y, inputData.button);
+          break;
+
+        case 'mouseup':
+          // Mouse button released (end of drag or click)
+          console.log(`[Main] >>> MOUSEUP ${inputData.button} at (${inputData.x.toFixed(2)}, ${inputData.y.toFixed(2)})`);
+          await inputInjection.mouseUp(inputData.x, inputData.y, inputData.button);
+          break;
+
+        case 'mousedrag':
+          // Mouse moved while button is pressed (dragging)
+          await inputInjection.moveMouse(inputData.x, inputData.y);
+          break;
+
         case 'click':
-          // Coordinates are already normalized (0-1) from dashboard
+          // Quick click (mousedown + mouseup within threshold)
           console.log(`[Main] >>> CLICK ${inputData.button} at (${inputData.x.toFixed(2)}, ${inputData.y.toFixed(2)})`);
           await inputInjection.click(inputData.x, inputData.y, inputData.button);
           break;

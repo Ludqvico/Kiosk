@@ -137,6 +137,46 @@ Write-Output "READY"
   }
 
   /**
+   * Mouse button down (press without release - for drag operations)
+   */
+  async mouseDown(normalizedX: number, normalizedY: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<void> {
+    const x = Math.round(normalizedX * this.screenWidth);
+    const y = Math.round(normalizedY * this.screenHeight);
+
+    try {
+      if (this.platform === 'darwin') {
+        await this.macMouseDown(x, y, button);
+      } else if (this.platform === 'win32') {
+        await this.windowsMouseDown(x, y, button);
+      } else if (this.platform === 'linux') {
+        await this.linuxMouseDown(x, y, button);
+      }
+    } catch (error) {
+      console.error(`[InputInjection] Error mouseDown ${button} at (${x}, ${y}):`, error);
+    }
+  }
+
+  /**
+   * Mouse button up (release after drag)
+   */
+  async mouseUp(normalizedX: number, normalizedY: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<void> {
+    const x = Math.round(normalizedX * this.screenWidth);
+    const y = Math.round(normalizedY * this.screenHeight);
+
+    try {
+      if (this.platform === 'darwin') {
+        await this.macMouseUp(x, y, button);
+      } else if (this.platform === 'win32') {
+        await this.windowsMouseUp(x, y, button);
+      } else if (this.platform === 'linux') {
+        await this.linuxMouseUp(x, y, button);
+      }
+    } catch (error) {
+      console.error(`[InputInjection] Error mouseUp ${button} at (${x}, ${y}):`, error);
+    }
+  }
+
+  /**
    * Pressione tasto
    */
   async keyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
@@ -189,6 +229,26 @@ Write-Output "READY"
       tell application "System Events"
         set position of mouse to {${x}, ${y}}
         ${clickCommand}
+      end tell
+    `;
+    await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
+  }
+
+  private async macMouseDown(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    const script = `
+      tell application "System Events"
+        set position of mouse to {${x}, ${y}}
+        mouse down
+      end tell
+    `;
+    await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
+  }
+
+  private async macMouseUp(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    const script = `
+      tell application "System Events"
+        set position of mouse to {${x}, ${y}}
+        mouse up
       end tell
     `;
     await execAsync(`osascript -e '${script.replace(/'/g, "\\'")}'`);
@@ -252,6 +312,55 @@ Start-Sleep -Milliseconds 10;
     this.windowsPowerShell.stdin.write(clickScript);
   }
 
+  private async windowsMouseDown(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    if (!this.psReady || !this.windowsPowerShell?.stdin) {
+      console.error('[InputInjection] PowerShell not ready for mousedown');
+      return;
+    }
+
+    let downFlag: string;
+
+    if (button === 'left') {
+      downFlag = '0x0002'; // LEFTDOWN
+    } else if (button === 'right') {
+      downFlag = '0x0008'; // RIGHTDOWN
+    } else {
+      downFlag = '0x0020'; // MIDDLEDOWN
+    }
+
+    // Move to position and press button (but don't release - for drag)
+    const downScript = `
+[WinInput]::SetCursorPos(${x}, ${y});
+Start-Sleep -Milliseconds 5;
+[WinInput]::mouse_event(${downFlag}, 0, 0, 0, [UIntPtr]::Zero);
+`;
+    this.windowsPowerShell.stdin.write(downScript);
+  }
+
+  private async windowsMouseUp(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    if (!this.psReady || !this.windowsPowerShell?.stdin) {
+      console.error('[InputInjection] PowerShell not ready for mouseup');
+      return;
+    }
+
+    let upFlag: string;
+
+    if (button === 'left') {
+      upFlag = '0x0004';   // LEFTUP
+    } else if (button === 'right') {
+      upFlag = '0x0010';   // RIGHTUP
+    } else {
+      upFlag = '0x0040';   // MIDDLEUP
+    }
+
+    // Move to position and release button (end of drag)
+    const upScript = `
+[WinInput]::SetCursorPos(${x}, ${y});
+[WinInput]::mouse_event(${upFlag}, 0, 0, 0, [UIntPtr]::Zero);
+`;
+    this.windowsPowerShell.stdin.write(upScript);
+  }
+
   private async windowsKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
     if (!this.psReady || !this.windowsPowerShell?.stdin) {
       console.error('[InputInjection] PowerShell not ready for keypress');
@@ -307,6 +416,30 @@ Start-Sleep -Milliseconds 10;
       btn = '2'; // middle
     }
     await execAsync(`xdotool mousemove ${x} ${y} click ${btn}`);
+  }
+
+  private async linuxMouseDown(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    let btn: string;
+    if (button === 'left') {
+      btn = '1';
+    } else if (button === 'right') {
+      btn = '3';
+    } else {
+      btn = '2'; // middle
+    }
+    await execAsync(`xdotool mousemove ${x} ${y} mousedown ${btn}`);
+  }
+
+  private async linuxMouseUp(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
+    let btn: string;
+    if (button === 'left') {
+      btn = '1';
+    } else if (button === 'right') {
+      btn = '3';
+    } else {
+      btn = '2'; // middle
+    }
+    await execAsync(`xdotool mousemove ${x} ${y} mouseup ${btn}`);
   }
 
   private async linuxKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
