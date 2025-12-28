@@ -1,12 +1,12 @@
 import * as path from 'path';
+import { execSync } from 'child_process';
 
-// Importa l'addon nativo
+// Prova a caricare addon nativo (per Mac)
 let nativeAddon: any = null;
 try {
   nativeAddon = require('../../build/Release/inputblocker.node');
 } catch (error) {
-  console.error('Impossibile caricare l\'addon nativo:', error);
-  console.error('Esegui "npm run rebuild" per compilare gli addon nativi');
+  // Addon non disponibile - useremo PowerShell su Windows
 }
 
 export class InputBlocker {
@@ -24,7 +24,7 @@ export class InputBlocker {
     }
 
     if (!nativeAddon) {
-      console.error('Addon nativo non disponibile');
+      console.error('Addon nativo non disponibile per Mac');
       return;
     }
 
@@ -50,20 +50,23 @@ export class InputBlocker {
       return;
     }
 
-    if (!nativeAddon) {
-      console.error('Addon nativo non disponibile');
-      return;
-    }
-
     try {
-      const result = nativeAddon.blockInput();
-      this.isBlocking = result;
+      // USA POWERSHELL DIRETTO - NO COMPILAZIONE RICHIESTA
+      const scriptPath = path.join(__dirname, '..', 'native', 'win', 'BlockInput.ps1');
+      console.log('[Windows] Blocco input via PowerShell:', scriptPath);
 
-      if (result) {
-        console.log('✓ Blocco input Windows attivato');
-        console.log('IMPORTANTE: L\'app deve essere eseguita come amministratore per il blocco completo');
+      const result = execSync(
+        `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" block`,
+        { encoding: 'utf8' }
+      ).trim();
+
+      if (result === 'BLOCKED') {
+        this.isBlocking = true;
+        console.log('✓ Blocco input Windows attivato (PowerShell)');
+        console.log('✓ Explorer.exe killato - Alt+Tab disabilitato');
+        console.log('✓ BlockInput() attivo - mouse e tastiera bloccati');
       } else {
-        console.error('✗ Impossibile bloccare l\'input');
+        console.error('✗ BlockInput fallito - DEVI eseguire come AMMINISTRATORE');
       }
     } catch (error) {
       console.error('Errore nel blocco input Windows:', error);
@@ -75,20 +78,27 @@ export class InputBlocker {
       return;
     }
 
-    if (!nativeAddon) {
-      console.error('Addon nativo non disponibile');
-      return;
-    }
-
     console.log('Sblocco input...');
 
     try {
-      const result = nativeAddon.unblockInput();
-      if (result) {
-        this.isBlocking = false;
-        console.log('✓ Input sbloccato');
-      } else {
-        console.error('✗ Errore nello sblocco input');
+      if (this.platform === 'darwin' && nativeAddon) {
+        const result = nativeAddon.unblockInput();
+        if (result) {
+          this.isBlocking = false;
+          console.log('✓ Input sbloccato (Mac)');
+        }
+      } else if (this.platform === 'win32') {
+        const scriptPath = path.join(__dirname, '..', 'native', 'win', 'BlockInput.ps1');
+        const result = execSync(
+          `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" unblock`,
+          { encoding: 'utf8' }
+        ).trim();
+
+        if (result === 'UNBLOCKED') {
+          this.isBlocking = false;
+          console.log('✓ Input sbloccato (Windows)');
+          console.log('✓ Explorer.exe riavviato');
+        }
       }
     } catch (error) {
       console.error('Errore nello sblocco input:', error);
