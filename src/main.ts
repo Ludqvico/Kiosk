@@ -1,19 +1,13 @@
 import { app, BrowserWindow, globalShortcut, screen } from 'electron';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { InputBlocker } from './native/inputBlocker';
 import { ServerConnection } from './serverConnection';
-
-// RemoteControl import lazy per evitare crash se robotjs manca
-let RemoteControl: any = null;
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
 
 let mainWindow: BrowserWindow | null = null;
-let inputBlocker: InputBlocker | null = null;
 let serverConnection: ServerConnection | null = null;
-let remoteControl: any = null;
 let isLocked = false;
 
 // Configurazione
@@ -117,15 +111,7 @@ function lockKiosk() {
   // Blocca TUTTE le shortcut globali PRIMA di mostrare la finestra
   blockGlobalShortcuts();
 
-  // Blocca input nativo a livello di sistema
-  inputBlocker = new InputBlocker();
-  const platform = process.platform;
-
-  if (platform === 'darwin') {
-    inputBlocker.blockMacInput();
-  } else if (platform === 'win32') {
-    inputBlocker.blockWindowsInput();
-  }
+  // TODO: Ri-implementare input blocking se necessario per kiosk mode
 
   // Mostra la finestra fullscreen DOPO aver bloccato tutto
   if (mainWindow) {
@@ -154,12 +140,6 @@ function unlockKiosk() {
   }
 
   console.log('[Main] SBLOCCO KIOSK');
-
-  // Sblocca input nativo PRIMA di nascondere
-  if (inputBlocker) {
-    inputBlocker.unblock();
-    inputBlocker = null;
-  }
 
   // Sblocca TUTTE le shortcut
   globalShortcut.unregisterAll();
@@ -309,36 +289,12 @@ function connectToServer() {
     logoutClient();
   });
 
-  // Remote control callbacks
-  serverConnection.onStartScreenCapture(() => {
-    console.log('[Main] Ricevuto comando START SCREEN CAPTURE dal server');
-    startRemoteControl();
-  });
-
-  serverConnection.onStopScreenCapture(() => {
-    console.log('[Main] Ricevuto comando STOP SCREEN CAPTURE dal server');
-    stopRemoteControl();
-  });
-
-  serverConnection.onRemoteInput((type: string, data: any) => {
-    console.log(`[Main] Ricevuto input remoto: ${type}`);
-    if (remoteControl) {
-      remoteControl.processRemoteInput(type, data);
-    }
-  });
-
   // Connetti
   serverConnection.connect();
 }
 
 function rebootClient() {
   console.log('[Main] RIAVVIO CLIENT in corso...');
-
-  // Sblocca temporaneamente per permettere il reboot
-  if (inputBlocker) {
-    inputBlocker.unblock();
-    inputBlocker = null;
-  }
 
   // Disconnetti dal server
   if (serverConnection) {
@@ -352,12 +308,6 @@ function rebootClient() {
 
 function shutdownClient(delay: number) {
   console.log(`[Main] SHUTDOWN CLIENT in corso (delay: ${delay}s)...`);
-
-  // Sblocca temporaneamente
-  if (inputBlocker) {
-    inputBlocker.unblock();
-    inputBlocker = null;
-  }
 
   // Disconnetti dal server
   if (serverConnection) {
@@ -382,12 +332,6 @@ function shutdownClient(delay: number) {
 function logoutClient() {
   console.log('[Main] LOGOUT CLIENT in corso...');
 
-  // Sblocca temporaneamente
-  if (inputBlocker) {
-    inputBlocker.unblock();
-    inputBlocker = null;
-  }
-
   // Disconnetti dal server
   if (serverConnection) {
     serverConnection.disconnect();
@@ -408,83 +352,12 @@ function logoutClient() {
 }
 
 // ========== REMOTE CONTROL ==========
-
-function startRemoteControl() {
-  console.log('[Main] Avvio remote control...');
-
-  try {
-    // IMPORTANTE: Sblocca input per permettere remote control
-    if (inputBlocker) {
-      console.log('[Main] Sblocco input per remote control...');
-      inputBlocker.unblock();
-    }
-
-    // Lazy load RemoteControl solo quando serve
-    if (!RemoteControl) {
-      console.log('[Main] Caricamento modulo RemoteControl...');
-      const remoteControlModule = require('./remoteControl');
-      RemoteControl = remoteControlModule.RemoteControl;
-      console.log('[Main] RemoteControl caricato con successo');
-    }
-
-    if (!remoteControl) {
-      remoteControl = new RemoteControl();
-
-      // Registra callback per inviare frame al server
-      remoteControl.onFrame((frame: string, width: number, height: number) => {
-        try {
-          if (serverConnection && serverConnection.isConnected()) {
-            serverConnection.sendScreenFrame(frame, width, height);
-          }
-        } catch (err) {
-          console.error('[Main] Errore invio frame:', err);
-        }
-      });
-    }
-
-    // Avvia cattura a 10 FPS
-    remoteControl.startCapture(10);
-    console.log('[Main] Remote control avviato con successo');
-  } catch (error) {
-    console.error('[Main] ERRORE avvio remote control:', error);
-    console.error('[Main] Stack:', (error as Error).stack);
-    // Non crashare, semplicemente non disponibile
-  }
-}
-
-function stopRemoteControl() {
-  console.log('[Main] Stop remote control...');
-
-  try {
-    if (remoteControl) {
-      remoteControl.stopCapture();
-    }
-
-    // IMPORTANTE: Ri-blocca input dopo remote control
-    if (!inputBlocker) {
-      console.log('[Main] Ri-blocco input dopo remote control...');
-      inputBlocker = new InputBlocker();
-
-      if (process.platform === 'darwin') {
-        inputBlocker.blockMacInput();
-      } else if (process.platform === 'win32') {
-        inputBlocker.blockWindowsInput();
-      }
-    }
-  } catch (error) {
-    console.error('[Main] Errore stop remote control:', error);
-  }
-}
+// TODO: Implementare WebRTC remote desktop
 
 function quitApp() {
   // Disconnetti dal server
   if (serverConnection) {
     serverConnection.disconnect();
-  }
-
-  // Sblocca l'input prima di uscire
-  if (inputBlocker) {
-    inputBlocker.unblock();
   }
 
   globalShortcut.unregisterAll();

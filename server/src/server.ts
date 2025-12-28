@@ -45,9 +45,7 @@ const connectedClients = new Map<string, KioskClient>();
 const activityLog: ActivityEvent[] = [];
 let eventIdCounter = 0;
 
-// Traccia sessioni di remote control attive
-// Map<clientId, adminSocketId>
-const activeRemoteSessions = new Map<string, string>();
+// TODO: WebRTC signaling state
 
 // Helper per loggare eventi
 function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>) {
@@ -397,94 +395,7 @@ io.on('connection', (socket) => {
 
   // ========== REMOTE CONTROL ==========
 
-  // Avvia sessione remote control
-  socket.on('admin:start-remote-control', (clientId: string) => {
-    console.log(`[Admin] Richiesta REMOTE CONTROL per client: ${clientId}`);
-
-    const client = connectedClients.get(clientId);
-    if (client) {
-      // Verifica se già in remote control
-      if (activeRemoteSessions.has(clientId)) {
-        const existingAdminId = activeRemoteSessions.get(clientId);
-        socket.emit('admin:remote-control-error', {
-          message: `Client already under remote control by another admin (${existingAdminId})`
-        });
-        return;
-      }
-
-      // Registra sessione
-      activeRemoteSessions.set(clientId, socket.id);
-
-      // Avvia streaming sul client
-      io.to(clientId).emit('server:start-screen-capture');
-      console.log(`[Server] Remote control avviato su ${client.hostname}`);
-
-      // Conferma all'admin
-      socket.emit('admin:remote-control-started', { clientId });
-
-      // Log activity
-      logActivity({
-        type: 'diagnostics', // Riusa type diagnostics per ora
-        clientId: clientId,
-        clientHostname: client.hostname,
-        adminId: socket.id,
-        details: `Remote control session started`
-      });
-    }
-  });
-
-  // Ferma sessione remote control
-  socket.on('admin:stop-remote-control', (clientId: string) => {
-    console.log(`[Admin] Stop REMOTE CONTROL per client: ${clientId}`);
-
-    const client = connectedClients.get(clientId);
-    if (client) {
-      // Rimuovi sessione
-      activeRemoteSessions.delete(clientId);
-
-      // Ferma streaming sul client
-      io.to(clientId).emit('server:stop-screen-capture');
-      console.log(`[Server] Remote control fermato su ${client.hostname}`);
-
-      // Log activity
-      logActivity({
-        type: 'diagnostics',
-        clientId: clientId,
-        clientHostname: client.hostname,
-        adminId: socket.id,
-        details: `Remote control session stopped`
-      });
-    }
-  });
-
-  // Ricevi frame schermo dal client
-  socket.on('client:screen-frame', (data: { frame: string; width: number; height: number }) => {
-    const clientId = socket.id;
-    const adminId = activeRemoteSessions.get(clientId);
-
-    if (adminId) {
-      // Inoltra il frame all'admin che sta controllando
-      io.to(adminId).emit('admin:screen-frame', {
-        clientId: clientId,
-        frame: data.frame,
-        width: data.width,
-        height: data.height
-      });
-    }
-  });
-
-  // Ricevi input dall'admin e inoltra al client
-  socket.on('admin:remote-input', (data: { clientId: string; type: string; data: any }) => {
-    const client = connectedClients.get(data.clientId);
-
-    if (client && activeRemoteSessions.get(data.clientId) === socket.id) {
-      // Inoltra l'input al client
-      io.to(data.clientId).emit('server:remote-input', {
-        type: data.type,
-        data: data.data
-      });
-    }
-  });
+  // TODO: WebRTC signaling handlers
 
   // Disconnessione
   socket.on('disconnect', () => {
@@ -506,18 +417,7 @@ io.on('connection', (socket) => {
       io.emit('admin:client-disconnected', { clientId: socket.id });
     }
 
-    // Se era un admin che controllava un client, ferma il remote control
-    for (const [clientId, adminId] of activeRemoteSessions.entries()) {
-      if (adminId === socket.id) {
-        console.log(`[Admin] Admin disconnesso, fermo remote control per client: ${clientId}`);
-
-        // Ferma screen capture sul client
-        io.to(clientId).emit('server:stop-screen-capture');
-
-        // Rimuovi sessione
-        activeRemoteSessions.delete(clientId);
-      }
-    }
+    // TODO: Cleanup WebRTC connections
   });
 });
 

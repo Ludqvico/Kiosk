@@ -11,9 +11,6 @@ export class ServerConnection {
   private onRebootCallback: (() => void) | null = null;
   private onShutdownCallback: ((delay: number) => void) | null = null;
   private onLogoutCallback: (() => void) | null = null;
-  private onStartScreenCaptureCallback: (() => void) | null = null;
-  private onStopScreenCaptureCallback: (() => void) | null = null;
-  private onRemoteInputCallback: ((type: string, data: any) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -112,29 +109,7 @@ export class ServerConnection {
       }
     });
 
-    // Remote control: start screen capture
-    this.socket.on('server:start-screen-capture', () => {
-      console.log('[ServerConnection] Ricevuto comando START SCREEN CAPTURE dal server');
-      if (this.onStartScreenCaptureCallback) {
-        this.onStartScreenCaptureCallback();
-      }
-    });
-
-    // Remote control: stop screen capture
-    this.socket.on('server:stop-screen-capture', () => {
-      console.log('[ServerConnection] Ricevuto comando STOP SCREEN CAPTURE dal server');
-      if (this.onStopScreenCaptureCallback) {
-        this.onStopScreenCaptureCallback();
-      }
-    });
-
-    // Remote control: receive input commands
-    this.socket.on('server:remote-input', (data: { type: string; data: any }) => {
-      console.log(`[ServerConnection] Ricevuto input remoto: ${data.type}`);
-      if (this.onRemoteInputCallback) {
-        this.onRemoteInputCallback(data.type, data.data);
-      }
-    });
+    // TODO: WebRTC signaling handlers
   }
 
   private registerClient() {
@@ -246,27 +221,6 @@ export class ServerConnection {
     return this.socket ? this.socket.connected : false;
   }
 
-  // ========== REMOTE CONTROL ==========
-
-  // Registra callback per start screen capture
-  onStartScreenCapture(callback: () => void) {
-    this.onStartScreenCaptureCallback = callback;
-  }
-
-  // Registra callback per stop screen capture
-  onStopScreenCapture(callback: () => void) {
-    this.onStopScreenCaptureCallback = callback;
-  }
-
-  // Registra callback per remote input
-  onRemoteInput(callback: (type: string, data: any) => void) {
-    this.onRemoteInputCallback = callback;
-  }
-
-  // Invia frame schermo al server
-  sendScreenFrame(frame: string, width: number, height: number) {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('client:screen-frame', { frame, width, height });
-    }
-  }
+  // ========== REMOTE DESKTOP (WebRTC) ==========
+  // TODO: Implementare WebRTC peer connection
 }
