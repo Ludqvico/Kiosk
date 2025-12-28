@@ -32,11 +32,66 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #3a3a3a;
+            gap: 20px;
         }
 
         .remote-title {
             font-size: 16px;
             font-weight: 600;
+        }
+
+        .remote-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #555;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #4CAF50;
+        }
+
+        .toggle-switch.disabled {
+            background: #f44336;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .toggle-switch.disabled .toggle-slider {
+            transform: translateX(20px);
         }
 
         .remote-status {
@@ -155,6 +210,30 @@
     <div class="remote-container">
         <div class="remote-header">
             <div class="remote-title" id="remoteTitle">Remote Desktop - WebRTC</div>
+
+            <div class="remote-controls">
+                <div class="control-group">
+                    <span class="control-label">Mouse</span>
+                    <div class="toggle-switch active" id="toggleMouse" onclick="toggleMouseControl()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <span class="control-label">Keyboard</span>
+                    <div class="toggle-switch active" id="toggleKeyboard" onclick="toggleKeyboardControl()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <span class="control-label">Block Client Input</span>
+                    <div class="toggle-switch" id="toggleBlockInput" onclick="toggleBlockClientInput()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="remote-status">
                 <div class="status-indicator connecting" id="statusIndicator"></div>
                 <span id="statusText">Connecting...</span>
@@ -195,6 +274,11 @@
         let peerConnection = null;
         let dataChannel = null;
         let isConnected = false;
+
+        // Control states
+        let mouseEnabled = true;
+        let keyboardEnabled = true;
+        let blockClientInput = false;
 
         // WebRTC Configuration
         const config = {
@@ -329,7 +413,7 @@
         const MOUSE_THROTTLE = 16; // ~60fps
 
         video.addEventListener('mousemove', (e) => {
-            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open' || !mouseEnabled) return;
 
             const now = Date.now();
             if (now - lastMouseMove < MOUSE_THROTTLE) return;
@@ -350,7 +434,7 @@
         });
 
         video.addEventListener('mousedown', (e) => {
-            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open' || !mouseEnabled) return;
             e.preventDefault();
 
             const rect = video.getBoundingClientRect();
@@ -372,7 +456,7 @@
         });
 
         video.addEventListener('dblclick', (e) => {
-            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open' || !mouseEnabled) return;
             e.preventDefault();
 
             const rect = video.getBoundingClientRect();
@@ -395,7 +479,7 @@
         });
 
         document.addEventListener('keydown', (e) => {
-            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') return;
+            if (!isConnected || !dataChannel || dataChannel.readyState !== 'open' || !keyboardEnabled) return;
 
             // Don't capture browser shortcuts
             if (e.ctrlKey && (e.key === 'w' || e.key === 't' || e.key === 'r')) return;
@@ -452,7 +536,60 @@
             isConnected = false;
         }
 
+        // Toggle functions
+        function toggleMouseControl() {
+            mouseEnabled = !mouseEnabled;
+            const toggle = document.getElementById('toggleMouse');
+            if (mouseEnabled) {
+                toggle.classList.add('active');
+                toggle.classList.remove('disabled');
+            } else {
+                toggle.classList.remove('active');
+                toggle.classList.add('disabled');
+            }
+            console.log('[Remote] Mouse control:', mouseEnabled ? 'enabled' : 'disabled');
+        }
+
+        function toggleKeyboardControl() {
+            keyboardEnabled = !keyboardEnabled;
+            const toggle = document.getElementById('toggleKeyboard');
+            if (keyboardEnabled) {
+                toggle.classList.add('active');
+                toggle.classList.remove('disabled');
+            } else {
+                toggle.classList.remove('active');
+                toggle.classList.add('disabled');
+            }
+            console.log('[Remote] Keyboard control:', keyboardEnabled ? 'enabled' : 'disabled');
+        }
+
+        function toggleBlockClientInput() {
+            blockClientInput = !blockClientInput;
+            const toggle = document.getElementById('toggleBlockInput');
+            if (blockClientInput) {
+                toggle.classList.add('disabled');
+                console.log('[Remote] Blocking client input...');
+            } else {
+                toggle.classList.remove('disabled');
+                console.log('[Remote] Unblocking client input...');
+            }
+
+            // Send command to client to block/unblock input
+            socket.emit('admin:block-client-input', {
+                clientId: clientId,
+                block: blockClientInput
+            });
+        }
+
         function closeRemote() {
+            // Unblock client input before closing
+            if (blockClientInput) {
+                socket.emit('admin:block-client-input', {
+                    clientId: clientId,
+                    block: false
+                });
+            }
+
             // Stop remote desktop
             socket.emit('admin:stop-remote-desktop', clientId);
             cleanup();
@@ -461,6 +598,14 @@
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
+            // Unblock client input before closing
+            if (blockClientInput) {
+                socket.emit('admin:block-client-input', {
+                    clientId: clientId,
+                    block: false
+                });
+            }
+
             socket.emit('admin:stop-remote-desktop', clientId);
             cleanup();
         });

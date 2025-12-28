@@ -14,6 +14,7 @@ export class ServerConnection {
   private onWebRTCStartCallback: (() => void) | null = null;
   private onWebRTCStopCallback: (() => void) | null = null;
   private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
+  private onBlockInputCallback: ((block: boolean) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -131,6 +132,13 @@ export class ServerConnection {
       console.log('[ServerConnection] Ricevuto segnale WebRTC dal server:', signal.type);
       if (this.onWebRTCSignalCallback) {
         this.onWebRTCSignalCallback(signal);
+      }
+    });
+
+    this.socket.on('server:block-input', (block: boolean) => {
+      console.log(`[ServerConnection] Ricevuto comando ${block ? 'BLOCK' : 'UNBLOCK'} INPUT dal server`);
+      if (this.onBlockInputCallback) {
+        this.onBlockInputCallback(block);
       }
     });
   }
@@ -259,6 +267,10 @@ export class ServerConnection {
   // Registra callback per segnali WebRTC
   onWebRTCSignal(callback: (signal: any) => void) {
     this.onWebRTCSignalCallback = callback;
+  }
+
+  onBlockInput(callback: (block: boolean) => void) {
+    this.onBlockInputCallback = callback;
   }
 
   // Invia segnale WebRTC al server

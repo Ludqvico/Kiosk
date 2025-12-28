@@ -315,6 +315,15 @@ function connectToServer() {
     }
   });
 
+  serverConnection.onBlockInput((block) => {
+    console.log(`[Main] Ricevuto comando ${block ? 'BLOCK' : 'UNBLOCK'} INPUT dal server`);
+    if (block) {
+      blockUserInput();
+    } else {
+      unblockUserInput();
+    }
+  });
+
   // Connetti
   serverConnection.connect();
 }
@@ -375,6 +384,132 @@ function logoutClient() {
   }
 
   app.quit();
+}
+
+// ========== INPUT BLOCKING ==========
+
+let inputBlocked = false;
+let inputBlockInterval: NodeJS.Timeout | null = null;
+
+function blockUserInput() {
+  if (inputBlocked) {
+    console.log('[Main] Input già bloccato');
+    return;
+  }
+
+  console.log('[Main] BLOCCO INPUT UTENTE');
+  inputBlocked = true;
+
+  const { exec } = require('child_process');
+  const platform = process.platform;
+
+  if (platform === 'win32') {
+    // Windows: Blocca input usando BlockInput API
+    // Nota: BlockInput può essere chiamato solo da processo con privilegi admin
+    // Alternativa: Disabilita periodicamente i device di input
+    const psScript = `
+      Add-Type @"
+        using System;
+        using System.Runtime.InteropServices;
+        public class InputBlocker {
+          [DllImport("user32.dll")]
+          public static extern bool BlockInput(bool fBlockIt);
+        }
+"@
+      [InputBlocker]::BlockInput($true)
+    `;
+    exec(`powershell -Command "${psScript.replace(/"/g, '\\"')}"`, (error) => {
+      if (error) {
+        console.error('[Main] Errore blocco input Windows:', error);
+      } else {
+        console.log('[Main] Input bloccato su Windows');
+      }
+    });
+  } else if (platform === 'darwin') {
+    // Mac: Non c'è modo semplice senza privilegi root
+    // Possiamo solo catturare e ignorare gli eventi
+    console.log('[Main] Blocco input su Mac non implementato (richiede privilegi root)');
+  } else if (platform === 'linux') {
+    // Linux: Disabilita xinput devices
+    exec('xinput list | grep -i "keyboard\\|mouse" | grep -o "id=[0-9]*" | grep -o "[0-9]*"', (error, stdout) => {
+      if (error) {
+        console.error('[Main] Errore blocco input Linux:', error);
+        return;
+      }
+
+      const deviceIds = stdout.trim().split('\n');
+      deviceIds.forEach(id => {
+        exec(`xinput disable ${id}`, (err) => {
+          if (err) {
+            console.error(`[Main] Errore disabilitazione device ${id}:`, err);
+          } else {
+            console.log(`[Main] Device ${id} disabilitato`);
+          }
+        });
+      });
+    });
+  }
+}
+
+function unblockUserInput() {
+  if (!inputBlocked) {
+    console.log('[Main] Input non era bloccato');
+    return;
+  }
+
+  console.log('[Main] SBLOCCO INPUT UTENTE');
+  inputBlocked = false;
+
+  if (inputBlockInterval) {
+    clearInterval(inputBlockInterval);
+    inputBlockInterval = null;
+  }
+
+  const { exec } = require('child_process');
+  const platform = process.platform;
+
+  if (platform === 'win32') {
+    // Windows: Sblocca input
+    const psScript = `
+      Add-Type @"
+        using System;
+        using System.Runtime.InteropServices;
+        public class InputBlocker {
+          [DllImport("user32.dll")]
+          public static extern bool BlockInput(bool fBlockIt);
+        }
+"@
+      [InputBlocker]::BlockInput($false)
+    `;
+    exec(`powershell -Command "${psScript.replace(/"/g, '\\"')}"`, (error) => {
+      if (error) {
+        console.error('[Main] Errore sblocco input Windows:', error);
+      } else {
+        console.log('[Main] Input sbloccato su Windows');
+      }
+    });
+  } else if (platform === 'darwin') {
+    console.log('[Main] Sblocco input su Mac (nessuna azione necessaria)');
+  } else if (platform === 'linux') {
+    // Linux: Riabilita xinput devices
+    exec('xinput list | grep -i "keyboard\\|mouse" | grep -o "id=[0-9]*" | grep -o "[0-9]*"', (error, stdout) => {
+      if (error) {
+        console.error('[Main] Errore sblocco input Linux:', error);
+        return;
+      }
+
+      const deviceIds = stdout.trim().split('\n');
+      deviceIds.forEach(id => {
+        exec(`xinput enable ${id}`, (err) => {
+          if (err) {
+            console.error(`[Main] Errore riabilitazione device ${id}:`, err);
+          } else {
+            console.log(`[Main] Device ${id} riabilitato`);
+          }
+        });
+      });
+    });
+  }
 }
 
 // ========== REMOTE DESKTOP (WebRTC) ==========

@@ -461,6 +461,28 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Admin blocca/sblocca input del client
+  socket.on('admin:block-client-input', (data: { clientId: string; block: boolean }) => {
+    const { clientId, block } = data;
+    console.log(`[Admin] ${block ? 'BLOCK' : 'UNBLOCK'} input per client: ${clientId}`);
+
+    const client = connectedClients.get(clientId);
+    if (client) {
+      // Invia comando al client
+      io.to(clientId).emit('server:block-input', block);
+      console.log(`[Server] Input ${block ? 'bloccato' : 'sbloccato'} su ${client.hostname}`);
+
+      // Log activity
+      logActivity({
+        type: 'diagnostics',
+        clientId: clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Client input ${block ? 'blocked' : 'unblocked'} by admin`
+      });
+    }
+  });
+
   // WebRTC signaling: Admin -> Client
   socket.on('admin:webrtc-signal', (data: { clientId: string; signal: any }) => {
     const client = connectedClients.get(data.clientId);
