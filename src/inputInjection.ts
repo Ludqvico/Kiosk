@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { exec, spawn, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -8,19 +8,77 @@ const execAsync = promisify(exec);
  *
  * Simula input mouse e tastiera usando API native:
  * - Mac: osascript (AppleScript)
- * - Windows: PowerShell con Add-Type C#
+ * - Windows: Persistent PowerShell process (per performance)
  * - Linux: xdotool
  */
 export class InputInjection {
   private platform: string;
   private screenWidth: number;
   private screenHeight: number;
+  private windowsPowerShell: ChildProcess | null = null;
+  private psReady: boolean = false;
 
   constructor(screenWidth: number, screenHeight: number) {
     this.platform = process.platform;
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
     console.log(`[InputInjection] Initialized for ${this.platform} (${screenWidth}x${screenHeight})`);
+
+    // Initialize persistent PowerShell on Windows
+    if (this.platform === 'win32') {
+      this.initWindowsPowerShell();
+    }
+  }
+
+  private initWindowsPowerShell() {
+    console.log('[InputInjection] Starting persistent PowerShell process...');
+
+    this.windowsPowerShell = spawn('powershell.exe', [
+      '-NoProfile',
+      '-NoLogo',
+      '-NonInteractive',
+      '-ExecutionPolicy', 'Bypass',
+      '-Command', '-'
+    ], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    // Initialize C# types once
+    const initScript = `
+Add-Type -AssemblyName System.Windows.Forms;
+Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public class WinInput {
+  [DllImport("user32.dll")]
+  public static extern bool SetCursorPos(int X, int Y);
+
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
+}
+'@;
+Write-Host "READY";
+`;
+
+    this.windowsPowerShell.stdin?.write(initScript);
+
+    this.windowsPowerShell.stdout?.on('data', (data) => {
+      const output = data.toString().trim();
+      if (output === 'READY') {
+        this.psReady = true;
+        console.log('[InputInjection] ✓ PowerShell process ready');
+      }
+    });
+
+    this.windowsPowerShell.stderr?.on('data', (data) => {
+      console.error('[InputInjection] PowerShell error:', data.toString());
+    });
+
+    this.windowsPowerShell.on('exit', (code) => {
+      console.error('[InputInjection] PowerShell process exited with code:', code);
+      this.psReady = false;
+      this.windowsPowerShell = null;
+    });
   }
 
   /**
@@ -143,50 +201,51 @@ export class InputInjection {
   // ========== WINDOWS IMPLEMENTATION (PowerShell C#) ==========
 
   private async windowsMoveMouse(x: number, y: number): Promise<void> {
-    const ps = `
-      Add-Type -AssemblyName System.Windows.Forms;
-      [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x}, ${y})
-    `;
-    await execAsync(`powershell -ExecutionPolicy Bypass -Command "${ps}"`);
+    if (!this.psReady || !this.windowsPowerShell?.stdin) {
+      console.error('[InputInjection] PowerShell not ready for mouse move');
+      return;
+    }
+
+    // Use persistent PowerShell process with SetCursorPos for fast mouse movement
+    this.windowsPowerShell.stdin.write(`[WinInput]::SetCursorPos(${x}, ${y});\n`);
   }
 
   private async windowsClick(x: number, y: number, button: 'left' | 'right' | 'middle'): Promise<void> {
-    let mouseEvent: string;
+    if (!this.psReady || !this.windowsPowerShell?.stdin) {
+      console.error('[InputInjection] PowerShell not ready for click');
+      return;
+    }
+
+    let downFlag: string;
+    let upFlag: string;
+
     if (button === 'left') {
-      mouseEvent = '0x0002, 0x0004'; // LEFTDOWN + LEFTUP
+      downFlag = '0x0002'; // LEFTDOWN
+      upFlag = '0x0004';   // LEFTUP
     } else if (button === 'right') {
-      mouseEvent = '0x0008, 0x0010'; // RIGHTDOWN + RIGHTUP
+      downFlag = '0x0008'; // RIGHTDOWN
+      upFlag = '0x0010';   // RIGHTUP
     } else {
-      mouseEvent = '0x0020, 0x0040'; // MIDDLEDOWN + MIDDLEUP
+      downFlag = '0x0020'; // MIDDLEDOWN
+      upFlag = '0x0040';   // MIDDLEUP
     }
 
-    const ps = `
-      Add-Type -AssemblyName System.Windows.Forms;
-      [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x}, ${y});
-      Start-Sleep -Milliseconds 50;
-      Add-Type @'
-        using System;
-        using System.Runtime.InteropServices;
-        public class Mouse {
-          [DllImport("user32.dll")]
-          public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
-        }
-'@;
-      [Mouse]::mouse_event(${mouseEvent}, 0, 0, 0, [UIntPtr]::Zero)
-    `;
-
-    try {
-      const result = await execAsync(`powershell -ExecutionPolicy Bypass -Command "${ps}"`);
-      if (result.stderr) {
-        console.error('[InputInjection] PowerShell stderr:', result.stderr);
-      }
-    } catch (error: any) {
-      console.error('[InputInjection] PowerShell error:', error.message);
-      throw error;
-    }
+    // Use persistent PowerShell process - move mouse, then click
+    const clickScript = `
+[WinInput]::SetCursorPos(${x}, ${y});
+Start-Sleep -Milliseconds 10;
+[WinInput]::mouse_event(${downFlag}, 0, 0, 0, [UIntPtr]::Zero);
+[WinInput]::mouse_event(${upFlag}, 0, 0, 0, [UIntPtr]::Zero);
+`;
+    this.windowsPowerShell.stdin.write(clickScript);
   }
 
   private async windowsKeyPress(key: string, modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }): Promise<void> {
+    if (!this.psReady || !this.windowsPowerShell?.stdin) {
+      console.error('[InputInjection] PowerShell not ready for keypress');
+      return;
+    }
+
     // Map special keys to SendKeys format
     const keyMap: Record<string, string> = {
       'Enter': '{ENTER}',
@@ -213,11 +272,11 @@ export class InputInjection {
     if (modifiers?.alt) sendKey = '%' + sendKey;
     // Note: Windows meta key (Win key) is not easily supported via SendKeys
 
-    const ps = `
-      Add-Type -AssemblyName System.Windows.Forms
-      [System.Windows.Forms.SendKeys]::SendWait("${sendKey.replace(/"/g, '\\"')}")
-    `;
-    await execAsync(`powershell -Command "${ps.replace(/"/g, '\\"')}"`);
+    // Escape double quotes for PowerShell
+    const escapedKey = sendKey.replace(/"/g, '""');
+
+    // Use persistent PowerShell process
+    this.windowsPowerShell.stdin.write(`[System.Windows.Forms.SendKeys]::SendWait("${escapedKey}");\n`);
   }
 
   // ========== LINUX IMPLEMENTATION (xdotool) ==========
@@ -256,5 +315,22 @@ export class InputInjection {
     this.screenWidth = width;
     this.screenHeight = height;
     console.log(`[InputInjection] Screen size updated: ${width}x${height}`);
+  }
+
+  /**
+   * Cleanup: chiude il processo PowerShell persistente
+   */
+  cleanup(): void {
+    if (this.windowsPowerShell) {
+      console.log('[InputInjection] Closing persistent PowerShell process...');
+      try {
+        this.windowsPowerShell.stdin?.write('exit\n');
+        this.windowsPowerShell.kill();
+      } catch (error) {
+        console.error('[InputInjection] Error closing PowerShell:', error);
+      }
+      this.windowsPowerShell = null;
+      this.psReady = false;
+    }
   }
 }

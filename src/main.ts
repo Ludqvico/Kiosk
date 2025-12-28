@@ -593,6 +593,12 @@ function stopRemoteDesktop() {
     webrtcWindow = null;
   }
 
+  // Cleanup input injection
+  if (inputInjection) {
+    inputInjection.cleanup();
+    inputInjection = null;
+  }
+
   console.log('[Main] WebRTC remote desktop stopped');
 }
 
@@ -738,6 +744,9 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   if (serverConnection) {
     serverConnection.disconnect();
+  }
+  if (inputInjection) {
+    inputInjection.cleanup();
   }
 });
 
