@@ -43,42 +43,53 @@ export class InputInjection {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    // Initialize C# types once
-    const initScript = `
-Add-Type -AssemblyName System.Windows.Forms;
-Add-Type @'
-using System;
-using System.Runtime.InteropServices;
-public class WinInput {
-  [DllImport("user32.dll")]
-  public static extern bool SetCursorPos(int X, int Y);
-
-  [DllImport("user32.dll")]
-  public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
-}
-'@;
-Write-Host "READY";
-`;
-
-    this.windowsPowerShell.stdin?.write(initScript);
+    // Buffer for collecting output
+    let stdoutBuffer = '';
+    let stderrBuffer = '';
 
     this.windowsPowerShell.stdout?.on('data', (data) => {
-      const output = data.toString().trim();
-      if (output === 'READY') {
+      const output = data.toString();
+      stdoutBuffer += output;
+      console.log('[InputInjection] PowerShell stdout:', output.trim());
+
+      if (output.includes('READY')) {
         this.psReady = true;
         console.log('[InputInjection] ✓ PowerShell process ready');
       }
     });
 
     this.windowsPowerShell.stderr?.on('data', (data) => {
-      console.error('[InputInjection] PowerShell error:', data.toString());
+      const error = data.toString();
+      stderrBuffer += error;
+      console.error('[InputInjection] PowerShell stderr:', error.trim());
     });
 
     this.windowsPowerShell.on('exit', (code) => {
       console.error('[InputInjection] PowerShell process exited with code:', code);
+      if (stderrBuffer) {
+        console.error('[InputInjection] Full stderr output:', stderrBuffer);
+      }
       this.psReady = false;
       this.windowsPowerShell = null;
     });
+
+    // Initialize C# types once - use simpler approach with direct command
+    console.log('[InputInjection] Sending init script...');
+    const initScript = `Add-Type -AssemblyName System.Windows.Forms
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class WinInput {
+  [DllImport("user32.dll")]
+  public static extern bool SetCursorPos(int X, int Y);
+  [DllImport("user32.dll")]
+  public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
+}
+"@
+Write-Output "READY"
+`;
+
+    this.windowsPowerShell.stdin?.write(initScript + '\n');
   }
 
   /**
