@@ -114,7 +114,7 @@ export class ServerConnection {
 
     // Remote control: start screen capture
     this.socket.on('server:start-screen-capture', () => {
-      console.log('[ServerConnection] 🖥️ Ricevuto comando START SCREEN CAPTURE dal server');
+      console.log('[ServerConnection] Ricevuto comando START SCREEN CAPTURE dal server');
       if (this.onStartScreenCaptureCallback) {
         this.onStartScreenCaptureCallback();
       }
@@ -122,7 +122,7 @@ export class ServerConnection {
 
     // Remote control: stop screen capture
     this.socket.on('server:stop-screen-capture', () => {
-      console.log('[ServerConnection] 🖥️ Ricevuto comando STOP SCREEN CAPTURE dal server');
+      console.log('[ServerConnection] Ricevuto comando STOP SCREEN CAPTURE dal server');
       if (this.onStopScreenCaptureCallback) {
         this.onStopScreenCaptureCallback();
       }
@@ -130,7 +130,7 @@ export class ServerConnection {
 
     // Remote control: receive input commands
     this.socket.on('server:remote-input', (data: { type: string; data: any }) => {
-      console.log(`[ServerConnection] ⌨️ Ricevuto input remoto: ${data.type}`);
+      console.log(`[ServerConnection] Ricevuto input remoto: ${data.type}`);
       if (this.onRemoteInputCallback) {
         this.onRemoteInputCallback(data.type, data.data);
       }

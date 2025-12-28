@@ -100,7 +100,7 @@ export class RemoteControl {
       // Log ogni 30 frame (~3 secondi a 10 FPS) per non spammare
       if (this.frameCount % 30 === 0) {
         const kb = Math.round(dataUrl.length / 1024);
-        console.log(`[RemoteControl] 📸 Frame #${this.frameCount}: ${size.width}x${size.height} (${kb} KB)`);
+        console.log(`[RemoteControl] Frame #${this.frameCount}: ${size.width}x${size.height} (${kb} KB)`);
       }
 
       if (this.onFrameCallback) {
@@ -163,26 +163,30 @@ export class RemoteControl {
 
   private execPowerShellInput(command: string, ...args: any[]): boolean {
     try {
-      const scriptPath = path.join(__dirname, '..', 'native', 'win', 'SimulateInput.ps1');
+      // __dirname = dist/, quindi lo script è in dist/native/win/SimulateInput.ps1
+      const scriptPath = path.join(__dirname, 'native', 'win', 'SimulateInput.ps1');
       const psArgs = args.map(a => `"${a}"`).join(' ');
       const fullCommand = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${command} ${psArgs}`;
 
-      console.log(`[RemoteControl] 🎯 Executing: ${command} ${args.join(', ')}`);
+      console.log(`[RemoteControl] Executing: ${command} ${args.join(', ')}`);
+      console.log(`[RemoteControl] Script path: ${scriptPath}`);
 
       const result = execSync(fullCommand, {
         encoding: 'utf8',
-        timeout: 1000,
+        timeout: 2000,
         windowsHide: true
       }).trim();
 
+      console.log(`[RemoteControl] PowerShell result: ${result}`);
+
       const success = result === 'OK';
       if (!success) {
-        console.error(`[RemoteControl] ❌ PowerShell failed: ${result}`);
+        console.error(`[RemoteControl] ERROR: PowerShell returned: ${result}`);
       }
 
       return success;
     } catch (error) {
-      console.error('[RemoteControl] ❌ PowerShell error:', error);
+      console.error('[RemoteControl] ERROR executing PowerShell:', error);
       return false;
     }
   }
@@ -193,7 +197,7 @@ export class RemoteControl {
     const x = Math.round(data.x * this.screenWidth);
     const y = Math.round(data.y * this.screenHeight);
 
-    console.log(`[RemoteControl] 🖱️  MouseMove: ${data.x.toFixed(2)},${data.y.toFixed(2)} -> ${x},${y} (screen: ${this.screenWidth}x${this.screenHeight})`);
+    console.log(`[RemoteControl] MouseMove: ${data.x.toFixed(2)},${data.y.toFixed(2)} -> ${x},${y} (screen: ${this.screenWidth}x${this.screenHeight})`);
 
     if (this.platform === 'win32') {
       this.execPowerShellInput('mousemove', x, y);
@@ -207,7 +211,7 @@ export class RemoteControl {
     const y = Math.round(data.y * this.screenHeight);
     const button = data.button === 'right' ? 'right' : 'left';
 
-    console.log(`[RemoteControl] 🖱️  MouseDown: ${button} at ${x},${y}`);
+    console.log(`[RemoteControl] MouseDown: ${button} at ${x},${y}`);
 
     if (this.platform === 'win32') {
       this.execPowerShellInput('mousemove', x, y);
@@ -236,7 +240,7 @@ export class RemoteControl {
     const y = Math.round(data.y * this.screenHeight);
     const button = data.button === 'right' ? 'right' : 'left';
 
-    console.log(`[RemoteControl] 🖱️  Click: ${button} at ${x},${y}`);
+    console.log(`[RemoteControl] Click: ${button} at ${x},${y}`);
 
     if (this.platform === 'win32') {
       this.execPowerShellInput('click', x, y, button);
