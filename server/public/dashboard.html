@@ -2034,10 +2034,12 @@
         // Unified Diagnostics listener
         socket.on('admin:diagnostics-response', (data) => {
             console.log('Diagnostics received:', data);
-            console.log('Data keys:', Object.keys(data));
-            console.log('ClientId:', data.clientId);
-            console.log('Stats:', data.stats);
-            const { clientId, stats } = data;
+
+            // Map data.diagnostics to stats for compatibility with existing code
+            const clientId = data.clientId;
+            const stats = data.diagnostics;
+
+            console.log('Processed stats:', stats);
 
             // Only update if it's for the current diagnostics client
             if (currentDiagnosticsClientId === clientId) {
