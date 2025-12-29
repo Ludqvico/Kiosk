@@ -59,6 +59,8 @@ function enableFirewallBlock() {
   const execCommand = (index: number) => {
     if (index >= commands.length) {
       console.log('[Firewall] All commands executed - Block ENABLED');
+      // After firewall is enabled, show blocked page
+      showBlockedPageInBrowser();
       return;
     }
 
@@ -73,6 +75,44 @@ function enableFirewallBlock() {
   };
 
   execCommand(0);
+}
+
+// Kill all browsers and open blocked page
+function showBlockedPageInBrowser() {
+  console.log('[Browser] Killing browsers and showing blocked page...');
+
+  // Path to blocked.html
+  const blockedPagePath = path.join(__dirname, '../renderer/blocked.html').replace(/\\/g, '/');
+  const fileUrl = `file:///${blockedPagePath}`;
+
+  // Kill all major browsers
+  const killCommands = [
+    'taskkill /F /IM chrome.exe 2>nul',
+    'taskkill /F /IM msedge.exe 2>nul',
+    'taskkill /F /IM firefox.exe 2>nul',
+    'taskkill /F /IM opera.exe 2>nul',
+    'taskkill /F /IM brave.exe 2>nul',
+  ];
+
+  // Execute all kill commands, then open page
+  const killCmd = killCommands.join(' & ');
+
+  exec(killCmd, (error) => {
+    // Ignore errors (browser might not be running)
+    console.log('[Browser] Browsers killed, opening blocked page...');
+
+    // Wait a moment for browsers to close, then open blocked page
+    setTimeout(() => {
+      // Open blocked page in default browser
+      exec(`start "" "${fileUrl}"`, (err) => {
+        if (err) {
+          console.error('[Browser] Error opening blocked page:', err.message);
+        } else {
+          console.log('[Browser] Blocked page opened successfully');
+        }
+      });
+    }, 500);
+  });
 }
 
 function disableFirewallBlock() {
