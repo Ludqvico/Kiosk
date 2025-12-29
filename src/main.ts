@@ -73,6 +73,7 @@ function createWindow() {
     e.preventDefault();
   });
 
+
   // Previeni navigazione (Internet Block Logic)
   mainWindow.webContents.on('will-navigate', (e, url) => {
     if (isInternetBlocked) {
@@ -83,16 +84,34 @@ function createWindow() {
       e.preventDefault();
       mainWindow?.loadFile(path.join(__dirname, '../renderer/blocked.html'));
     } else {
-      // Allow navigation if not blocked? 
-      // Original code had e.preventDefault() unconditionally.
-      // User implied "option blocks internet", meaning default allows it?
-      // Or maybe default blocks it and this is an "Extra" block? 
-      // But "qualora l'utente client provasse ad andare su un qualsiasi sito web" implies they CAN try.
-      // If I keep e.preventDefault(), they can't try. 
-      // So I must allow it here.
+      // Allow navigation if not blocked
       console.log('[Main] Navigation Allowed:', url);
     }
   });
+
+  // ALCATRAZ MODE: Block ALL network requests when internet is blocked
+  mainWindow.webContents.session.webRequest.onBeforeRequest(
+    { urls: ['http://*/*', 'https://*/*'] },
+    (details, callback) => {
+      if (isInternetBlocked) {
+        // Allow only local files (file://)
+        if (details.url.startsWith('file://')) {
+          callback({ cancel: false });
+        } else {
+          console.log('[Main] Network request BLOCKED:', details.url);
+          callback({ cancel: true });
+
+          // If this is a main frame navigation, redirect to blocked page
+          if (details.resourceType === 'mainFrame') {
+            mainWindow?.loadFile(path.join(__dirname, '../renderer/blocked.html'));
+          }
+        }
+      } else {
+        // Allow all requests when not blocked
+        callback({ cancel: false });
+      }
+    }
+  );
 
   // Previeni nuove finestre
   mainWindow.webContents.setWindowOpenHandler(() => {
@@ -106,6 +125,7 @@ function createWindow() {
   } else {
     console.log('[Main] Modalità CLIENT-SERVER - In attesa comandi dal server (client nascosto)');
   }
+
 
   registerSecretExit();
 }
