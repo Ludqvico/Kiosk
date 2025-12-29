@@ -669,6 +669,32 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Get Disks Info
+  socket.on('admin:fs-get-disks', (data: { clientId: string }) => {
+    const { clientId } = data;
+    console.log(`[Admin] File Explorer: Get Disks on client ${clientId}`);
+    io.to(clientId).emit('server:fs-get-disks', { requestId: socket.id });
+  });
+
+  socket.on('client:fs-get-disks-response', (data: { requestId: string; disks: any[]; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-get-disks-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-get-disks-response', { disks: data.disks });
+    }
+  });
+
+  // Rename file/folder
+  socket.on('admin:fs-rename', (data: { clientId: string; oldPath: string; newPath: string }) => {
+    const { clientId, oldPath, newPath } = data;
+    console.log(`[Admin] File Explorer: Rename ${oldPath} to ${newPath} on client ${clientId}`);
+    io.to(clientId).emit('server:fs-rename', { oldPath, newPath, requestId: socket.id });
+  });
+
+  socket.on('client:fs-rename-response', (data: { requestId: string; error?: string }) => {
+    io.to(data.requestId).emit('admin:fs-rename-response', data);
+  });
+
   // Disconnessione
   socket.on('disconnect', () => {
     const client = connectedClients.get(socket.id);

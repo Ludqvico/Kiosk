@@ -316,6 +316,18 @@ export class ServerConnection {
     }
   }
 
+  sendFsGetDisksResponse(requestId: string, disks?: any[], error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-get-disks-response', { requestId, disks, error });
+    }
+  }
+
+  sendFsRenameResponse(requestId: string, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-rename-response', { requestId, error });
+    }
+  }
+
   // Allow main.ts to register custom socket event listeners
   on(event: string, callback: (...args: any[]) => void) {
     if (this.socket) {

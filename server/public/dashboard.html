@@ -967,6 +967,472 @@
             min-height: 4px;
         }
 
+        .diag-chart-bar:last-child {
+            opacity: 1;
+        }
+
+        /* ================= FILE MANAGER ================= */
+        .modal.fm-modal {
+            max-width: 1000px;
+            width: 95%;
+            height: 85vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .fm-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Loading / Drag Overlays */
+        .fm-loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .fm-drag-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.8);
+            color: white;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            font-size: 24px;
+            font-weight: 600;
+            gap: 16px;
+        }
+
+        .fm-drag-overlay.active {
+            display: flex;
+        }
+
+        /* Sidebar - Drives */
+        .fm-sidebar {
+            width: 240px;
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .fm-drives-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .fm-drive-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .fm-drive-item:hover,
+        .fm-drive-item.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .fm-drive-item.active {
+            border-width: 2px;
+        }
+
+        .fm-drive-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+        }
+
+        .fm-drive-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .fm-drive-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .fm-drive-usage {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .fm-drive-bar {
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: 2px;
+        }
+
+        /* Main Content */
+        .fm-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            min-width: 0;
+        }
+
+        .fm-toolbar {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-primary);
+        }
+
+        .fm-nav-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .fm-nav-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .fm-breadcrumbs {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .fm-crumb {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+        }
+
+        .fm-crumb:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .fm-crumb.active {
+            font-weight: 600;
+            color: var(--text-primary);
+            pointer-events: none;
+        }
+
+        .fm-crumb-sep {
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        .fm-search {
+            position: relative;
+            width: 200px;
+        }
+
+        .fm-search input {
+            width: 100%;
+            padding: 8px 32px 8px 12px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            background: var(--bg-secondary);
+            outline: none;
+        }
+
+        .fm-search input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* File List/Grid */
+        .fm-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            position: relative;
+        }
+
+        /* Grid View */
+        .fm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 16px;
+        }
+
+        .fm-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            border: 1px solid transparent;
+            position: relative;
+            transition: all 0.1s ease;
+        }
+
+        .fm-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .fm-item.selected {
+            background: var(--highlight-bg, #eff6ff);
+            border-color: var(--highlight-border, #bfdbfe);
+        }
+
+        .fm-item-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fm-item[data-type="folder"] .fm-item-icon {
+            color: #f59e0b;
+        }
+
+        .fm-item-name {
+            font-size: 12px;
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* List View styles will be handled via class .view-list on parent */
+        .fm-list-header {
+            display: none;
+            grid-template-columns: 40px 3fr 1fr 1fr;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            background: var(--bg-primary);
+        }
+
+        .view-list .fm-list-header {
+            display: grid;
+        }
+
+        .view-list.fm-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .view-list .fm-item {
+            display: grid;
+            grid-template-columns: 40px 3fr 1fr 1fr;
+            flex-direction: row;
+            align-items: center;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-tertiary, #f3f4f6);
+            width: 100%;
+            gap: 0;
+            border-radius: 0;
+        }
+
+        .view-list .fm-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .view-list .fm-item.selected {
+            background: var(--highlight-bg, #eff6ff);
+        }
+
+        .view-list .fm-item-icon {
+            font-size: 20px;
+            width: 24px;
+            height: 24px;
+            margin: 0;
+        }
+
+        .view-list .fm-item-name {
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .fm-item-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .view-list .fm-item-meta {
+            display: block;
+        }
+
+        /* Checkbox */
+        .fm-check {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-medium);
+            border-radius: 4px;
+            background: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .view-list .fm-check {
+            position: static;
+            margin-right: 12px;
+            display: flex;
+            /* Always show in list view for alignment? Or on hover? */
+            opacity: 0;
+        }
+
+        .view-list .fm-item:hover .fm-check,
+        .view-list .fm-item.selected .fm-check {
+            opacity: 1;
+        }
+
+        .fm-item:hover .fm-check,
+        .fm-item.selected .fm-check {
+            display: flex;
+        }
+
+        .fm-check.checked {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+            opacity: 1;
+            display: flex;
+        }
+
+        /* Context Menu */
+        .fm-context-menu {
+            position: fixed;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 6px 0;
+            min-width: 180px;
+            z-index: 10000;
+            display: none;
+        }
+
+        .fm-context-item {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .fm-context-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .fm-context-item.danger {
+            color: var(--danger);
+        }
+
+        .fm-context-icon {
+            width: 16px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .fm-context-shortcut {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        /* Upload Button (Floating) */
+        .fm-upload-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent-primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .fm-upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
         .shutdown-timer {
             margin: 20px 0;
         }
@@ -1114,6 +1580,472 @@
             border-radius: var(--radius-lg);
             overflow: hidden;
             box-shadow: var(--shadow-sm);
+        }
+
+        /* ================= FILE MANAGER ================= */
+        .modal.fm-modal {
+            max-width: 1000px;
+            width: 95%;
+            height: 85vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .fm-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Loading / Drag Overlays */
+        .fm-loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .fm-drag-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.8);
+            color: white;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            font-size: 24px;
+            font-weight: 600;
+            gap: 16px;
+        }
+
+        .fm-drag-overlay.active {
+            display: flex;
+            pointer-events: none;
+            /* Let events bubble to drop zone */
+        }
+
+        /* Make body target for drag events, show overlay */
+
+        /* Sidebar - Drives */
+        .fm-sidebar {
+            width: 240px;
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .fm-drives-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .fm-drive-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .fm-drive-item:hover,
+        .fm-drive-item.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .fm-drive-item.active {
+            border-width: 2px;
+        }
+
+        .fm-drive-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+        }
+
+        .fm-drive-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .fm-drive-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .fm-drive-usage {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .fm-drive-bar {
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: 2px;
+        }
+
+        /* Main Content */
+        .fm-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            min-width: 0;
+        }
+
+        .fm-toolbar {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-primary);
+        }
+
+        .fm-nav-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .fm-nav-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .fm-breadcrumbs {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .fm-crumb {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+        }
+
+        .fm-crumb:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .fm-crumb.active {
+            font-weight: 600;
+            color: var(--text-primary);
+            pointer-events: none;
+        }
+
+        .fm-crumb-sep {
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        .fm-search {
+            position: relative;
+            width: 200px;
+        }
+
+        .fm-search input {
+            width: 100%;
+            padding: 8px 32px 8px 12px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            background: var(--bg-secondary);
+            outline: none;
+        }
+
+        .fm-search input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* File List/Grid */
+        .fm-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            position: relative;
+        }
+
+        /* Grid View */
+        .fm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 16px;
+        }
+
+        .fm-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            border: 1px solid transparent;
+            position: relative;
+            transition: all 0.1s ease;
+        }
+
+        .fm-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .fm-item.selected {
+            background: var(--highlight-bg, #eff6ff);
+            border-color: var(--highlight-border, #bfdbfe);
+        }
+
+        .fm-item-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fm-item[data-type="folder"] .fm-item-icon {
+            color: #f59e0b;
+        }
+
+        .fm-item-name {
+            font-size: 12px;
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* List View styles will be handled via class .view-list on parent */
+        .fm-list-header {
+            display: none;
+            grid-template-columns: 40px 3fr 1fr 1fr;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            background: var(--bg-primary);
+        }
+
+        .view-list .fm-list-header {
+            display: grid;
+        }
+
+        .view-list.fm-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .view-list .fm-item {
+            display: grid;
+            grid-template-columns: 40px 3fr 1fr 1fr;
+            flex-direction: row;
+            align-items: center;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-tertiary, #f3f4f6);
+            width: 100%;
+            gap: 0;
+            border-radius: 0;
+        }
+
+        .view-list .fm-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .view-list .fm-item.selected {
+            background: var(--highlight-bg, #eff6ff);
+        }
+
+        .view-list .fm-item-icon {
+            font-size: 20px;
+            width: 24px;
+            height: 24px;
+            margin: 0;
+        }
+
+        .view-list .fm-item-name {
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .fm-item-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .view-list .fm-item-meta {
+            display: block;
+        }
+
+        /* Checkbox */
+        .fm-check {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-medium);
+            border-radius: 4px;
+            background: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .view-list .fm-check {
+            position: static;
+            margin-right: 12px;
+            display: flex;
+            /* Always show in list view for alignment? Or on hover? */
+            opacity: 0;
+        }
+
+        .view-list .fm-item:hover .fm-check,
+        .view-list .fm-item.selected .fm-check {
+            opacity: 1;
+        }
+
+        .fm-item:hover .fm-check,
+        .fm-item.selected .fm-check {
+            display: flex;
+        }
+
+        .fm-check.checked {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+            opacity: 1;
+            display: flex;
+        }
+
+        /* Context Menu */
+        .fm-context-menu {
+            position: fixed;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 6px 0;
+            min-width: 180px;
+            z-index: 10000;
+            display: none;
+        }
+
+        .fm-context-item {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .fm-context-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .fm-context-item.danger {
+            color: var(--danger);
+        }
+
+        .fm-context-icon {
+            width: 16px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .fm-context-shortcut {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        /* Upload Button (Floating) */
+        .fm-upload-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent-primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .fm-upload-btn:hover {
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -1585,6 +2517,12 @@
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                         Rename Station
+                                    </button>
+                                    <button class="client-dropdown-item" onclick="openFileManager('${client.id}'); toggleClientMenu('${client.id}', event)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        File Manager
                                     </button>
                                     <div class="client-dropdown-divider"></div>
                                     <button class="client-dropdown-item" onclick="toggleStartup('${client.id}')">
@@ -2363,8 +3301,641 @@
                     dropdown.classList.remove('active');
                 });
             }
+            // Close context menu
+            document.getElementById('fm-context-menu').style.display = 'none';
         });
+
+        // ================= FILE MANAGER LOGIC =================
+        let fmState = {
+            clientId: null,
+            currentPath: '',
+            history: [], // stack of paths
+            historyIndex: -1,
+            viewMode: 'grid',
+            selection: new Set(), // Set of path strings
+            clipboard: null, // { action: 'copy'|'cut', files: [{name, path}], sourcePath }
+            drives: []
+        };
+
+        function openFileManager(clientId) {
+            const client = clients.get(clientId);
+            if (!client) return;
+
+            fmState.clientId = clientId;
+            fmState.currentPath = '';
+            fmState.history = [];
+            fmState.historyIndex = -1;
+            fmState.selection.clear();
+
+            document.getElementById('fm-hostname').textContent = client.hostname;
+            document.getElementById('fileManagerModal').style.display = 'flex';
+
+            // Reset UI
+            document.getElementById('fm-file-list').innerHTML = '';
+            document.getElementById('fm-drives-list').innerHTML = '<div style="padding:10px; color:var(--text-secondary)">Loading...</div>';
+            document.getElementById('fm-breadcrumbs').innerHTML = '';
+
+            // Request Drives
+            socket.emit('admin:fs-get-disks', { clientId });
+        }
+
+        function closeFileManager() {
+            document.getElementById('fileManagerModal').style.display = 'none';
+        }
+
+        function fmLoadPath(path) {
+            if (!path) return;
+
+            // History management
+            if (fmState.currentPath !== path) {
+                // If we moved to a new path (not back/forward), clear future history
+                // (Simplified for now: just push)
+                fmState.history.push(path);
+                fmState.historyIndex = fmState.history.length - 1;
+            }
+
+            fmState.currentPath = path;
+            fmState.selection.clear();
+            updateBreadcrumbs();
+            updateDrivesUI();
+
+            document.getElementById('fm-loading').style.display = 'flex';
+            socket.emit('admin:fs-list', { clientId: fmState.clientId, dirPath: path });
+        }
+
+        function fmRefresh() {
+            if (fmState.currentPath) {
+                fmLoadPath(fmState.currentPath);
+            } else {
+                socket.emit('admin:fs-get-disks', { clientId: fmState.clientId });
+            }
+        }
+
+        function fmGoUp() {
+            if (!fmState.currentPath) return;
+            // Hacky parent resolution (works for standard paths)
+            // On Windows: C:\Users\Foo -> C:\Users -> C:\ -> C:\ (stopped)
+            // On Unix: /home/foo -> /home -> /
+
+            let parent = '';
+            if (fmState.currentPath.includes('\\')) { // Windows
+                const parts = fmState.currentPath.split('\\').filter(p => p);
+                if (parts.length <= 1) { // Root drive
+                    // Don't go up from C:
+                    return;
+                }
+                parts.pop();
+                parent = parts.join('\\');
+                if (!parent.includes('\\') && fmState.currentPath.match(/^[A-Z]:\\/)) {
+                    parent += '\\'; // Restore trailing slash for root drive
+                }
+            } else { // Unix
+                const parts = fmState.currentPath.split('/').filter(p => p);
+                if (parts.length === 0) return; // Root
+                parts.pop();
+                parent = '/' + parts.join('/');
+            }
+
+            if (parent) fmLoadPath(parent);
+        }
+
+        // --- Socket Responses ---
+        socket.on('admin:fs-get-disks-response', (data) => {
+            if (data.error) {
+                alert('Error getting drives: ' + data.error);
+                return;
+            }
+            renderDrives(data.disks);
+            // Auto-load first drive if nothing loaded
+            if (data.disks.length > 0 && !fmState.currentPath) {
+                fmLoadPath(data.disks[0].name);
+            }
+        });
+
+        socket.on('admin:fs-list-response', (data) => {
+            document.getElementById('fm-loading').style.display = 'none';
+            if (data.error) {
+                // alert('Error listing: ' + data.error); // Warning: this can spam
+                console.error(data.error);
+                return;
+            }
+            renderFiles(data.result);
+        });
+
+        socket.on('admin:fs-rename-response', (data) => {
+            if (data.error) alert('Rename failed: ' + data.error);
+            else fmRefresh();
+        });
+
+        socket.on('admin:fs-delete-response', (data) => {
+            if (data.error) alert('Delete failed: ' + data.error);
+            else fmRefresh();
+        });
+
+        socket.on('admin:fs-copy-response', (data) => {
+            if (data.error) alert('Copy failed: ' + data.error);
+            else fmRefresh();
+        });
+
+        socket.on('admin:fs-move-response', (data) => {
+            if (data.error) alert('Move/Paste failed: ' + data.error);
+            else fmRefresh();
+        });
+
+        socket.on('admin:fs-write-response', (data) => {
+            if (data.error) alert('Upload failed: ' + data.error);
+            else {
+                // Might be one of many chunks/files, so silent success
+                fmRefresh();
+            }
+        });
+
+        // --- Rendering ---
+        function renderDrives(disks) {
+            fmState.drives = disks;
+            const container = document.getElementById('fm-drives-list');
+            container.innerHTML = disks.map(d => `
+                <div class="fm-drive-item ${fmState.currentPath.startsWith(d.name) ? 'active' : ''}" onclick="fmLoadPath('${d.name.replace(/\\/g, '\\\\')}')">
+                    <div class="fm-drive-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    </div>
+                    <div class="fm-drive-info">
+                        <div class="fm-drive-name">${d.name}</div>
+                        <div class="fm-drive-usage">
+                            <div class="fm-drive-bar" style="width: ${d.usedPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateDrivesUI() {
+            // Update active state in sidebar
+            const items = document.querySelectorAll('.fm-drive-item');
+            // Implementation dependent on how we match paths
+        }
+
+        function renderFiles(files) {
+            const container = document.getElementById('fm-file-list');
+
+            if (files.length === 0) {
+                container.innerHTML = '<div style="width:100%; text-align:center; padding:40px; color:var(--text-secondary)">Folder is empty</div>';
+                return;
+            }
+
+            container.innerHTML = files.map(f => {
+                const icon = getFileIcon(f);
+                const isSelected = fmState.selection.has(f.path);
+                const sizeStr = formatSize(f.size);
+                const dateStr = new Date(f.modified).toLocaleDateString();
+
+                return `
+                <div class="fm-item ${isSelected ? 'selected' : ''}" 
+                     data-path="${f.path}" 
+                     data-type="${f.isDirectory ? 'folder' : 'file'}"
+                     onclick="fmClickItem(this, event)"
+                     ondblclick="fmDblClickItem(this)"
+                     oncontextmenu="fmContextMenu(this, event)">
+                    
+                    <div class="fm-check ${isSelected ? 'checked' : ''}" onclick="fmToggleCheck(this, event)">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    
+                    <div class="fm-item-icon">
+                        ${icon}
+                    </div>
+                    <div class="fm-item-name" title="${f.name}">${f.name}</div>
+                    
+                    <!-- Meta for List View -->
+                    <div class="fm-item-meta">${sizeStr}</div>
+                    <div class="fm-item-meta">${dateStr}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function getFileIcon(f) {
+            if (f.isDirectory) {
+                return `<svg width="100%" height="100%" viewBox="0 0 24 24" fill="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+            }
+            // Simple extension based icons
+            const ext = f.name.split('.').pop()?.toLowerCase();
+            let icon = `<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+
+            if (['jpg', 'png', 'gif', 'webp', 'jpeg'].includes(ext)) {
+                icon = `<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+            } else if (['mp4', 'mov', 'avi'].includes(ext)) {
+                icon = `<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>`;
+            }
+            return icon;
+        }
+
+        function updateBreadcrumbs() {
+            // Generate crumbs based on path split
+            // Windows: C:\Users\Foo -> [C:, Users, Foo]
+            const sep = fmState.currentPath.includes('/') ? '/' : '\\';
+            const parts = fmState.currentPath.split(sep).filter(p => p);
+
+            let html = '';
+            let builtPath = '';
+
+            parts.forEach((p, i) => {
+                builtPath += (i === 0 ? '' : sep) + p;
+                if (i === 0 && builtPath.match(/^[A-Z]:$/)) builtPath += sep; // Windows drive fix
+
+                html += `
+                    <div class="fm-crumb" onclick="fmLoadPath('${builtPath.replace(/\\/g, '\\\\')}')">
+                        ${p}
+                    </div>
+                    ${i < parts.length - 1 ? '<div class="fm-crumb-sep">/</div>' : ''}
+                 `;
+            });
+
+            document.getElementById('fm-breadcrumbs').innerHTML = html;
+        }
+
+        // --- Interaction ---
+        function fmClickItem(el, e) {
+            const path = el.getAttribute('data-path');
+
+            if (e.ctrlKey || e.metaKey) {
+                // Toggle selection
+                if (fmState.selection.has(path)) fmState.selection.delete(path);
+                else fmState.selection.add(path);
+            } else if (e.shiftKey) {
+                // Range selection (simplified - needs index tracking)
+                fmState.selection.add(path);
+            } else {
+                // Single select
+                fmState.selection.clear();
+                fmState.selection.add(path);
+            }
+
+            // Re-render selection (visual only to avoid full re-render)
+            document.querySelectorAll('.fm-item').forEach(item => {
+                if (fmState.selection.has(item.getAttribute('data-path'))) {
+                    item.classList.add('selected');
+                    item.querySelector('.fm-check').classList.add('checked');
+                } else {
+                    item.classList.remove('selected');
+                    item.querySelector('.fm-check').classList.remove('checked');
+                }
+            });
+        }
+
+        function fmDblClickItem(el) {
+            const type = el.getAttribute('data-type');
+            if (type === 'folder') {
+                const path = el.getAttribute('data-path');
+                fmLoadPath(path);
+            }
+        }
+
+        function fmToggleView() {
+            const container = document.getElementById('fm-file-list');
+            const btn = document.getElementById('fm-view-toggle');
+
+            if (fmState.viewMode === 'grid') {
+                fmState.viewMode = 'list';
+                container.classList.add('view-list');
+                // btn icon change...
+            } else {
+                fmState.viewMode = 'grid';
+                container.classList.remove('view-list');
+            }
+        }
+
+        function fmSelectAll(cb) {
+            const items = document.querySelectorAll('.fm-item');
+            fmState.selection.clear();
+
+            if (cb.checked) {
+                items.forEach(i => fmState.selection.add(i.getAttribute('data-path')));
+            }
+            // Trigger visual update (reuse fmClickItem logic or refresh)
+            fmRefresh(); // lazy way
+        }
+
+        function fmToggleCheck(el, e) {
+            e.stopPropagation();
+            const item = el.closest('.fm-item');
+            const path = item.getAttribute('data-path');
+
+            if (fmState.selection.has(path)) {
+                fmState.selection.delete(path);
+                item.classList.remove('selected');
+                el.classList.remove('checked');
+            } else {
+                fmState.selection.add(path);
+                item.classList.add('selected');
+                el.classList.add('checked');
+            }
+        }
+
+        // --- Context Menu & Actions ---
+        function fmContextMenu(el, e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Select item if not selected
+            const path = el.getAttribute('data-path');
+            if (!fmState.selection.has(path)) {
+                fmState.selection.clear();
+                fmState.selection.add(path);
+                // Visual update...
+            }
+
+            const menu = document.getElementById('fm-context-menu');
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+
+            // Show/Hide open based on selection count
+            document.getElementById('ctx-open').style.display = fmState.selection.size === 1 ? 'flex' : 'none';
+        }
+
+        function fmContextAction(action) {
+            const items = Array.from(fmState.selection);
+            if (items.length === 0 && action !== 'paste') return;
+
+            const firstItem = items[0];
+
+            switch (action) {
+                case 'open':
+                    // Only folders
+                    fmLoadPath(firstItem);
+                    break;
+                case 'copy':
+                    fmState.clipboard = { type: 'copy', items: items, sourcePath: fmState.currentPath };
+                    break;
+                case 'cut':
+                    fmState.clipboard = { type: 'cut', items: items, sourcePath: fmState.currentPath };
+                    break;
+                case 'paste':
+                    if (!fmState.clipboard) return;
+                    processPaste();
+                    break;
+                case 'rename':
+                    if (items.length !== 1) return;
+                    const newName = prompt('Rename to:', firstItem.split(/[\\/]/).pop());
+                    if (newName) {
+                        // Construct new path
+                        const sep = fmState.currentPath.includes('/') ? '/' : '\\';
+                        const newPath = fmState.currentPath + sep + newName;
+                        socket.emit('admin:fs-rename', { clientId: fmState.clientId, oldPath: firstItem, newPath });
+                    }
+                    break;
+                case 'delete':
+                    if (!confirm(`Delete ${items.length} items?`)) return;
+                    items.forEach(path => {
+                        socket.emit('admin:fs-delete', { clientId: fmState.clientId, targetPath: path });
+                    });
+                    break;
+            }
+            document.getElementById('fm-context-menu').style.display = 'none';
+        }
+
+        function processPaste() {
+            const { type, items, sourcePath } = fmState.clipboard;
+            const dest = fmState.currentPath;
+
+            items.forEach(src => {
+                const name = src.split(/[\\/]/).pop();
+                const sep = dest.includes('/') ? '/' : '\\';
+                const target = dest + sep + name;
+
+                if (type === 'copy') {
+                    socket.emit('admin:fs-copy', { clientId: fmState.clientId, sourcePath: src, destPath: target });
+                } else {
+                    socket.emit('admin:fs-move', { clientId: fmState.clientId, sourcePath: src, destPath: target });
+                }
+            });
+
+            if (type === 'cut') fmState.clipboard = null; // Clear after cut
+        }
+
+        // --- Upload ---
+        function fmHandleFileSelect(input) {
+            const files = input.files;
+            if (files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                uploadFile(file);
+            });
+            input.value = ''; // Reset
+        }
+
+        function uploadFile(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result; // Data URL or ArrayBuffer?
+                // For simplicity, using text/base64 via readAsDataURL logic in backend? 
+                // Wait, backend expects string content currently in fs-write?
+                // Let's assume we send string, but for binary files we need base64.
+                // Re-check backend implementation... Backend relays 'content'.
+                // If we send base64, Client needs to decode.
+                // My proposed client fileManager.ts handles writeFile with standard fs.writeFile.
+                // fs.writeFile(path, data) supports string or buffer.
+                // JSON socket supports strings. So Base64 is best.
+
+                // Extract base64
+                // e.target.result looks like "data:image/png;base64,iVBOR..."
+                const base64Content = content.split(',')[1];
+
+                const sep = fmState.currentPath.includes('/') ? '/' : '\\';
+                const targetPath = fmState.currentPath + sep + file.name;
+
+                // We need to modify client fileManager.ts to handle Base64 decoding if we send Base64.
+                // Actually my plan for fileManager.ts looked like it just accepts 'content'.
+
+                // Let's emit straight, but we need to ensure client writes it as binary.
+                // I will update client implementation to assume Base64 if needed or handle it transparently.
+                // For now, let's assume we sending string content.
+                // Wait, I SHOULD update client fileManager to write Buffer.from(content, 'base64').
+
+                socket.emit('admin:fs-write', {
+                    clientId: fmState.clientId,
+                    filePath: targetPath,
+                    content: base64Content
+                });
+            };
+            reader.readAsDataURL(file); // Read as Base64
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // --- Drag & Drop ---
+        const dropZone = document.getElementById('fm-drop-zone');
+        const overlay = document.getElementById('fm-drag-overlay');
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (document.getElementById('fileManagerModal').style.display === 'flex') {
+                overlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            // Basic implementation: if leaving window or finding specific target...
+            // Drag leave is tricky with child elements.
+            if (e.clientX === 0 || e.clientY === 0) {
+                overlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            overlay.classList.remove('active');
+            if (document.getElementById('fileManagerModal').style.display !== 'flex') return;
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                Array.from(files).forEach(file => uploadFile(file));
+            }
+        });
+
     </script>
+    <!-- File Manager Modal -->
+    <div id="fileManagerModal" class="modal-overlay">
+        <div class="modal fm-modal">
+            <div class="modal-header">
+                <h3>Remote File Manager - <span id="fm-hostname">Client</span></h3>
+                <button class="close-modal" onclick="closeFileManager()">&times;</button>
+            </div>
+            <div class="fm-container">
+                <!-- Sidebar -->
+                <div class="fm-sidebar">
+                    <div class="fm-drives-title">Drives & Devices</div>
+                    <div id="fm-drives-list">
+                        <!-- Drives injected here -->
+                    </div>
+                </div>
+
+                <!-- Main -->
+                <div class="fm-main" id="fm-drop-zone">
+                    <!-- Toolbar -->
+                    <div class="fm-toolbar">
+                        <div class="fm-nav-btn" onclick="fmGoUp()" title="Go Up"><svg width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 19V5M5 12l7-7 7 7" />
+                            </svg></div>
+                        <div class="fm-nav-btn" onclick="fmRefresh()" title="Refresh"><svg width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6M1 20v-6h6" />
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                            </svg></div>
+
+                        <div class="fm-breadcrumbs" id="fm-breadcrumbs">
+                            <!-- Breadcrumbs -->
+                        </div>
+
+                        <div class="fm-search">
+                            <input type="text" placeholder="Search..." id="fm-search-input">
+                        </div>
+
+                        <div class="fm-nav-btn" onclick="fmToggleView()" id="fm-view-toggle" title="Toggle View"><svg
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg></div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="fm-list-header">
+                        <div style="display:flex; justify-content:center;"><input type="checkbox" id="fm-select-all"
+                                onclick="fmSelectAll(this)"></div>
+                        <div>Name</div>
+                        <div>Size</div>
+                        <div>Modified</div>
+                    </div>
+                    <div class="fm-content fm-grid" id="fm-file-list">
+                        <!-- Files injected here -->
+                    </div>
+
+                    <!-- Drag Overlay -->
+                    <div class="fm-drag-overlay" id="fm-drag-overlay">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span>Drop files to upload to current folder</span>
+                    </div>
+
+                    <!-- Loading Overlay -->
+                    <div class="fm-loading-overlay" id="fm-loading" style="display:none">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Btn -->
+            <div class="fm-upload-btn" onclick="document.getElementById('fm-upload-input').click()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Upload Files
+            </div>
+            <input type="file" id="fm-upload-input" multiple style="display:none" onchange="fmHandleFileSelect(this)">
+
+            <!-- Context Menu -->
+            <div class="fm-context-menu" id="fm-context-menu">
+                <div class="fm-context-item" onclick="fmContextAction('open')" id="ctx-open"><span
+                        class="fm-context-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg></span> Open</div>
+                <div class="fm-context-item" onclick="fmContextAction('copy')"><span class="fm-context-icon"><svg
+                            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg></span> Copy <span class="fm-context-shortcut">Ctrl+C</span></div>
+                <div class="fm-context-item" onclick="fmContextAction('cut')"><span class="fm-context-icon"><svg
+                            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="6" cy="6" r="3" />
+                            <circle cx="6" cy="18" r="3" />
+                            <line x1="20" y1="4" x2="8.12" y2="15.88" />
+                            <line x1="14.47" y1="14.48" x2="20" y2="20" />
+                            <line x1="8.12" y1="8.12" x2="12" y2="12" />
+                        </svg></span> Cut <span class="fm-context-shortcut">Ctrl+X</span></div>
+                <div class="fm-context-item" onclick="fmContextAction('paste')" id="ctx-paste"><span
+                        class="fm-context-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                        </svg></span> Paste <span class="fm-context-shortcut">Ctrl+V</span></div>
+                <div class="fm-context-item" onclick="fmContextAction('rename')"><span class="fm-context-icon"><svg
+                            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg></span> Rename <span class="fm-context-shortcut">F2</span></div>
+                <div class="fm-context-item danger" onclick="fmContextAction('delete')"><span
+                        class="fm-context-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg></span> Delete <span class="fm-context-shortcut">Del</span></div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -5,6 +5,7 @@ import * as fsSync from 'fs';
 import * as dotenv from 'dotenv';
 import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
+import { FileManager } from './fileManager';
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
@@ -321,37 +322,33 @@ function connectToServer() {
   serverConnection.on('server:fs-list', async (data: { dirPath: string; requestId: string }) => {
     console.log('[Main] File Explorer: List directory', data.dirPath);
     try {
-      const entries = await fs.readdir(data.dirPath, { withFileTypes: true });
-      const result = await Promise.all(
-        entries.map(async (entry) => {
-          const fullPath = path.join(data.dirPath, entry.name);
-          try {
-            const stats = await fs.stat(fullPath);
-            return {
-              name: entry.name,
-              isDirectory: entry.isDirectory(),
-              isFile: entry.isFile(),
-              size: stats.size,
-              modified: stats.mtime,
-              path: fullPath
-            };
-          } catch (error) {
-            return {
-              name: entry.name,
-              isDirectory: entry.isDirectory(),
-              isFile: entry.isFile(),
-              size: 0,
-              modified: new Date(),
-              path: fullPath,
-              error: 'Cannot access'
-            };
-          }
-        })
-      );
+      const result = await FileManager.listDir(data.dirPath);
       serverConnection.sendFsListResponse(data.requestId, result);
     } catch (error: any) {
       console.error('[Main] Error listing directory:', error.message);
       serverConnection.sendFsListResponse(data.requestId, undefined, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-get-disks', async (data: { requestId: string }) => {
+    console.log('[Main] File Explorer: Get Disks');
+    try {
+      const disks = await FileManager.getDisks();
+      serverConnection.sendFsGetDisksResponse(data.requestId, disks);
+    } catch (error: any) {
+      console.error('[Main] Error getting disks:', error.message);
+      serverConnection.sendFsGetDisksResponse(data.requestId, undefined, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-rename', async (data: { oldPath: string; newPath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Rename', data.oldPath, 'to', data.newPath);
+    try {
+      await FileManager.rename(data.oldPath, data.newPath);
+      serverConnection.sendFsRenameResponse(data.requestId);
+    } catch (error: any) {
+      console.error('[Main] Error renaming:', error.message);
+      serverConnection.sendFsRenameResponse(data.requestId, error.message);
     }
   });
 
