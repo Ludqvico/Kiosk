@@ -1675,6 +1675,8 @@
         socket.on('connect', () => {
             updateConnectionStatus(true);
             console.log('[Dashboard] Connected to server');
+            // Request the list of connected clients
+            socket.emit('admin:request-clients-list');
         });
 
         socket.on('disconnect', () => {
