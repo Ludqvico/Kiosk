@@ -637,6 +637,12 @@
                     video.srcObject = event.streams[0];
                     video.classList.add('active');
                     hideLoading();
+
+                    // Live Audio: Ensure video is unchecked
+                    video.muted = false;
+                    video.volume = 1.0;
+                    video.play().catch(e => console.log('Autoplay blocked:', e));
+
                     updateStatus('connected', 'Connected');
                     isConnected = true;
                 }

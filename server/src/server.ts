@@ -264,6 +264,37 @@ app.post('/api/recordings', express.raw({ type: 'video/*', limit: '500mb' }), as
   }
 });
 
+// Delete recording
+app.delete('/api/recordings/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    // Basic sanitization
+    if (filename.includes('..') || filename.includes('/')) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
+
+    const filePath = path.join(RECORDINGS_DIR, filename);
+
+    // Check if file exists
+    try {
+      await fs.access(filePath);
+    } catch {
+      return res.status(404).json({ error: 'Recording not found' });
+    }
+
+    await fs.unlink(filePath);
+    console.log(`[Server] Deleted recording: ${filename}`);
+
+    // Notify clients to refresh gallery
+    io.emit('server:recording-deleted', { filename });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting recording:', error);
+    res.status(500).json({ error: 'Failed to delete recording' });
+  }
+});
+
 // Socket.io - Gestione connessioni
 io.on('connection', (socket) => {
   console.log(`[Socket.io] Nuova connessione: ${socket.id}`);
