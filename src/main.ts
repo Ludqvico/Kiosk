@@ -28,6 +28,81 @@ let passwordBuffer = '';
 console.log('[Config] SERVER_URL:', SERVER_URL);
 console.log('[Config] STANDALONE_MODE:', STANDALONE_MODE);
 
+// ========== ALCATRAZ MODE: Windows Firewall Control ==========
+const FIREWALL_RULE_NAME = 'KioskInternetBlock';
+
+function enableFirewallBlock() {
+  console.log('[Firewall] Enabling internet block...');
+
+  // Extract server hostname/IP from SERVER_URL
+  let serverHost = 'localhost';
+  try {
+    const url = new URL(SERVER_URL);
+    serverHost = url.hostname;
+  } catch (e) {
+    console.error('[Firewall] Failed to parse SERVER_URL, using localhost');
+  }
+
+  // PowerShell commands to:
+  // 1. Create a rule that blocks ALL outbound traffic
+  // 2. Create exception for the kiosk server
+  // 3. Create exception for localhost (for internal communication)
+  const psCommands = `
+    # Remove existing rules if any
+    Remove-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}*" -ErrorAction SilentlyContinue
+
+    # Block ALL outbound traffic
+    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_BlockAll" -Direction Outbound -Action Block -Enabled True
+
+    # Allow localhost
+    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_AllowLocalhost" -Direction Outbound -Action Allow -RemoteAddress 127.0.0.1,::1 -Enabled True
+
+    # Allow kiosk server
+    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_AllowServer" -Direction Outbound -Action Allow -RemoteAddress ${serverHost} -Enabled True
+
+    # Allow DNS (needed for hostname resolution if server uses hostname)
+    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_AllowDNS" -Direction Outbound -Action Allow -RemotePort 53 -Protocol UDP -Enabled True
+
+    Write-Host "Firewall block enabled"
+  `;
+
+  exec(`powershell -ExecutionPolicy Bypass -Command "${psCommands.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('[Firewall] Error enabling block:', error.message);
+      console.error('[Firewall] stderr:', stderr);
+    } else {
+      console.log('[Firewall] Block ENABLED successfully');
+      console.log('[Firewall] stdout:', stdout);
+    }
+  });
+}
+
+function disableFirewallBlock() {
+  console.log('[Firewall] Disabling internet block...');
+
+  const psCommand = `Remove-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}*" -ErrorAction SilentlyContinue; Write-Host "Firewall block disabled"`;
+
+  exec(`powershell -ExecutionPolicy Bypass -Command "${psCommand}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('[Firewall] Error disabling block:', error.message);
+    } else {
+      console.log('[Firewall] Block DISABLED successfully');
+    }
+  });
+}
+
+// Cleanup on exit - always remove firewall rules
+app.on('will-quit', () => {
+  if (process.platform === 'win32' && isInternetBlocked) {
+    console.log('[Firewall] Cleanup on exit...');
+    // Synchronous cleanup attempt
+    require('child_process').execSync(
+      `powershell -ExecutionPolicy Bypass -Command "Remove-NetFirewallRule -DisplayName '${FIREWALL_RULE_NAME}*' -ErrorAction SilentlyContinue"`,
+      { stdio: 'ignore' }
+    );
+  }
+});
+
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
@@ -502,11 +577,13 @@ function connectToServer() {
     console.log(`[Main] Internet Block set to: ${block}`);
     isInternetBlocked = block;
 
-    // If blocked and currently on an external specific URL, maybe redirect immediately?
-    // For now, next navigation will be caught.
-    if (block && mainWindow) {
-      // Optional: Force reload or check current URL?
-      // We'll leave it to next interaction.
+    // ALCATRAZ MODE: Use Windows Firewall to block ALL internet traffic
+    if (process.platform === 'win32') {
+      if (block) {
+        enableFirewallBlock();
+      } else {
+        disableFirewallBlock();
+      }
     }
   });
 
