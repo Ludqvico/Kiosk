@@ -1778,16 +1778,257 @@
             background: var(--bg-tertiary);
             color: var(--text-primary);
         }
-
-        .fm-crumb.active {
-            font-weight: 600;
-            color: var(--text-primary);
-            pointer-events: none;
+    </style>
+    <style>
+        /* Separated File Manager Styles for clarity */
+        .modal.fm-modal {
+            max-width: 1000px;
+            width: 95%;
+            height: 85vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
         }
 
-        .fm-crumb-sep {
+        .fm-modal .modal-header {
+            padding: 16px 20px;
+            height: auto;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .fm-modal .close-modal {
+            /* Match diagnostics close button style if possible, generic clean style */
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            transition: background 0.2s;
+        }
+
+        .fm-modal .close-modal:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .fm-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+
+        .fm-sidebar {
+            width: 240px;
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 0;
+            /* Managed by sections */
+            overflow-y: auto;
+        }
+
+        .fm-sidebar-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .fm-sidebar-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .fm-drive-stats {
+            margin-top: auto;
+            /* Push to bottom */
+            border-top: 1px solid var(--border-light);
+            padding-top: 16px;
+        }
+
+        .fm-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
             color: var(--text-tertiary);
-            font-size: 14px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .fm-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .fm-nav-item:hover {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--text-primary);
+        }
+
+        .fm-nav-item.active {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Override drive item to match nav item style */
+        .fm-drive-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .fm-drive-item:hover {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--text-primary);
+        }
+
+        .fm-drive-item.active {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .fm-drive-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .fm-drive-name {
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Progress bar styles for drive stats */
+        .fm-stats-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .fm-drive-bar-bg {
+            height: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 99px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .fm-drive-bar {
+            height: 100%;
+            background: var(--success);
+            /* Green for disk space usually? Or Brand color */
+            border-radius: 99px;
+        }
+
+        .fm-drive-bar.warning {
+            background: var(--warning);
+        }
+
+        .fm-drive-bar.danger {
+            background: var(--danger);
+        }
+
+        .fm-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: white;
+            position: relative;
+        }
+
+        .fm-toolbar {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .fm-nav-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .fm-nav-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .fm-breadcrumbs {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            height: 32px;
+            font-size: 13px;
+        }
+
+        .fm-breadcrumb-item {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .fm-breadcrumb-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+        }
+
+        .fm-breadcrumb-sep {
+            color: var(--text-tertiary);
+            font-size: 12px;
         }
 
         .fm-search {
@@ -1797,19 +2038,66 @@
 
         .fm-search input {
             width: 100%;
-            padding: 8px 32px 8px 12px;
+            padding: 6px 12px 6px 30px;
             border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
+            border-radius: 6px;
             font-size: 13px;
-            background: var(--bg-secondary);
             outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .fm-search svg {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            width: 14px;
+            height: 14px;
         }
 
         .fm-search input:focus {
-            border-color: var(--accent-primary);
+            border-color: var(--text-primary);
         }
 
-        /* File List/Grid */
+        /* Pill View Toggle */
+        .fm-view-toggle {
+            display: flex;
+            background: var(--bg-secondary);
+            padding: 3px;
+            border-radius: 99px;
+            border: 1px solid var(--border-light);
+            gap: 2px;
+        }
+
+        .fm-view-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 99px;
+            border: none;
+            background: transparent;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .fm-view-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .fm-view-btn.active {
+            background: black;
+            /* User Requested Black */
+            color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Content Area */
         .fm-content {
             flex: 1;
             overflow-y: auto;
@@ -1817,11 +2105,13 @@
             position: relative;
         }
 
-        /* Grid View */
+        /* Grid Layout */
         .fm-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 16px;
+            align-content: flex-start;
+            /* Fix for hover height bug */
         }
 
         .fm-item {
@@ -1829,11 +2119,12 @@
             flex-direction: column;
             align-items: center;
             padding: 12px;
-            border-radius: var(--radius-md);
+            border-radius: 8px;
             cursor: pointer;
             border: 1px solid transparent;
+            /* Prevent jump on selection */
             position: relative;
-            transition: all 0.1s ease;
+            transition: background 0.1s;
         }
 
         .fm-item:hover {
@@ -1841,19 +2132,18 @@
         }
 
         .fm-item.selected {
-            background: var(--highlight-bg, #eff6ff);
-            border-color: var(--highlight-border, #bfdbfe);
+            background: #eff6ff;
+            /* Light blue */
         }
 
         .fm-item-icon {
-            font-size: 40px;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
             width: 48px;
             height: 48px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--text-secondary);
         }
 
         .fm-item[data-type="folder"] .fm-item-icon {
@@ -1869,103 +2159,27 @@
             white-space: nowrap;
             color: var(--text-primary);
             font-weight: 500;
-        }
-
-        /* List View styles will be handled via class .view-list on parent */
-        .fm-list-header {
-            display: none;
-            grid-template-columns: 40px 3fr 1fr 1fr;
-            padding: 8px 16px;
-            border-bottom: 1px solid var(--border-light);
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            background: var(--bg-primary);
-        }
-
-        .view-list .fm-list-header {
-            display: grid;
-        }
-
-        .view-list.fm-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .view-list .fm-item {
-            display: grid;
-            grid-template-columns: 40px 3fr 1fr 1fr;
-            flex-direction: row;
-            align-items: center;
-            padding: 8px 16px;
-            border-bottom: 1px solid var(--border-tertiary, #f3f4f6);
-            width: 100%;
-            gap: 0;
-            border-radius: 0;
-        }
-
-        .view-list .fm-item:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .view-list .fm-item.selected {
-            background: var(--highlight-bg, #eff6ff);
-        }
-
-        .view-list .fm-item-icon {
-            font-size: 20px;
-            width: 24px;
-            height: 24px;
-            margin: 0;
-        }
-
-        .view-list .fm-item-name {
-            text-align: left;
-            font-size: 13px;
+            line-height: 1.4;
         }
 
         .fm-item-meta {
-            font-size: 12px;
-            color: var(--text-secondary);
             display: none;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        .view-list .fm-item-meta {
-            display: block;
-        }
-
-        /* Checkbox */
         .fm-check {
             position: absolute;
-            top: 8px;
-            left: 8px;
+            top: 6px;
+            left: 6px;
             width: 16px;
             height: 16px;
             border: 1px solid var(--border-medium);
             border-radius: 4px;
             background: white;
             display: none;
+            /* Show on hover/selected */
             align-items: center;
             justify-content: center;
             z-index: 2;
-        }
-
-        .view-list .fm-check {
-            position: static;
-            margin-right: 12px;
-            display: flex;
-            /* Always show in list view for alignment? Or on hover? */
-            opacity: 0;
-        }
-
-        .view-list .fm-item:hover .fm-check,
-        .view-list .fm-item.selected .fm-check {
-            opacity: 1;
         }
 
         .fm-item:hover .fm-check,
@@ -1977,75 +2191,158 @@
             background: var(--accent-primary);
             border-color: var(--accent-primary);
             color: white;
-            opacity: 1;
             display: flex;
         }
 
-        /* Context Menu */
+        /* List View (Table-like) using CSS Grid */
+        .view-list .fm-content {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            gap: 0;
+        }
+
+        .view-list .fm-grid {
+            display: contents;
+            /* Ungrid the container, children become grid items effectively in a new flow? No. */
+            /* Better: reset grid on container */
+        }
+
+        /* Actually, in View List mode, we want the header and items to share column sizing.
+           But simple 2-container approach is easier: Header Container + Item Container.
+           Items will use the same grid-template-columns. 
+        */
+
+        .fm-list-header {
+            display: none;
+            /* Hidden in grid view */
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-primary);
+            /* Or white */
+            border-bottom: 1px solid var(--border-light);
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .view-list .fm-list-header {
+            display: grid;
+            /* Columns: Icon(40px) Name(Flex) Date(150px) Size(100px) */
+            grid-template-columns: 40px minmax(200px, 2fr) 150px 100px;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .view-list .fm-item {
+            display: grid;
+            grid-template-columns: 40px minmax(200px, 2fr) 150px 100px;
+            gap: 16px;
+            flex-direction: row;
+            align-items: center;
+            padding: 8px 16px;
+            width: 100%;
+            border-radius: 0;
+            border-bottom: 1px solid var(--border-tertiary);
+            height: auto;
+        }
+
+        .view-list .fm-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .view-list .fm-item.selected {
+            background: #eff6ff;
+        }
+
+        .view-list .fm-item-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 0;
+            font-size: 20px;
+        }
+
+        .view-list .fm-item-name {
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .view-list .fm-item-meta {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .view-list .fm-check {
+            /* In list view, maybe just replace icon area or overlay? 
+                Let's keep it defined but positioned relatively 
+             */
+            position: absolute;
+            left: 10px;
+            /* Overlap icon area or separate column? */
+            /* User wants proper table. */
+            /* Let's make check a separate column or overlay icon. 
+                Overlay icon is standard macOS Finder style.
+             */
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Context Menu & Upload Btn (Keep existing) */
         .fm-context-menu {
             position: fixed;
-            background: var(--bg-secondary);
+            background: white;
             border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            padding: 6px 0;
-            min-width: 180px;
-            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            padding: 4px 0;
+            z-index: 9999;
             display: none;
+            width: 200px;
         }
 
         .fm-context-item {
-            padding: 8px 16px;
+            padding: 8px 12px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 13px;
-            color: var(--text-primary);
+            gap: 8px;
             cursor: pointer;
-            transition: background 0.1s;
+            font-size: 13px;
         }
 
         .fm-context-item:hover {
-            background: var(--bg-tertiary);
+            background: var(--bg-secondary);
         }
 
         .fm-context-item.danger {
             color: var(--danger);
         }
 
-        .fm-context-icon {
-            width: 16px;
-            text-align: center;
-            color: var(--text-secondary);
-        }
-
         .fm-context-shortcut {
             margin-left: auto;
-            font-size: 11px;
             color: var(--text-tertiary);
+            font-size: 11px;
         }
 
-        /* Upload Button (Floating) */
         .fm-upload-btn {
             position: absolute;
             bottom: 24px;
             right: 24px;
             background: var(--accent-primary);
             color: white;
-            padding: 12px 24px;
             border-radius: 99px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            padding: 10px 20px;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: transform 0.2s;
-            z-index: 10;
-        }
-
-        .fm-upload-btn:hover {
-            transform: translateY(-2px);
+            z-index: 50;
         }
     </style>
 </head>
@@ -3314,7 +3611,8 @@
             viewMode: 'grid',
             selection: new Set(), // Set of path strings
             clipboard: null, // { action: 'copy'|'cut', files: [{name, path}], sourcePath }
-            drives: []
+            drives: [],
+            files: [] // Cache for search
         };
 
         function openFileManager(clientId) {
@@ -3326,14 +3624,24 @@
             fmState.history = [];
             fmState.historyIndex = -1;
             fmState.selection.clear();
+            fmState.files = [];
 
-            document.getElementById('fm-hostname').textContent = client.hostname;
+            // Use custom name if available
+            const displayName = client.customName || client.hostname;
+            document.getElementById('fm-hostname').textContent = displayName;
             document.getElementById('fileManagerModal').style.display = 'flex';
 
             // Reset UI
             document.getElementById('fm-file-list').innerHTML = '';
-            document.getElementById('fm-drives-list').innerHTML = '<div style="padding:10px; color:var(--text-secondary)">Loading...</div>';
+            document.getElementById('fm-drives-list').innerHTML = '<div style="padding:10px; color:var(--text-secondary); font-size:12px;">Loading...</div>';
+            document.getElementById('fm-shortcuts-list').innerHTML = '';
+            document.getElementById('fm-drive-stats').innerHTML = '';
             document.getElementById('fm-breadcrumbs').innerHTML = '';
+            document.getElementById('fm-search-input').value = '';
+
+            // Initial Render
+            renderShortcuts(client.platform);
+            fmSetView(fmState.viewMode);
 
             // Request Drives
             socket.emit('admin:fs-get-disks', { clientId });
@@ -3406,6 +3714,8 @@
                 return;
             }
             renderDrives(data.disks);
+            renderDriveStats(data.disks);
+
             // Auto-load first drive if nothing loaded
             if (data.disks.length > 0 && !fmState.currentPath) {
                 fmLoadPath(data.disks[0].name);
@@ -3415,11 +3725,15 @@
         socket.on('admin:fs-list-response', (data) => {
             document.getElementById('fm-loading').style.display = 'none';
             if (data.error) {
-                // alert('Error listing: ' + data.error); // Warning: this can spam
                 console.error(data.error);
                 return;
             }
-            renderFiles(data.result);
+            fmState.files = data.result || [];
+            if (document.getElementById('fm-search-input').value) {
+                fmFilterFiles();
+            } else {
+                renderFiles(fmState.files);
+            }
         });
 
         socket.on('admin:fs-rename-response', (data) => {
@@ -3467,6 +3781,77 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function renderShortcuts(platform) {
+            const isWin = (platform || '').toLowerCase().includes('win');
+            const shortcuts = [
+                { name: 'Desktop', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', path: 'Desktop' },
+                { name: 'Documents', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', path: 'Documents' },
+                { name: 'Downloads', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>', path: 'Downloads' },
+                { name: 'Pictures', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>', path: 'Pictures' }
+            ];
+
+            const container = document.getElementById('fm-shortcuts-list');
+            if (container) {
+                container.innerHTML = shortcuts.map(s => `
+                    <div class="fm-nav-item" onclick="fmLoadShortcut('${s.path}')">
+                        ${s.icon} ${s.name}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function fmLoadShortcut(folderName) {
+            // Best effort navigation.
+            // Try to find users main drive.
+            if (fmState.drives.length === 0) return;
+
+            const root = fmState.drives[0].name; // e.g. "C:\" or "/"
+            let target = '';
+            if (root.includes('/') && root.length === 1) {
+                // Unix - try /home/
+                // Note: without knowing username, we can't be sure where to go.
+                // But typically /home/user. We can't guess user easily.
+                // For now, let's just do nothing or try /tmp to show it works?
+                // Or maybe we can try to use a relative path if the server supports it?
+                // Server uses `fs` and absolute paths.
+                return;
+            } else {
+                // Windows - try Public folder as a safe fallback that definitely exists
+                target = root + 'Users\\Public\\' + folderName;
+            }
+            if (target) fmLoadPath(target);
+        }
+
+        function renderDriveStats(disks) {
+            const container = document.getElementById('fm-drive-stats');
+            if (!container) return;
+
+            const main = disks.find(d => d.name === 'C:' || d.name === 'C:\\' || d.name === '/') || disks[0];
+
+            if (!main || !main.size) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const total = formatSize(main.size);
+            const free = formatSize(main.free);
+            const usedPercent = main.usedPercent;
+
+            let colorClass = '';
+            if (usedPercent > 90) colorClass = 'danger';
+            else if (usedPercent > 75) colorClass = 'warning';
+
+            container.innerHTML = `
+                <div class="fm-stats-info">
+                    <span style="font-weight:600">${main.name}</span>
+                    <span>${free} free</span>
+                </div>
+                <div class="fm-drive-bar-bg">
+                    <div class="fm-drive-bar ${colorClass}" style="width: ${usedPercent}%"></div>
+                </div>
+            `;
         }
 
         function updateDrivesUI() {
@@ -3590,18 +3975,33 @@
             }
         }
 
-        function fmToggleView() {
+        function fmSetView(mode) {
+            fmState.viewMode = mode;
             const container = document.getElementById('fm-file-list');
-            const btn = document.getElementById('fm-view-toggle');
+            const btnGrid = document.getElementById('btn-view-grid');
+            const btnList = document.getElementById('btn-view-list');
 
-            if (fmState.viewMode === 'grid') {
-                fmState.viewMode = 'list';
+            if (!btnGrid || !btnList) return; // Guard if elements missing
+
+            if (mode === 'list') {
                 container.classList.add('view-list');
-                // btn icon change...
+                btnList.classList.add('active');
+                btnGrid.classList.remove('active');
             } else {
-                fmState.viewMode = 'grid';
                 container.classList.remove('view-list');
+                btnGrid.classList.add('active');
+                btnList.classList.remove('active');
             }
+        }
+
+        function fmFilterFiles() {
+            const term = (document.getElementById('fm-search-input').value || '').toLowerCase();
+            if (!term) {
+                renderFiles(fmState.files);
+                return;
+            }
+            const filtered = fmState.files.filter(f => f.name.toLowerCase().includes(term));
+            renderFiles(filtered);
         }
 
         function fmSelectAll(cb) {
@@ -3810,9 +4210,22 @@
             <div class="fm-container">
                 <!-- Sidebar -->
                 <div class="fm-sidebar">
-                    <div class="fm-drives-title">Drives & Devices</div>
-                    <div id="fm-drives-list">
-                        <!-- Drives injected here -->
+                    <div class="fm-sidebar-section">
+                        <div class="fm-section-title">Favorites</div>
+                        <div id="fm-shortcuts-list">
+                            <!-- Shortcuts injected here -->
+                        </div>
+                    </div>
+
+                    <div class="fm-sidebar-section">
+                        <div class="fm-drives-title fm-section-title">Locations</div>
+                        <div id="fm-drives-list">
+                            <!-- Drives injected here -->
+                        </div>
+                    </div>
+
+                    <div class="fm-drive-stats" id="fm-drive-stats">
+                        <!-- Main Drive Stats -->
                     </div>
                 </div>
 
@@ -3835,19 +4248,36 @@
                         </div>
 
                         <div class="fm-search">
-                            <input type="text" placeholder="Search..." id="fm-search-input">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            <input type="text" placeholder="Search" id="fm-search-input" onkeyup="fmFilterFiles()">
                         </div>
 
-                        <div class="fm-nav-btn" onclick="fmToggleView()" id="fm-view-toggle" title="Toggle View"><svg
-                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <line x1="8" y1="6" x2="21" y2="6"></line>
-                                <line x1="8" y1="12" x2="21" y2="12"></line>
-                                <line x1="8" y1="18" x2="21" y2="18"></line>
-                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                            </svg></div>
+                        <div class="fm-view-toggle">
+                            <button class="fm-view-btn active" id="btn-view-grid" onclick="fmSetView('grid')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7" />
+                                    <rect x="14" y="3" width="7" height="7" />
+                                    <rect x="14" y="14" width="7" height="7" />
+                                    <rect x="3" y="14" width="7" height="7" />
+                                </svg>
+                                Cards
+                            </button>
+                            <button class="fm-view-btn" id="btn-view-list" onclick="fmSetView('list')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6" />
+                                    <line x1="8" y1="12" x2="21" y2="12" />
+                                    <line x1="8" y1="18" x2="21" y2="18" />
+                                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                                </svg>
+                                Table
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Content -->
