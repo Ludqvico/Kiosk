@@ -476,7 +476,7 @@
 
                 <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
 
-                <button class="ee-control-btn" id="btnRecord" onclick="openRecordModal()" title="Record Screen">
+                <button class="ee-control-btn" id="btnRecord" onclick="startRecording()" title="Record Screen">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -499,37 +499,7 @@
         </div>
     </div>
 
-    <!-- Recording Options Modal -->
-    <div class="modal-overlay" id="recordModal">
-        <div class="modal">
-            <div class="modal-title">Recording Settings</div>
 
-            <div class="form-group">
-                <label class="checkbox-group">
-                    <input type="checkbox" id="recSystemAudio" checked>
-                    <div>
-                        <div style="font-weight: 600; font-size: 14px;">Include System Audio</div>
-                        <div style="font-size: 12px; color: #a0aec0;">Capture sounds from the remote client</div>
-                    </div>
-                </label>
-            </div>
-
-            <div class="form-group">
-                <label class="checkbox-group">
-                    <input type="checkbox" id="recClientMic">
-                    <div>
-                        <div style="font-weight: 600; font-size: 14px;">Include Client Microphone</div>
-                        <div style="font-size: 12px; color: #a0aec0;">Record audio from the remote microphone</div>
-                    </div>
-                </label>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeRecordModal()">Cancel</button>
-                <button class="btn-start" onclick="startRecording()">Start Recording</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         // Get client info from URL
@@ -902,51 +872,29 @@
         }
 
         // --- Recording Logic ---
-        function openRecordModal() {
+
+
+        async function startRecording() {
             if (isRecording) {
                 stopRecording();
                 return;
             }
-            document.getElementById('recordModal').classList.add('active');
-        }
 
-        function closeRecordModal() {
-            document.getElementById('recordModal').classList.remove('active');
-        }
-
-        async function startRecording() {
-            closeRecordModal();
             recordedChunks = [];
 
             try {
                 const stream = video.srcObject;
                 if (!stream) throw new Error('No stream available');
 
-                // Get options
-                const includeSystemAudio = document.getElementById('recSystemAudio').checked;
-                const includeClientMic = document.getElementById('recClientMic').checked;
-
+                // Simplification: Always include all available tracks (Video + System Audio + Mic)
+                // The client sends mixed audio if available, so we just record whatever we get.
                 const recordingStream = new MediaStream();
 
-                // Always add video
-                stream.getVideoTracks().forEach(track => recordingStream.addTrack(track));
-
-                // Add audio tracks
-                // webrtc-capture.html adds system audio first, then mic.
-                const audioTracks = stream.getAudioTracks();
-
-                if (includeSystemAudio && audioTracks.length > 0) {
-                    recordingStream.addTrack(audioTracks[0]);
-                    console.log('[Recording] Added System Audio track');
-                }
-                if (includeClientMic && audioTracks.length > 1) {
-                    recordingStream.addTrack(audioTracks[1]);
-                    console.log('[Recording] Added Client Mic track');
-                } else if (includeClientMic && audioTracks.length === 1 && !includeSystemAudio) {
-                    // Fallback if only one track exists but system audio wasn't requested
-                    recordingStream.addTrack(audioTracks[0]);
-                    console.log('[Recording] Added only available Audio track as Mic');
-                }
+                // Add all tracks from the remote stream
+                stream.getTracks().forEach(track => {
+                    recordingStream.addTrack(track);
+                    console.log(`[Recording] Added track: ${track.kind} (${track.label})`);
+                });
 
                 mediaRecorder = new MediaRecorder(recordingStream, {
                     mimeType: 'video/webm;codecs=vp9,opus'
@@ -1036,7 +984,7 @@
                     headers: {
                         'Content-Type': 'video/webm',
                         'x-filename': fileName,
-                        'x-client-name': clientAlias || clientId
+                        'x-client-name': hostname || clientId
                     },
                     body: blob
                 });
@@ -1049,12 +997,7 @@
                 }
             } catch (err) {
                 console.error('Save recording error:', err);
-                // Fallback to local download if upload fails
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                a.click();
+                alert('Failed to upload recording to Gallery: ' + err.message);
             }
         }
 
