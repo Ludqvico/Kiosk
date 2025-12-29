@@ -2038,9 +2038,10 @@
                     modal.classList.add('active');
                 }
 
-                // Update title
+                // Update title with custom name if available
                 const client = clients.get(clientId);
-                title.textContent = `Diagnostics - ${client?.hostname || 'Unknown'} (Auto-refresh)`;
+                const displayName = client?.customName || client?.hostname || 'Unknown';
+                title.textContent = `Diagnostics - ${displayName}`;
 
                 // Formatting helper
                 const formatUptime = (seconds) => {
@@ -2050,6 +2051,14 @@
                     return `${d}d ${h}h ${m}m`;
                 };
 
+                // Validate stats data
+                if (!stats) {
+                    console.error('No stats data received!');
+                    content.innerHTML = '<div class="diagnostic-item full-width"><div class="diagnostic-label">Error: No diagnostics data</div></div>';
+                    return;
+                }
+
+                console.log('Stats data valid, rendering...');
                 const memUsedPercent = ((stats.memUsed / stats.memTotal) * 100).toFixed(1);
 
                 content.innerHTML = `
