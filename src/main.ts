@@ -67,32 +67,42 @@ function enableFirewallBlock() {
       // Start local web server on port 80
       startBlockedWebServer();
 
-      // Modify Windows hosts file to redirect common domains to localhost
-      const hostsPath = 'C:\\\\Windows\\\\System32\\\\drivers\\\\etc\\\\hosts';
-      const hostsEntries = `
-# Kiosk Internet Block - START
-127.0.0.1 google.com
-127.0.0.1 www.google.com
-127.0.0.1 bing.com
-127.0.0.1 www.bing.com
-127.0.0.1 facebook.com
-127.0.0.1 www.facebook.com
-127.0.0.1 youtube.com
-127.0.0.1 www.youtube.com
-127.0.0.1 twitter.com
-127.0.0.1 www.twitter.com
-127.0.0.1 instagram.com
-127.0.0.1 www.instagram.com
-127.0.0.1 office.com
-127.0.0.1 www.office.com
-127.0.0.1 microsoft.com
-127.0.0.1 www.microsoft.com
-# Kiosk Internet Block - END
-`;
+      // Modify Windows hosts file to redirect ALL common domains to localhost
+      const hostsPath = 'C:\\Windows\\System32\\drivers\\etc\\hosts';
 
-      exec(`echo ${hostsEntries.replace(/\n/g, ' & echo ')} >> ${hostsPath}`, (err) => {
+      // Comprehensive list of domains to block
+      const domains = [
+        'google.com', 'www.google.com', 'google.it', 'www.google.it',
+        'bing.com', 'www.bing.com',
+        'yahoo.com', 'www.yahoo.com',
+        'duckduckgo.com', 'www.duckduckgo.com',
+        'facebook.com', 'www.facebook.com', 'fb.com', 'www.fb.com',
+        'youtube.com', 'www.youtube.com', 'youtu.be',
+        'twitter.com', 'www.twitter.com', 'x.com', 'www.x.com',
+        'instagram.com', 'www.instagram.com',
+        'tiktok.com', 'www.tiktok.com',
+        'reddit.com', 'www.reddit.com',
+        'linkedin.com', 'www.linkedin.com',
+        'whatsapp.com', 'www.whatsapp.com', 'web.whatsapp.com',
+        'office.com', 'www.office.com', 'office365.com', 'www.office365.com',
+        'microsoft.com', 'www.microsoft.com',
+        'amazon.com', 'www.amazon.com', 'amazon.it', 'www.amazon.it',
+        'wikipedia.org', 'www.wikipedia.org', 'it.wikipedia.org',
+        'netflix.com', 'www.netflix.com',
+        'twitch.tv', 'www.twitch.tv',
+        'discord.com', 'www.discord.com',
+        'github.com', 'www.github.com',
+        'stackoverflow.com', 'www.stackoverflow.com'
+      ];
+
+      // Build PowerShell command to append entries
+      const psCommand = `Add-Content -Path '${hostsPath}' -Value '# Kiosk Internet Block - START'; ` +
+        domains.map(domain => `Add-Content -Path '${hostsPath}' -Value '127.0.0.1 ${domain}';`).join(' ') +
+        ` Add-Content -Path '${hostsPath}' -Value '# Kiosk Internet Block - END'`;
+
+      exec(`powershell -Command "${psCommand}"`, (err) => {
         if (err) console.error('[Hosts] Error modifying hosts file:', err.message);
-        else console.log('[Hosts] Hosts file modified - domains redirected to localhost');
+        else console.log(`[Hosts] Hosts file modified - ${domains.length} domains redirected to localhost`);
       });
 
       // After firewall is enabled, show blocked page
