@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,24 +17,55 @@
         }
 
         :root {
-            --color-bg: #fafafa;
-            --color-surface: #ffffff;
-            --color-border: #e5e5e5;
-            --color-text-primary: #171717;
-            --color-text-secondary: #737373;
-            --color-text-tertiary: #a3a3a3;
-            --color-accent: #0ea5e9;
-            --color-success: #22c55e;
-            --color-danger: #ef4444;
-            --color-warning: #f59e0b;
-            --sidebar-width: 240px;
+            /* Color Palette - High-end Minimal */
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+
+            --accent-primary: #000000;
+            --accent-secondary: #333333;
+
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+
+            /* Spacing & Layout */
+            --sidebar-width: 250px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Effects */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            --transition-fast: 0.15s ease;
+            --transition-base: 0.25s ease;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--color-bg);
-            color: var(--color-text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
         .app-container {
@@ -41,593 +73,430 @@
             min-height: 100vh;
         }
 
+        /* Modern Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: var(--color-surface);
-            border-right: 1px solid var(--color-border);
-            padding: 24px 16px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-light);
+            padding: var(--space-lg);
             display: flex;
             flex-direction: column;
-            gap: 32px;
+            gap: var(--space-xl);
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 50;
         }
 
         .logo {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--color-text-primary);
-            padding: 0 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-left: var(--space-sm);
+        }
+
+        .logo svg {
+            color: var(--accent-primary);
         }
 
         .nav-section {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            letter-spacing: 0.5px;
+            padding: 0 var(--space-sm);
+            margin-bottom: var(--space-xs);
         }
 
         .nav-item {
             padding: 10px 12px;
-            border-radius: 4px;
+            border-radius: var(--radius-md);
             font-size: 14px;
-            color: var(--color-text-secondary);
+            font-weight: 500;
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all var(--transition-fast);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .nav-item:hover {
-            background: var(--color-bg);
-            color: var(--color-text-primary);
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
         }
 
         .nav-item.active {
-            background: var(--color-bg);
-            color: var(--color-text-primary);
-            font-weight: 500;
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
         }
 
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2px;
+        }
+
+        /* Main Content Area */
         .main-content {
             flex: 1;
-            padding: 32px 40px;
-            overflow-y: auto;
+            margin-left: var(--sidebar-width);
+            /* Adjust for fixed sidebar */
+            padding: 40px;
+            max-width: 1600px;
         }
 
         .page-header {
-            margin-bottom: 24px;
+            margin-bottom: var(--space-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .page-title {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 700;
             margin-bottom: 4px;
+            letter-spacing: -0.02em;
         }
 
         .page-subtitle {
             font-size: 14px;
-            color: var(--color-text-secondary);
+            color: var(--text-secondary);
         }
 
+        /* Better Stats Cards */
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
         }
 
         .stat-card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-base), box-shadow var(--transition-base);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-medium);
         }
 
         .stat-label {
             font-size: 13px;
-            color: var(--color-text-secondary);
-            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stat-value {
-            font-size: 28px;
-            font-weight: 600;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
         }
 
+        /* Minimalist Buttons */
         .controls {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            align-items: center;
         }
 
         button {
-            background: #000;
+            background: var(--accent-primary);
             color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
+            border: 1px solid transparent;
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all var(--transition-fast);
             font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
         }
 
         button:hover {
-            opacity: 0.85;
+            background: var(--accent-secondary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         button:active {
-            transform: scale(0.98);
+            transform: translateY(0);
         }
 
         button.secondary {
-            background: var(--color-surface);
-            color: var(--color-text-primary);
-            border: 1px solid var(--color-border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+            box-shadow: none;
         }
 
+        button.secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--text-tertiary);
+        }
+
+        button.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        button.danger:hover {
+            background: #dc2626;
+        }
+
+        /* Elegant Client Grid */
         .clients-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: var(--space-lg);
         }
 
         .client-card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            padding: 20px;
-            transition: all 0.15s;
-        }
-
-        .client-card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-
-        .client-card.locked {
-            border-color: var(--color-danger);
-            background: #fef2f2;
-        }
-
-        .client-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 16px;
-        }
-
-        .client-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .client-id {
-            font-size: 12px;
-            color: var(--color-text-tertiary);
-            font-family: 'Courier New', monospace;
-        }
-
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .status-badge.locked {
-            background: var(--color-danger);
-            color: white;
-        }
-
-        .status-badge.unlocked {
-            background: var(--color-success);
-            color: white;
-        }
-
-        .client-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .client-meta-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-        }
-
-        .client-meta-label {
-            color: var(--color-text-secondary);
-        }
-
-        .client-meta-value {
-            font-weight: 500;
-        }
-
-        .platform-badge {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .platform-badge.darwin {
-            background: #e0f2fe;
-            color: #0369a1;
-        }
-
-        .platform-badge.win32 {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .client-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-        }
-
-        .client-actions button {
-            padding: 8px 10px;
-            font-size: 12px;
-        }
-
-        .client-actions button.primary {
-            grid-column: 1 / -1;
-        }
-
-        .client-actions button.secondary {
-            background: var(--color-surface);
-            color: var(--color-text-primary);
-            border: 1px solid var(--color-border);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            grid-column: 1 / -1;
-        }
-
-        .empty-state-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--color-text-primary);
-            margin-bottom: 8px;
-        }
-
-        .empty-state-text {
-            font-size: 14px;
-            color: var(--color-text-secondary);
-        }
-
-        .connection-status {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            padding: 8px 14px;
-            border-radius: 4px;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            font-size: 13px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 1000;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--color-success);
-        }
-
-        .status-indicator.disconnected {
-            background: var(--color-danger);
-        }
-
-        /* Activity Log Styles */
-        .filters-bar {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            padding: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: end;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 160px;
-        }
-
-        .filter-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--color-text-secondary);
-        }
-
-        select, input[type="date"] {
-            padding: 8px 12px;
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: inherit;
-            background: var(--color-surface);
-            color: var(--color-text-primary);
-        }
-
-        select:focus, input:focus {
-            outline: none;
-            border-color: var(--color-accent);
-        }
-
-        .log-table {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-base);
+            position: relative;
             overflow: hidden;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .client-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+            border-color: var(--border-medium);
         }
 
-        th {
-            background: var(--color-bg);
-            padding: 12px 16px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--color-border);
+        /* Card Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-md);
         }
 
-        td {
-            padding: 14px 16px;
-            font-size: 14px;
-            border-bottom: 1px solid var(--color-border);
+        .card-info {
+            display: flex;
+            flex-direction: column;
         }
 
-        tr:last-child td {
-            border-bottom: none;
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
         }
 
-        .log-type {
-            display: inline-block;
+        .card-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
             padding: 4px 10px;
-            border-radius: 4px;
+            border-radius: 99px;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .log-type.client_connected {
-            background: #e0f2fe;
-            color: #0369a1;
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            margin-right: 6px;
         }
 
-        .log-type.client_disconnected {
-            background: #fee2e2;
-            color: #991b1b;
+        .status-badge.locked {
+            background: var(--danger-light);
+            color: var(--danger);
         }
 
-        .log-type.lock, .log-type.lock_all {
-            background: #fef3c7;
-            color: #b45309;
+        .status-badge.unlocked {
+            background: var(--success-light);
+            color: var(--success);
         }
 
-        .log-type.unlock, .log-type.unlock_all {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .log-type.reboot {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .log-type.shutdown {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .log-type.logout {
-            background: #fef3c7;
-            color: #78350f;
-        }
-
-        .log-type.diagnostics {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .log-timestamp {
-            color: var(--color-text-secondary);
-            font-size: 13px;
-        }
-
-        .page-view {
-            display: none;
-        }
-
-        .page-view.active {
-            display: block;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.active {
+        .card-details {
             display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--border-light);
         }
 
-        .modal {
-            background: var(--color-surface);
-            border-radius: 8px;
-            padding: 24px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
+        .detail-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Action Buttons Grid */
+        .card-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-sm);
+        }
+
+        .card-actions button {
+            justify-content: center;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        /* Search Box */
+        .search-box {
+            position: relative;
+            min-width: 300px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        /* Filters Bar */
+        .filters-bar {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            display: flex;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        /* Modal - Modernized */
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-xl);
+            border: 1px solid var(--border-light);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: var(--space-lg);
+            margin-bottom: var(--space-lg);
         }
 
         .modal-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
         }
 
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--color-text-secondary);
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-        }
-
-        .modal-close:hover {
-            background: var(--color-bg);
-        }
-
-        .diagnostics-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .diagnostic-item {
-            background: var(--color-bg);
-            padding: 12px 16px;
-            border-radius: 4px;
-        }
-
-        .diagnostic-label {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .diagnostic-value {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .diagnostic-item.full-width {
-            grid-column: 1 / -1;
-        }
-
-        /* Shutdown Modal */
-        .shutdown-timer {
-            margin: 20px 0;
-        }
-
-        .timer-label {
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 12px;
-            color: var(--color-text-primary);
-        }
-
-        .timer-value {
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 16px;
-            color: var(--color-text-primary);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            background: var(--color-border);
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #000;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #000;
-            cursor: pointer;
-            border: none;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
+        .modal actions {
             margin-top: 24px;
         }
 
-        .modal-actions button {
-            flex: 1;
+        /* Animation Keyframes */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .main-content {
+            animation: fadeIn 0.4s ease-out;
         }
 
         /* Three Dots Menu */
         .client-menu-button {
             background: none;
             border: none;
-            color: var(--color-text-secondary);
+            color: var(--text-secondary);
             font-size: 20px;
             cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 4px;
+            border-radius: var(--radius-sm);
             line-height: 1;
             transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
         }
 
         .client-menu-button:hover {
-            background: var(--color-bg);
-            color: var(--color-text-primary);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
 
         .client-menu-button:active {
@@ -647,23 +516,25 @@
             position: absolute;
             top: 100%;
             right: 0;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
             min-width: 200px;
             z-index: 100;
             margin-top: 4px;
+            overflow: hidden;
         }
 
         .client-dropdown.active {
             display: block;
+            animation: fadeIn 0.1s ease-out;
         }
 
         .client-dropdown-item {
             padding: 10px 16px;
             font-size: 14px;
-            color: var(--color-text-primary);
+            color: var(--text-primary);
             cursor: pointer;
             transition: all 0.15s;
             border: none;
@@ -677,20 +548,12 @@
         }
 
         .client-dropdown-item:hover {
-            background: var(--color-bg);
-        }
-
-        .client-dropdown-item:first-child {
-            border-radius: 4px 4px 0 0;
-        }
-
-        .client-dropdown-item:last-child {
-            border-radius: 0 0 4px 4px;
+            background: var(--bg-tertiary);
         }
 
         .client-dropdown-divider {
             height: 1px;
-            background: var(--color-border);
+            background: var(--border-light);
             margin: 4px 0;
         }
 
@@ -703,70 +566,72 @@
             display: block;
             font-size: 14px;
             font-weight: 500;
-            color: var(--color-text-primary);
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
 
         .modal-input {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
             font-size: 14px;
             font-family: inherit;
-            background: var(--color-surface);
-            color: var(--color-text-primary);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
         .modal-input:focus {
             outline: none;
-            border-color: var(--color-accent);
+            border-color: var(--accent-primary);
         }
 
         /* View Toggle */
         .view-toggle {
             display: flex;
             gap: 0;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
             overflow: hidden;
         }
 
         .view-toggle-btn {
-            padding: 10px 16px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 500;
-            background: var(--color-surface);
-            color: var(--color-text-secondary);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
             border: none;
             cursor: pointer;
             transition: all 0.15s;
             display: flex;
             align-items: center;
             gap: 6px;
+            border-radius: 0;
         }
 
         .view-toggle-btn:not(:last-child) {
-            border-right: 1px solid var(--color-border);
+            border-right: 1px solid var(--border-medium);
         }
 
         .view-toggle-btn:hover {
-            background: var(--color-bg);
+            background: var(--bg-tertiary);
         }
 
         .view-toggle-btn.active {
-            background: #000;
+            background: var(--accent-primary);
             color: white;
         }
 
         /* Table View */
         .clients-table-container {
             display: none;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
             overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
 
         .clients-table-container.active {
@@ -783,22 +648,23 @@
         }
 
         .clients-table th {
-            background: var(--color-bg);
+            background: var(--bg-tertiary);
             padding: 12px 16px;
             text-align: left;
             font-size: 12px;
             font-weight: 600;
-            color: var(--color-text-secondary);
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--color-border);
+            border-bottom: 1px solid var(--border-light);
         }
 
         .clients-table td {
             padding: 14px 16px;
             font-size: 14px;
-            border-bottom: 1px solid var(--color-border);
+            border-bottom: 1px solid var(--border-light);
             vertical-align: middle;
+            color: var(--text-primary);
         }
 
         .clients-table tr:last-child td {
@@ -806,54 +672,332 @@
         }
 
         .clients-table tr:hover {
-            background: var(--color-bg);
+            background: var(--bg-tertiary);
         }
 
         .clients-table .client-name-cell {
             font-weight: 600;
+            color: var(--text-primary);
         }
 
         .clients-table .client-id-cell {
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            color: var(--color-text-tertiary);
+            color: var(--text-input-placeholder);
+            /* Fallback or define new */
+            color: #9ca3af;
         }
 
-        .clients-table .actions-cell {
+        .actions-cell {
             display: flex;
             gap: 6px;
         }
 
-        .clients-table .actions-cell button {
-            padding: 6px 10px;
+        .actions-cell button {
+            padding: 6px;
             font-size: 12px;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .table-empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: var(--color-text-secondary);
+            color: var(--text-secondary);
+        }
+
+        /* Modals Enhancements */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-xl);
+            border: 1px solid var(--border-light);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: var(--space-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .modal-actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
+        /* Diagnostics & Shutdown */
+        .diagnostics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .diagnostic-item {
+            background: var(--bg-primary);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .diagnostic-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .diagnostic-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .diagnostic-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .shutdown-timer {
+            margin: 20px 0;
+        }
+
+        .timer-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .timer-value {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--border-medium);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+            color: var(--text-primary);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .status-indicator.disconnected {
+            background: var(--danger);
+        }
+
+        .page-view {
+            display: none;
+        }
+
+        .page-view.active {
+            display: block;
+        }
+
+        /* Log Activity styling */
+        .log-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .log-type.client_connected {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .log-type.client_disconnected {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .log-type.lock,
+        .log-type.lock_all {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .log-type.unlock,
+        .log-type.unlock_all {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .log-type.reboot {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .log-type.shutdown {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .log-type.logout {
+            background: var(--warning-light);
+            color: #b45309;
+        }
+
+        .log-type.diagnostics {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        select,
+        input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .log-table {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
     </style>
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="logo">Kiosk Manager</div>
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                Kiosk Admin
+            </div>
 
             <nav class="nav-section">
-                <div class="nav-item active" data-page="stations">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="2" y="3" width="12" height="10" rx="1"/>
-                        <line x1="2" y1="6" x2="14" y2="6"/>
+                <div class="nav-label">Main Menu</div>
+                <div class="nav-item active" onclick="switchPage('stations')" id="nav-stations">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                    Active Stations
+                    Dashboard
                 </div>
-                <div class="nav-item" data-page="activity">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <circle cx="8" cy="8" r="6"/>
-                        <path d="M8 4v4l2 2"/>
+                <div class="nav-item" onclick="switchPage('activity')" id="nav-activity">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
                     Activity Log
                 </div>
@@ -864,14 +1008,16 @@
         <main class="main-content">
             <div class="connection-status" id="connectionStatus">
                 <span class="status-indicator disconnected"></span>
-                <span>Connecting...</span>
+                <span id="connectionText">Connecting...</span>
             </div>
 
             <!-- Stations Page -->
             <div class="page-view active" id="stationsPage">
                 <div class="page-header">
-                    <h1 class="page-title">Active Stations</h1>
-                    <p class="page-subtitle">Manage and monitor all kiosk stations</p>
+                    <div>
+                        <h1 class="page-title">Dashboard</h1>
+                        <div class="page-subtitle">Overview of connected kiosk stations</div>
+                    </div>
                 </div>
 
                 <div class="stats-bar">
@@ -890,32 +1036,70 @@
                 </div>
 
                 <div class="controls">
-                    <button onclick="lockAll()">Lock All Stations</button>
-                    <button onclick="unlockAll()">Unlock All Stations</button>
-                    <button class="secondary" onclick="refreshStations()">Refresh</button>
+                    <button class="primary" onclick="lockAll()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Lock All
+                    </button>
+                    <button class="secondary" onclick="unlockAll()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                        </svg>
+                        Unlock All
+                    </button>
+
                     <div class="view-toggle" style="margin-left: auto;">
                         <button class="view-toggle-btn active" onclick="toggleView('cards')">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="2" y="2" width="5" height="5" rx="1"/>
-                                <rect x="9" y="2" width="5" height="5" rx="1"/>
-                                <rect x="2" y="9" width="5" height="5" rx="1"/>
-                                <rect x="9" y="9" width="5" height="5" rx="1"/>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
                             </svg>
                             Cards
                         </button>
                         <button class="view-toggle-btn" onclick="toggleView('table')">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <line x1="2" y1="4" x2="14" y2="4"/>
-                                <line x1="2" y1="8" x2="14" y2="8"/>
-                                <line x1="2" y1="12" x2="14" y2="12"/>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
                             </svg>
                             Table
                         </button>
                     </div>
                 </div>
 
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search stations..."
+                            onkeyup="filterCards()">
+                    </div>
+                </div>
+
                 <div id="clientsContainer" class="clients-grid">
                     <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                            style="color: var(--text-tertiary); margin-bottom: 16px;">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
                         <div class="empty-state-title">No stations connected</div>
                         <div class="empty-state-text">Stations will appear here when they connect to the server</div>
                     </div>
@@ -1004,7 +1188,8 @@
                         </thead>
                         <tbody id="activityTableBody">
                             <tr>
-                                <td colspan="4" style="text-align: center; color: var(--color-text-secondary); padding: 40px;">
+                                <td colspan="4"
+                                    style="text-align: center; color: var(--color-text-secondary); padding: 40px;">
                                     Loading activity log...
                                 </td>
                             </tr>
@@ -1040,8 +1225,10 @@
             <div class="shutdown-timer">
                 <div class="timer-label">Shutdown Timer</div>
                 <div class="timer-value" id="shutdownTimerValue">Immediate</div>
-                <input type="range" id="shutdownTimerSlider" min="0" max="300" value="0" step="15" oninput="updateShutdownTimer()">
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); margin-top: 8px;">
+                <input type="range" id="shutdownTimerSlider" min="0" max="300" value="0" step="15"
+                    oninput="updateShutdownTimer()">
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); margin-top: 8px;">
                     <span>Immediate</span>
                     <span>5 minutes</span>
                 </div>
@@ -1062,7 +1249,8 @@
             </div>
             <div class="modal-input-group">
                 <label class="modal-input-label">Station Name</label>
-                <input type="text" id="renameInput" class="modal-input" placeholder="Enter custom name..." maxlength="50">
+                <input type="text" id="renameInput" class="modal-input" placeholder="Enter custom name..."
+                    maxlength="50">
                 <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 6px;">
                     This name will be saved and persist across sessions
                 </div>
@@ -1161,13 +1349,17 @@
             if (clients.size === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-tertiary); margin-bottom: 16px;">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
                         <div class="empty-state-title">No stations connected</div>
                         <div class="empty-state-text">Stations will appear here when they connect to the server</div>
                     </div>
                 `;
                 updateStats();
 
-                // Also update table view if active
                 if (currentView === 'table') {
                     renderTableView();
                 }
@@ -1175,57 +1367,96 @@
             }
 
             const clientsArray = Array.from(clients.values());
-            container.innerHTML = clientsArray.map(client => `
+            const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
+
+            const filteredClients = clientsArray.filter(client => {
+                const name = (client.customName || client.hostname).toLowerCase();
+                const id = client.id.toLowerCase();
+                return name.includes(searchTerm) || id.includes(searchTerm);
+            });
+
+            container.innerHTML = filteredClients.map(client => `
                 <div class="client-card ${client.locked ? 'locked' : ''}">
-                    <div class="client-header">
-                        <div class="client-header-info">
-                            <div class="client-title">${client.customName || client.hostname}</div>
-                            <div class="client-id">${client.id.substring(0, 12)}...</div>
+                    <div class="card-header">
+                        <div class="card-info">
+                            <div class="card-title">${client.customName || client.hostname}</div>
+                            <div class="card-subtitle">${client.id.substring(0, 12)}...</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">
-                                ${client.locked ? 'Locked' : 'Unlocked'}
-                            </span>
                             <div class="client-menu-container">
-                                <button class="client-menu-button" onclick="toggleClientMenu('${client.id}', event)">⋮</button>
+                                <button class="client-menu-button" onclick="toggleClientMenu('${client.id}', event)">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="1"></circle>
+                                        <circle cx="12" cy="5" r="1"></circle>
+                                        <circle cx="12" cy="19" r="1"></circle>
+                                    </svg>
+                                </button>
                                 <div class="client-dropdown" id="menu-${client.id}">
                                     <button class="client-dropdown-item" onclick="openRenameModal('${client.id}', '${client.customName || client.hostname}')">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <path d="M11 2L14 5L6 13H3V10L11 2Z"/>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                         Rename Station
                                     </button>
                                     <div class="client-dropdown-divider"></div>
                                     <button class="client-dropdown-item" onclick="toggleStartup('${client.id}')">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <path d="M8 2L10 6H14L11 9L12 14L8 11L4 14L5 9L2 6H6L8 2Z"/>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M5 12h14"></path>
+                                            <path d="M12 5l7 7-7 7"></path>
                                         </svg>
-                                        Add to Startup
+                                        Auto-start Settings
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="client-meta">
-                        <div class="client-meta-item">
-                            <span class="client-meta-label">Platform</span>
-                            <span class="platform-badge ${client.platform}">${client.platform}</span>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">
+                                <span class="badge-dot"></span>
+                                ${client.locked ? 'Locked' : 'Unlocked'}
+                            </span>
                         </div>
-                        <div class="client-meta-item">
-                            <span class="client-meta-label">Connected</span>
-                            <span class="client-meta-value">${formatTime(client.connectedAt)}</span>
+                        <div class="detail-row">
+                            <span class="detail-label">Platform</span>
+                            <span class="detail-value" style="text-transform: capitalize;">${client.platform}</span>
+                        </div>
+                         <div class="detail-row">
+                            <span class="detail-label">Connected</span>
+                            <span class="detail-value">${formatTime(client.connectedAt)}</span>
                         </div>
                     </div>
-                    <div class="client-actions">
-                        ${client.locked
-                            ? `<button class="primary" onclick="unlockClient('${client.id}')">Unlock</button>`
-                            : `<button class="primary" onclick="lockClient('${client.id}')">Lock</button>`
-                        }
-                        <button class="secondary" onclick="requestDiagnostics('${client.id}')">Diagnostics</button>
-                        <button class="secondary" onclick="rebootClient('${client.id}')">Reboot</button>
-                        <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.hostname}')">Shutdown</button>
-                        <button class="secondary" onclick="logoutClient('${client.id}')">Logout</button>
-                        <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.hostname}')">Remote Control</button>
+                    <div class="card-actions">
+                         ${client.locked
+                    ? `<button class="primary" onclick="unlockClient('${client.id}')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                                Unlock</button>`
+                    : `<button class="primary" onclick="lockClient('${client.id}')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Lock</button>`
+                }
+                        <button class="secondary" onclick="requestDiagnostics('${client.id}')">
+                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            Diag
+                        </button>
+                        <button class="secondary" onclick="rebootClient('${client.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            Reboot
+                        </button>
+                        <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.hostname}')">
+                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                            Off
+                        </button>
+                        <button class="secondary" onclick="logoutClient('${client.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            Logout
+                        </button>
+                        <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.hostname}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            View
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -1233,9 +1464,13 @@
             updateStats();
 
             // Also update table view if active
-            if (currentView === 'table') {
+            if (typeof currentView !== 'undefined' && currentView === 'table') {
                 renderTableView();
             }
+        }
+
+        function filterCards() {
+            renderClients();
         }
 
         function updateStats() {
@@ -1652,24 +1887,113 @@
                     <td class="client-name-cell">${client.customName || client.hostname}</td>
                     <td class="client-id-cell">${client.id.substring(0, 12)}...</td>
                     <td><span class="platform-badge ${client.platform}">${client.platform}</span></td>
-                    <td><span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">${client.locked ? 'Locked' : 'Unlocked'}</span></td>
+                    <td><span class="status-badge ${client.locked ? 'locked' : 'unlocked'}"><span class="badge-dot"></span>${client.locked ? 'Locked' : 'Unlocked'}</span></td>
                     <td>${formatTime(client.connectedAt)}</td>
                     <td>
                         <div class="actions-cell">
                             ${client.locked
-                                ? `<button class="secondary" onclick="unlockClient('${client.id}')">Unlock</button>`
-                                : `<button onclick="lockClient('${client.id}')">Lock</button>`
-                            }
-                            <button class="secondary" onclick="requestDiagnostics('${client.id}')">Diagnostics</button>
-                            <button class="secondary" onclick="rebootClient('${client.id}')">Reboot</button>
-                            <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.customName || client.hostname}')">Shutdown</button>
-                            <button class="secondary" onclick="logoutClient('${client.id}')">Logout</button>
-                            <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.customName || client.hostname}')">Remote</button>
+                    ? `<button class="secondary" onclick="unlockClient('${client.id}')" title="Unlock">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                                   </button>`
+                    : `<button class="secondary" onclick="lockClient('${client.id}')" title="Lock">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                   </button>`
+                }
+                            <button class="secondary" onclick="requestDiagnostics('${client.id}')" title="Diagnostics">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            </button>
+                            <button class="secondary" onclick="rebootClient('${client.id}')" title="Reboot">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            </button>
+                            <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.customName || client.hostname}')" title="Shutdown">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                            </button>
+                            <button class="secondary" onclick="logoutClient('${client.id}')" title="Logout">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            </button>
+                            <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.customName || client.hostname}')" title="View Remote">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            </button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
+
+        // ===== New Features Re-implementation (Lost in Revert) =====
+
+        function logoutClient(clientId) {
+            if (!confirm('Are you sure you want to logout this user?')) return;
+            socket.emit('admin:logout-client', clientId);
+        }
+
+        // Diagnostics
+        socket.on('admin:diagnostics-response', (data) => {
+            const { clientId, stats } = data;
+            const content = document.getElementById('diagnosticsContent');
+            if (content && currentDiagnosticsClientId === clientId) {
+                // Formatting helper
+                const formatUptime = (seconds) => {
+                    const d = Math.floor(seconds / (3600 * 24));
+                    const h = Math.floor(seconds % (3600 * 24) / 3600);
+                    const m = Math.floor(seconds % 3600 / 60);
+                    return `${d}d ${h}h ${m}m`;
+                };
+
+                content.innerHTML = `
+                    <div class="diagnostics-grid">
+                         <div class="diagnostic-item full-width">
+                            <div class="diagnostic-label">Hostname & Platform</div>
+                            <div class="diagnostic-value">${stats.hostname} (${stats.platform} ${stats.arch})</div>
+                        </div>
+                        <div class="diagnostic-item">
+                            <div class="diagnostic-label">CPU Usage</div>
+                            <div class="diagnostic-value">${stats.cpuLoad.toFixed(1)}%</div>
+                        </div>
+                        <div class="diagnostic-item">
+                            <div class="diagnostic-label">Memory Used</div>
+                            <div class="diagnostic-value">${Math.round(stats.memUsed / 1024 / 1024)} MB / ${Math.round(stats.memTotal / 1024 / 1024)} MB</div>
+                        </div>
+                        <div class="diagnostic-item">
+                            <div class="diagnostic-label">Uptime</div>
+                            <div class="diagnostic-value">${formatUptime(stats.uptime)}</div>
+                        </div>
+                        <div class="diagnostic-item">
+                            <div class="diagnostic-label">Node Version</div>
+                            <div class="diagnostic-value">${stats.nodeVersion}</div>
+                        </div>
+                       
+                        <div class="diagnostic-item full-width">
+                            <div class="diagnostic-label">CPU Model</div>
+                            <div class="diagnostic-value" style="font-size: 13px;">${stats.cpuModel}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        function showDiagnosticsModal(clientId, hostname) {
+            // Implementation of simple modal show if not already present or if simple version
+            // Note: In previous version this was called requestDiagnostics directly
+            // But we need the modal HTML structure first.
+            // Assuming modal exists in HTML (it should be there or added)
+            const modal = document.getElementById('diagnosticsModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeDiagnosticsModal() {
+            const modal = document.getElementById('diagnosticsModal');
+            if (modal) modal.classList.remove('active');
+            if (diagnosticsInterval) clearInterval(diagnosticsInterval);
+            currentDiagnosticsClientId = null;
+        }
+
+        function refreshDiagnostics() {
+            if (currentDiagnosticsClientId) {
+                socket.emit('admin:request-diagnostics', currentDiagnosticsClientId);
+            }
+        }
+
 
         // ========== REMOTE CONTROL ==========
         function startRemoteControl(clientId, hostname) {
@@ -1796,6 +2120,32 @@
                 renderClients();
             })
             .catch(error => console.error('Failed to load clients:', error));
+        // ========== CLIENT MENU ==========
+        function toggleClientMenu(clientId, event) {
+            event.stopPropagation();
+
+            // Close all other open menus first
+            document.querySelectorAll('.client-dropdown').forEach(dropdown => {
+                if (dropdown.id !== `menu-${clientId}`) {
+                    dropdown.classList.remove('active');
+                }
+            });
+
+            const menu = document.getElementById(`menu-${clientId}`);
+            if (menu) {
+                menu.classList.toggle('active');
+            }
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.client-menu-container')) {
+                document.querySelectorAll('.client-dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        });
     </script>
 </body>
+
 </html>
