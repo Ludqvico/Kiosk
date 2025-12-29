@@ -788,6 +788,70 @@
             flex: 1;
         }
 
+        /* Notification Modal Styles */
+        .icon-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+            transform: scale(1.05);
+        }
+
+        .icon-btn.selected {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-preview-container {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .notification-preview {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            display: flex;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .preview-icon-container {
+            flex-shrink: 0;
+        }
+
+        .preview-content {
+            flex: 1;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .preview-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
         /* Diagnostics & Shutdown */
         .diagnostics-grid {
             display: block;
@@ -2833,6 +2897,90 @@
         </div>
     </div>
 
+    <!-- Custom Notification Modal -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="modal notification-builder-modal" style="max-width: 900px; width: 90%;">
+            <div class="modal-header">
+                <h2 class="modal-title">Send Custom Notification</h2>
+                <button class="modal-close" onclick="closeNotificationModal()">×</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 20px;">
+                <!-- Left: Form -->
+                <div class="notification-form">
+                    <div class="modal-input-group">
+                        <label class="modal-input-label">Title</label>
+                        <input type="text" id="notifTitle" class="modal-input" placeholder="Notification Title"
+                            maxlength="50" oninput="updateNotificationPreview()">
+                    </div>
+
+                    <div class="modal-input-group">
+                        <label class="modal-input-label">Message</label>
+                        <textarea id="notifMessage" class="modal-input" rows="4" placeholder="Notification message..."
+                            maxlength="200" oninput="updateNotificationPreview()"></textarea>
+                    </div>
+
+                    <div class="modal-input-group">
+                        <label class="modal-input-label">Icon (Optional)</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <button type="button" class="icon-btn" data-icon="info"
+                                onclick="selectNotifIcon('info', this)">ℹ️</button>
+                            <button type="button" class="icon-btn" data-icon="warning"
+                                onclick="selectNotifIcon('warning', this)">⚠️</button>
+                            <button type="button" class="icon-btn" data-icon="success"
+                                onclick="selectNotifIcon('success', this)">✅</button>
+                            <button type="button" class="icon-btn" data-icon="error"
+                                onclick="selectNotifIcon('error', this)">❌</button>
+                            <button type="button" class="icon-btn" data-icon="bell"
+                                onclick="selectNotifIcon('bell', this)">🔔</button>
+                        </div>
+                        <input type="file" id="customIcon" accept="image/*" style="display:none"
+                            onchange="handleCustomIcon(this)">
+                        <button type="button" class="secondary" style="width: 100%; padding: 8px;"
+                            onclick="document.getElementById('customIcon').click()">Upload Custom Icon</button>
+                    </div>
+
+                    <div class="modal-input-group">
+                        <label class="modal-input-label">Image (Optional)</label>
+                        <input type="file" id="notifImage" class="modal-input" accept="image/*"
+                            onchange="handleNotifImage(this)">
+                        <small style="color: var(--text-tertiary); font-size: 12px;">Recommended: 400x200px</small>
+                    </div>
+
+                    <div class="modal-input-group">
+                        <label class="modal-input-label">Delay Timer (seconds)</label>
+                        <input type="number" id="notifDelay" class="modal-input" min="0" max="300" value="0"
+                            placeholder="0 = immediate">
+                        <small style="color: var(--text-tertiary); font-size: 12px;">0 = Send immediately</small>
+                    </div>
+                </div>
+
+                <!-- Right: Preview -->
+                <div class="notification-preview-container">
+                    <h3 style="margin-bottom: 15px; color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                        Preview</h3>
+                    <div class="notification-preview">
+                        <div class="preview-icon-container">
+                            <img id="previewIcon" src="" alt="Icon"
+                                style="width: 40px; height: 40px; border-radius: 4px; display: none;">
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-title" id="previewTitle">Notification Title</div>
+                            <div class="preview-message" id="previewMessage">Your message will appear here...</div>
+                            <img id="previewImage" src="" alt=""
+                                style="display:none; width: 100%; max-height: 150px; object-fit: cover; border-radius: 6px; margin-top: 10px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeNotificationModal()">Cancel</button>
+                <button onclick="sendCustomNotification()" id="btnSendNotif">Send Now</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const clients = new Map();
@@ -3036,6 +3184,13 @@
                                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                         </svg>
                                         Send Alert
+                                    </button>
+                                    <button class="client-dropdown-item" onclick="openNotificationModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                        </svg>
+                                        Send Notification
                                     </button>
                                     <button class="client-dropdown-item" onclick="toggleInternetBlock('${client.id}', !${client.internetBlocked || false}); toggleClientMenu('${client.id}', event)">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3335,6 +3490,150 @@
 
             socket.emit('admin:send-alert', payload);
             closeAlertModal();
+        }
+
+        // ===== Custom Notification Modal =====
+        let currentNotifClientId = null;
+        let selectedNotifIcon = null;
+        let selectedNotifImage = null;
+
+        function openNotificationModal(clientId) {
+            currentNotifClientId = clientId;
+            document.getElementById('notificationModal').classList.add('active');
+
+            // Reset form
+            document.getElementById('notifTitle').value = '';
+            document.getElementById('notifMessage').value = '';
+            document.getElementById('notifDelay').value = 0;
+            selectedNotifIcon = null;
+            selectedNotifImage = null;
+
+            // Reset icon buttons
+            document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('selected'));
+
+            updateNotificationPreview();
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').classList.remove('active');
+            currentNotifClientId = null;
+        }
+
+        function selectNotifIcon(iconType, btnElement) {
+            // Remove selected class from all buttons
+            document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('selected'));
+
+            // Add selected class to clicked button
+            btnElement.classList.add('selected');
+
+            // Map emoji to icon type
+            const iconMap = {
+                'info': 'ℹ️',
+                'warning': '⚠️',
+                'success': '✅',
+                'error': '❌',
+                'bell': '🔔'
+            };
+
+            selectedNotifIcon = iconMap[iconType];
+            updateNotificationPreview();
+        }
+
+        function handleCustomIcon(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedNotifIcon = e.target.result;
+
+                    // Remove selected class from emoji buttons
+                    document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('selected'));
+
+                    updateNotificationPreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleNotifImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedNotifImage = e.target.result;
+                    updateNotificationPreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateNotificationPreview() {
+            const title = document.getElementById('notifTitle').value || 'Notification Title';
+            const message = document.getElementById('notifMessage').value || 'Your message will appear here...';
+
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewMessage').textContent = message;
+
+            // Update icon
+            const iconEl = document.getElementById('previewIcon');
+            if (selectedNotifIcon) {
+                if (selectedNotifIcon.startsWith('data:')) {
+                    // Custom uploaded icon
+                    iconEl.src = selectedNotifIcon;
+                    iconEl.style.display = 'block';
+                } else {
+                    // Emoji icon - create a canvas to convert emoji to image
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 40;
+                    canvas.height = 40;
+                    const ctx = canvas.getContext('2d');
+                    ctx.font = '32px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(selectedNotifIcon, 20, 20);
+                    iconEl.src = canvas.toDataURL();
+                    iconEl.style.display = 'block';
+                }
+            } else {
+                iconEl.style.display = 'none';
+            }
+
+            // Update image
+            const imageEl = document.getElementById('previewImage');
+            if (selectedNotifImage) {
+                imageEl.src = selectedNotifImage;
+                imageEl.style.display = 'block';
+            } else {
+                imageEl.style.display = 'none';
+            }
+        }
+
+        function sendCustomNotification() {
+            const title = document.getElementById('notifTitle').value;
+            const message = document.getElementById('notifMessage').value;
+            const delay = parseInt(document.getElementById('notifDelay').value) || 0;
+
+            if (!title || !message) {
+                alert('Please enter both title and message');
+                return;
+            }
+
+            const notificationData = {
+                clientId: currentNotifClientId,
+                notification: {
+                    title,
+                    message,
+                    icon: selectedNotifIcon,
+                    image: selectedNotifImage,
+                    delay
+                }
+            };
+
+            socket.emit('admin:send-custom-notification', notificationData);
+            closeNotificationModal();
+
+            // Show success toast
+            showToast(`Notification sent to client${delay > 0 ? ` (delayed ${delay}s)` : ''}`, 'success');
         }
 
         // ===== Helper Functions =====

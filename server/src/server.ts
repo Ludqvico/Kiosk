@@ -452,6 +452,30 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Admin Send Custom Notification
+  socket.on('admin:send-custom-notification', (data: { clientId: string, notification: { title: string, message: string, icon?: string, image?: string, delay?: number } }) => {
+    console.log(`[Admin] Send Custom Notification to ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (!client) {
+      console.log('[Server] Client not found for notification');
+      return;
+    }
+
+    // Send notification to client
+    io.to(data.clientId).emit('server:custom-notification', data.notification);
+
+    // Log activity
+    logActivity({
+      type: 'diagnostics',
+      clientId: data.clientId,
+      clientHostname: client.hostname,
+      adminId: socket.id,
+      details: `Custom notification sent: "${data.notification.title}"${data.notification.delay ? ` (delayed ${data.notification.delay}s)` : ''}`
+    });
+
+    console.log(`[Server] Custom notification sent to ${client.hostname}`);
+  });
+
   // Admin Block Internet
   socket.on('admin:block-internet', (data: { clientId: string, block: boolean }) => {
     console.log(`[Admin] Internet Block ${data.block} for ${data.clientId}`);

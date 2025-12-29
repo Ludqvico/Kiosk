@@ -230,6 +230,62 @@ function showUnblockedPageInBrowser() {
   });
 }
 
+// Show custom notification
+function showCustomNotification(notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) {
+  const { Notification } = require('electron');
+
+  if (!Notification.isSupported()) {
+    console.error('[Notification] Not supported on this system');
+    return;
+  }
+
+  console.log(`[Notification] Displaying custom notification: ${notification.title}`);
+
+  const notifOptions: any = {
+    title: notification.title,
+    body: notification.message,
+    timeoutType: 'default'
+  };
+
+  // Handle icon
+  if (notification.icon) {
+    if (notification.icon.startsWith('data:')) {
+      // Base64 image - save to temp file
+      const tempIconPath = saveBase64ToTemp(notification.icon, 'custom-notif-icon.png');
+      notifOptions.icon = tempIconPath;
+    } else {
+      // Emoji or URL - use default kiosk icon
+      notifOptions.icon = path.join(__dirname, '../renderer/kiosk-icon.png');
+    }
+  } else {
+    // No icon - use default
+    notifOptions.icon = path.join(__dirname, '../renderer/kiosk-icon.png');
+  }
+
+  // Handle image (Windows 10+ supports this)
+  if (notification.image && notification.image.startsWith('data:')) {
+    const tempImagePath = saveBase64ToTemp(notification.image, 'custom-notif-image.png');
+    // Note: Electron Notification doesn't support 'image' property on all platforms
+    // We'll just use the icon for now
+  }
+
+  const electronNotif = new Notification(notifOptions);
+  electronNotif.show();
+
+  console.log('[Notification] Custom notification displayed');
+}
+
+// Helper function to save base64 image to temp file
+function saveBase64ToTemp(base64Data: string, filename: string): string {
+  const base64Image = base64Data.split(';base64,').pop();
+  if (!base64Image) return '';
+
+  const buffer = Buffer.from(base64Image, 'base64');
+  const tempPath = path.join(os.tmpdir(), filename);
+  fsSync.writeFileSync(tempPath, buffer);
+  return tempPath;
+}
+
 
 // Cleanup on exit - always restore normal policy and stop web server
 app.on('will-quit', () => {
@@ -732,6 +788,21 @@ function connectToServer() {
       } else {
         disableFirewallBlock();
       }
+    }
+  });
+
+  serverConnection.onCustomNotification((notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => {
+    console.log('[Main] Received custom notification:', notification.title);
+
+    const delay = notification.delay || 0;
+
+    if (delay > 0) {
+      console.log(`[Main] Delaying notification ${delay} seconds...`);
+      setTimeout(() => {
+        showCustomNotification(notification);
+      }, delay * 1000);
+    } else {
+      showCustomNotification(notification);
     }
   });
 
