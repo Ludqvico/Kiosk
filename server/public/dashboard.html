@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -179,6 +180,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -193,9 +195,12 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 1;
             }
+
             50% {
                 opacity: 0.5;
             }
@@ -226,6 +231,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -468,6 +474,66 @@
 
         .client-card:hover::before {
             opacity: 1;
+        }
+
+        /* Locked Card Styles */
+        .client-card.locked {
+            border-color: var(--danger);
+            border-width: 2px;
+        }
+
+        .client-card.locked::before {
+            background: linear-gradient(90deg, var(--danger), #dc2626);
+            opacity: 1;
+        }
+
+        .client-card.locked::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(239, 68, 68, 0.05);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .client-card.locked .card-header,
+        .client-card.locked .card-details,
+        .client-card.locked .card-actions {
+            position: relative;
+            z-index: 1;
+        }
+
+        .lock-indicator {
+            position: absolute;
+            top: var(--space-md);
+            right: 50px;
+            width: 28px;
+            height: 28px;
+            background: var(--danger);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: var(--shadow-md);
+            animation: pulse-lock 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-lock {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
         }
 
         .card-header {
@@ -909,11 +975,30 @@
             font-weight: 600;
         }
 
-        .event-badge.lock { background: var(--success-light); color: var(--success); }
-        .event-badge.unlock { background: var(--warning-light); color: var(--warning); }
-        .event-badge.connect { background: #dbeafe; color: #0369a1; }
-        .event-badge.disconnect { background: var(--danger-light); color: var(--danger); }
-        .event-badge.reboot { background: #fef3c7; color: #d97706; }
+        .event-badge.lock {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .event-badge.unlock {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .event-badge.connect {
+            background: #dbeafe;
+            color: #0369a1;
+        }
+
+        .event-badge.disconnect {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .event-badge.reboot {
+            background: #fef3c7;
+            color: #d97706;
+        }
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -988,7 +1073,9 @@
 
         /* Loading Spinner */
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .spinner {
@@ -1023,7 +1110,96 @@
         }
 
         @keyframes tooltipFadeIn {
-            to { opacity: 1; }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Diagnostics Modal Styles */
+        .diagnostics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+        }
+
+        .diagnostic-item {
+            padding: var(--space-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+        }
+
+        .diagnostic-item.full-width {
+            grid-column: span 2;
+        }
+
+        .diagnostic-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--space-xs);
+        }
+
+        .diagnostic-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .diagnostic-value.highlight {
+            color: var(--accent-primary);
+        }
+
+        /* Shutdown Timer Input */
+        .timer-input-group {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .timer-input {
+            width: 100px;
+            padding: 12px 16px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .timer-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .timer-unit {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .shutdown-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            background: var(--warning-light);
+            border-radius: var(--radius-md);
+            margin-top: var(--space-md);
+        }
+
+        .shutdown-warning svg {
+            flex-shrink: 0;
+            color: var(--warning);
+        }
+
+        .shutdown-warning-text {
+            font-size: 14px;
+            color: var(--text-primary);
         }
 
         /* File Explorer Styles */
@@ -1315,6 +1491,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1353,6 +1530,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -1362,13 +1540,16 @@
             <nav class="nav-section">
                 <div class="nav-item active" data-page="stations" onclick="switchPage('stations')">
                     <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                        <path
+                            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
                     </svg>
                     Stations
                 </div>
                 <div class="nav-item" data-page="activity" onclick="switchPage('activity')">
                     <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd"
+                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                            clip-rule="evenodd" />
                     </svg>
                     Activity Log
                 </div>
@@ -1416,26 +1597,34 @@
                 <div class="controls">
                     <div class="search-box">
                         <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd"
+                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                clip-rule="evenodd" />
                         </svg>
-                        <input type="text" class="search-input" id="searchInput" placeholder="Search stations..." oninput="filterClients()">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search stations..."
+                            oninput="filterClients()">
                     </div>
                     <button class="secondary" onclick="refreshStations()">
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd"
+                                d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                                clip-rule="evenodd" />
                         </svg>
                         Refresh
                     </button>
                     <div class="view-toggle">
                         <button class="view-toggle-btn active" onclick="toggleView('cards')">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                                <path
+                                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
                             </svg>
                             Cards
                         </button>
                         <button class="view-toggle-btn" onclick="toggleView('table')">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Table
                         </button>
@@ -1446,9 +1635,9 @@
                 <div id="clientsContainer" class="clients-grid">
                     <div class="empty-state">
                         <svg class="empty-state-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor">
-                            <rect x="8" y="12" width="48" height="36" rx="4" stroke-width="2"/>
-                            <rect x="14" y="18" width="36" height="24" rx="2" stroke-width="2"/>
-                            <line x1="20" y1="54" x2="44" y2="54" stroke-width="2"/>
+                            <rect x="8" y="12" width="48" height="36" rx="4" stroke-width="2" />
+                            <rect x="14" y="18" width="36" height="24" rx="2" stroke-width="2" />
+                            <line x1="20" y1="54" x2="44" y2="54" stroke-width="2" />
                         </svg>
                         <div class="empty-state-title">No stations connected</div>
                         <div class="empty-state-text">Stations will appear here when they connect to the server</div>
@@ -1514,7 +1703,9 @@
                     <div class="filter-group" style="display: flex; align-items: flex-end;">
                         <button class="secondary" onclick="exportActivityLog()" style="width: 100%;">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Export CSV
                         </button>
@@ -1552,7 +1743,8 @@
                 <div class="file-explorer-toolbar">
                     <div class="toolbar-section">
                         <label class="toolbar-label">Select Station</label>
-                        <select class="toolbar-select" id="fileExplorerClientSelect" onchange="onFileExplorerClientChange()">
+                        <select class="toolbar-select" id="fileExplorerClientSelect"
+                            onchange="onFileExplorerClientChange()">
                             <option value="">Choose a station...</option>
                         </select>
                     </div>
@@ -1564,15 +1756,19 @@
                         <div class="breadcrumb" id="breadcrumb">
                             <span class="breadcrumb-item" onclick="navigateToPath('/')">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                    <path
+                                        d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                                 </svg>
                             </span>
                         </div>
                         <div class="path-input-container">
-                            <input type="text" class="path-input" id="pathInput" placeholder="Enter path..." onkeypress="handlePathInputKeypress(event)">
+                            <input type="text" class="path-input" id="pathInput" placeholder="Enter path..."
+                                onkeypress="handlePathInputKeypress(event)">
                             <button class="path-go-btn" onclick="navigateToInputPath()">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </button>
                         </div>
@@ -1588,7 +1784,9 @@
                         </button>
                         <button class="action-btn" onclick="refreshCurrentPath()">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Refresh
                         </button>
@@ -1647,6 +1845,73 @@
             <div class="modal-footer">
                 <button class="secondary" onclick="closeFileRenameModal()">Cancel</button>
                 <button class="primary" onclick="saveFileName()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostics Modal -->
+    <div class="modal-overlay" id="diagnosticsModal">
+        <div class="modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="diagnosticsTitle">Diagnostics</h2>
+            </div>
+            <div class="modal-body">
+                <div class="diagnostics-grid" id="diagnosticsContent">
+                    <div class="diagnostic-item full-width">
+                        <div class="diagnostic-label">Loading...</div>
+                        <div class="diagnostic-value">Fetching diagnostics data...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeDiagnosticsModal()">Close</button>
+                <button class="primary" onclick="refreshDiagnostics()">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shutdown Modal -->
+    <div class="modal-overlay" id="shutdownModal">
+        <div class="modal" style="max-width: 440px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="shutdownTitle">Shutdown Station</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: var(--space-lg); color: var(--text-secondary);">
+                    Set the delay before the station shuts down:
+                </p>
+                <div class="timer-input-group">
+                    <input type="number" class="timer-input" id="shutdownDelay" value="60" min="0" max="3600">
+                    <span class="timer-unit">seconds</span>
+                </div>
+                <div class="shutdown-warning">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span class="shutdown-warning-text">
+                        This will shut down the station. Make sure all work is saved.
+                    </span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeShutdownModal()">Cancel</button>
+                <button class="danger" onclick="confirmShutdown()">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Shutdown
+                </button>
             </div>
         </div>
     </div>
@@ -1800,11 +2065,19 @@
                 const displayName = clientNames[id] || client.hostname;
                 const statusClass = client.locked ? 'locked' : 'unlocked';
                 const statusText = client.locked ? 'Locked' : 'Unlocked';
+                const cardLockedClass = client.locked ? ' locked' : '';
 
                 const card = document.createElement('div');
-                card.className = 'client-card';
+                card.className = 'client-card' + cardLockedClass;
                 card.dataset.clientId = id;
                 card.innerHTML = `
+                    ${client.locked ? `
+                        <div class="lock-indicator">
+                            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    ` : ''}
                     <div class="card-header">
                         <div class="card-info">
                             <div class="card-title">${displayName}</div>
@@ -1822,6 +2095,24 @@
                                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                     </svg>
                                     Rename
+                                </div>
+                                <div class="dropdown-item" onclick="requestDiagnostics('${id}')">
+                                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd" />
+                                    </svg>
+                                    Diagnostics
+                                </div>
+                                <div class="dropdown-item" onclick="showShutdownModal('${id}', '${displayName}')">
+                                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                                    </svg>
+                                    Shutdown
+                                </div>
+                                <div class="dropdown-item" onclick="logoutClient('${id}')">
+                                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm7 4a1 1 0 00-2 0v4a1 1 0 002 0V7z" clip-rule="evenodd" />
+                                    </svg>
+                                    Logout User
                                 </div>
                                 <div class="dropdown-item" onclick="toggleAutoStart('${id}')">
                                     <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -1847,21 +2138,15 @@
                     </div>
                     <div class="card-actions">
                         ${client.locked
-                            ? '<button class="secondary" onclick="unlockClient(\'' + id + '\')">Unlock</button>'
-                            : '<button class="primary" onclick="lockClient(\'' + id + '\')">Lock</button>'
-                        }
+                        ? '<button class="primary" onclick="unlockClient(\'' + id + '\')"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" /></svg> Unlock</button>'
+                        : '<button class="primary" onclick="lockClient(\'' + id + '\')"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg> Lock</button>'
+                    }
                         <button class="secondary" onclick="openRemoteDesktop('${id}')">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                                 <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                             </svg>
                             View
-                        </button>
-                        <button class="danger" onclick="rebootClient('${id}')">
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                            </svg>
-                            Reboot
                         </button>
                     </div>
                 `;
@@ -1895,10 +2180,13 @@
                     <td>
                         <div class="table-actions">
                             ${client.locked
-                                ? '<button class="table-action-btn secondary" onclick="unlockClient(\'' + id + '\')">Unlock</button>'
-                                : '<button class="table-action-btn primary" onclick="lockClient(\'' + id + '\')">Lock</button>'
-                            }
+                        ? '<button class="table-action-btn primary" onclick="unlockClient(\'' + id + '\')">Unlock</button>'
+                        : '<button class="table-action-btn primary" onclick="lockClient(\'' + id + '\')">Lock</button>'
+                    }
+                            <button class="table-action-btn secondary" onclick="requestDiagnostics('${id}')">Diagnostics</button>
                             <button class="table-action-btn secondary" onclick="openRemoteDesktop('${id}')">View</button>
+                            <button class="table-action-btn secondary" onclick="showShutdownModal('${id}', '${displayName}')">Shutdown</button>
+                            <button class="table-action-btn secondary" onclick="logoutClient('${id}')">Logout</button>
                         </div>
                     </td>
                 `;
@@ -1998,6 +2286,161 @@
 
         function openRemoteDesktop(clientId) {
             window.open(`/remote.html?clientId=${clientId}`, '_blank', 'width=1200,height=800');
+        }
+
+        // ========== LOGOUT CLIENT ==========
+        function logoutClient(clientId) {
+            if (confirm('Are you sure you want to log out the user on this station?')) {
+                socket.emit('admin:logout-client', clientId);
+                addActivityLogEntry('logout', clientId, 'Logout command sent');
+            }
+        }
+
+        // ========== DIAGNOSTICS ==========
+        let currentDiagnosticsClientId = null;
+        let diagnosticsInterval = null;
+
+        function requestDiagnostics(clientId) {
+            currentDiagnosticsClientId = clientId;
+            const client = clients.get(clientId);
+            const displayName = clientNames[clientId] || client?.hostname || 'Unknown';
+
+            // Show modal with loading state
+            document.getElementById('diagnosticsTitle').textContent = `Diagnostics - ${displayName}`;
+            document.getElementById('diagnosticsContent').innerHTML = `
+                <div class="diagnostic-item full-width">
+                    <div class="diagnostic-label">Loading</div>
+                    <div class="diagnostic-value">Fetching diagnostics data...</div>
+                </div>
+            `;
+            document.getElementById('diagnosticsModal').classList.add('active');
+
+            // Request diagnostics from server
+            socket.emit('admin:request-diagnostics', clientId);
+
+            // Start auto-refresh
+            if (diagnosticsInterval) clearInterval(diagnosticsInterval);
+            diagnosticsInterval = setInterval(() => {
+                if (currentDiagnosticsClientId) {
+                    socket.emit('admin:request-diagnostics', currentDiagnosticsClientId);
+                }
+            }, 5000);
+        }
+
+        function refreshDiagnostics() {
+            if (currentDiagnosticsClientId) {
+                socket.emit('admin:request-diagnostics', currentDiagnosticsClientId);
+            }
+        }
+
+        function closeDiagnosticsModal() {
+            document.getElementById('diagnosticsModal').classList.remove('active');
+            currentDiagnosticsClientId = null;
+            if (diagnosticsInterval) {
+                clearInterval(diagnosticsInterval);
+                diagnosticsInterval = null;
+            }
+        }
+
+        // Listen for diagnostics response
+        socket.on('admin:diagnostics-response', (data) => {
+            if (data.clientId !== currentDiagnosticsClientId) return;
+
+            const diagnostics = data.diagnostics;
+            if (!diagnostics) {
+                document.getElementById('diagnosticsContent').innerHTML = `
+                    <div class="diagnostic-item full-width">
+                        <div class="diagnostic-label">Error</div>
+                        <div class="diagnostic-value">Failed to fetch diagnostics</div>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('diagnosticsContent').innerHTML = `
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Hostname</div>
+                    <div class="diagnostic-value">${diagnostics.hostname || 'N/A'}</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Platform</div>
+                    <div class="diagnostic-value">${diagnostics.platform || 'N/A'} (${diagnostics.arch || 'N/A'})</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">CPU Usage</div>
+                    <div class="diagnostic-value highlight">${diagnostics.cpuUsage || 0}%</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Memory Usage</div>
+                    <div class="diagnostic-value highlight">${diagnostics.memoryUsage || 0}%</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Total RAM</div>
+                    <div class="diagnostic-value">${diagnostics.totalMemoryMB || 0} MB</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Free RAM</div>
+                    <div class="diagnostic-value">${diagnostics.freeMemoryMB || 0} MB</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">CPU Cores</div>
+                    <div class="diagnostic-value">${diagnostics.cpuCores || 'N/A'}</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Uptime</div>
+                    <div class="diagnostic-value">${formatUptime(diagnostics.uptime || 0)}</div>
+                </div>
+                <div class="diagnostic-item full-width">
+                    <div class="diagnostic-label">CPU Model</div>
+                    <div class="diagnostic-value">${diagnostics.cpuModel || 'N/A'}</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Node.js Version</div>
+                    <div class="diagnostic-value">${diagnostics.nodeVersion || 'N/A'}</div>
+                </div>
+                <div class="diagnostic-item">
+                    <div class="diagnostic-label">Last Updated</div>
+                    <div class="diagnostic-value">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+        });
+
+        function formatUptime(seconds) {
+            if (!seconds) return 'N/A';
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+
+            if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        // ========== SHUTDOWN ==========
+        let currentShutdownClientId = null;
+
+        function showShutdownModal(clientId, displayName) {
+            currentShutdownClientId = clientId;
+            document.getElementById('shutdownTitle').textContent = `Shutdown - ${displayName}`;
+            document.getElementById('shutdownDelay').value = 60;
+            document.getElementById('shutdownModal').classList.add('active');
+        }
+
+        function closeShutdownModal() {
+            document.getElementById('shutdownModal').classList.remove('active');
+            currentShutdownClientId = null;
+        }
+
+        function confirmShutdown() {
+            if (!currentShutdownClientId) return;
+
+            const delay = parseInt(document.getElementById('shutdownDelay').value) || 60;
+            socket.emit('admin:shutdown-client', {
+                clientId: currentShutdownClientId,
+                delay: delay
+            });
+            addActivityLogEntry('shutdown', currentShutdownClientId, `Shutdown scheduled in ${delay}s`);
+            closeShutdownModal();
         }
 
         function refreshStations() {
@@ -2136,6 +2579,27 @@
         document.getElementById('newClientName').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 saveClientName();
+            }
+        });
+
+        // Close diagnostics modal on overlay click
+        document.getElementById('diagnosticsModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeDiagnosticsModal();
+            }
+        });
+
+        // Close shutdown modal on overlay click
+        document.getElementById('shutdownModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeShutdownModal();
+            }
+        });
+
+        // Enter key in shutdown modal
+        document.getElementById('shutdownDelay').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmShutdown();
             }
         });
 
@@ -2698,4 +3162,5 @@
         });
     </script>
 </body>
+
 </html>
