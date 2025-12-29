@@ -737,7 +737,7 @@
             box-shadow: var(--shadow-lg);
             padding: var(--space-xl);
             border: 1px solid var(--border-light);
-            max-width: 850px;
+            max-width: 720px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
@@ -830,33 +830,10 @@
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
             padding: 16px;
-            transition: all var(--transition-base);
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
-        }
-
-        /* Highlight decoration */
-        .diag-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent-primary), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .diag-card:hover::after {
-            opacity: 1;
-        }
-
-        .diag-card:hover {
-            border-color: var(--border-medium);
-            box-shadow: var(--shadow-md);
         }
 
         .diag-card.full-width {
