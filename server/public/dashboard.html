@@ -2941,13 +2941,6 @@
                     </div>
 
                     <div class="modal-input-group">
-                        <label class="modal-input-label">Image (Optional)</label>
-                        <input type="file" id="notifImage" class="modal-input" accept="image/*"
-                            onchange="handleNotifImage(this)">
-                        <small style="color: var(--text-tertiary); font-size: 12px;">Recommended: 400x200px</small>
-                    </div>
-
-                    <div class="modal-input-group">
                         <label class="modal-input-label">Delay Timer (seconds)</label>
                         <input type="number" id="notifDelay" class="modal-input" min="0" max="300" value="0"
                             placeholder="0 = immediate">
@@ -2961,14 +2954,12 @@
                         Preview</h3>
                     <div class="notification-preview">
                         <div class="preview-icon-container">
-                            <img id="previewIcon" src="" alt="Icon"
+                            <img id="notifPreviewIcon" src="" alt="Icon"
                                 style="width: 40px; height: 40px; border-radius: 4px; display: none;">
                         </div>
                         <div class="preview-content">
-                            <div class="preview-title" id="previewTitle">Notification Title</div>
-                            <div class="preview-message" id="previewMessage">Your message will appear here...</div>
-                            <img id="previewImage" src="" alt=""
-                                style="display:none; width: 100%; max-height: 150px; object-fit: cover; border-radius: 6px; margin-top: 10px;">
+                            <div class="preview-title" id="notifPreviewTitle">Notification Title</div>
+                            <div class="preview-message" id="notifPreviewMessage">Your message will appear here...</div>
                         </div>
                     </div>
                 </div>
@@ -3495,7 +3486,6 @@
         // ===== Custom Notification Modal =====
         let currentNotifClientId = null;
         let selectedNotifIcon = null;
-        let selectedNotifImage = null;
 
         function openNotificationModal(clientId) {
             currentNotifClientId = clientId;
@@ -3506,7 +3496,6 @@
             document.getElementById('notifMessage').value = '';
             document.getElementById('notifDelay').value = 0;
             selectedNotifIcon = null;
-            selectedNotifImage = null;
 
             // Reset icon buttons
             document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('selected'));
@@ -3555,27 +3544,15 @@
             }
         }
 
-        function handleNotifImage(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    selectedNotifImage = e.target.result;
-                    updateNotificationPreview();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
         function updateNotificationPreview() {
             const title = document.getElementById('notifTitle').value || 'Notification Title';
             const message = document.getElementById('notifMessage').value || 'Your message will appear here...';
 
-            document.getElementById('previewTitle').textContent = title;
-            document.getElementById('previewMessage').textContent = message;
+            document.getElementById('notifPreviewTitle').textContent = title;
+            document.getElementById('notifPreviewMessage').textContent = message;
 
             // Update icon
-            const iconEl = document.getElementById('previewIcon');
+            const iconEl = document.getElementById('notifPreviewIcon');
             if (selectedNotifIcon) {
                 if (selectedNotifIcon.startsWith('data:')) {
                     // Custom uploaded icon
@@ -3597,15 +3574,6 @@
             } else {
                 iconEl.style.display = 'none';
             }
-
-            // Update image
-            const imageEl = document.getElementById('previewImage');
-            if (selectedNotifImage) {
-                imageEl.src = selectedNotifImage;
-                imageEl.style.display = 'block';
-            } else {
-                imageEl.style.display = 'none';
-            }
         }
 
         function sendCustomNotification() {
@@ -3624,7 +3592,6 @@
                     title,
                     message,
                     icon: selectedNotifIcon,
-                    image: selectedNotifImage,
                     delay
                 }
             };
