@@ -150,7 +150,7 @@ function disableFirewallBlock() {
   showUnblockedPageInBrowser();
 
   // Send Windows notification
-  sendWindowsNotification('Connessione Ripristinata', 'Accesso a Internet riabilitato.');
+  // sendWindowsNotification('Connessione Ripristinata', 'Accesso a Internet riabilitato.');
 }
 
 // Show unblocked page when internet is restored
