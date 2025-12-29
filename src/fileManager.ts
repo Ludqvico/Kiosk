@@ -11,13 +11,16 @@ export class FileManager {
 
     // Get list of disks/drives
     static async getDisks() {
+        console.log('[FileManager] getDisks called');
         try {
             const platform = os.platform();
             const disks: Array<{ name: string; size: number; free: number; usedPercent: number }> = [];
 
             if (platform === 'win32') {
+                console.log('[FileManager] Platform is win32, executing wmic...');
                 // Use WMIC on Windows
                 const { stdout } = await execAsync('wmic logicaldisk get name,size,freespace,caption');
+                console.log('[FileManager] wmic output length:', stdout.length);
                 const lines = stdout.trim().split('\n').slice(1); // Skip header
 
                 for (const line of lines) {
@@ -41,6 +44,7 @@ export class FileManager {
                     }
                 }
             } else {
+                console.log('[FileManager] Platform is *nix, executing df...');
                 // Use df on *nix/mac
                 const { stdout } = await execAsync('df -kP');
                 const lines = stdout.trim().split('\n').slice(1);
@@ -60,6 +64,7 @@ export class FileManager {
                     }
                 }
             }
+            console.log('[FileManager] getDisks found:', disks.length, 'disks');
             return disks;
         } catch (error: any) {
             console.error('Error getting disks:', error);
