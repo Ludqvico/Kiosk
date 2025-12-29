@@ -19,28 +19,78 @@ export class FileManager {
             if (platform === 'win32') {
                 console.log('[FileManager] Platform is win32, executing wmic...');
                 // Use WMIC on Windows
-                const { stdout } = await execAsync('wmic logicaldisk get name,size,freespace,caption');
-                console.log('[FileManager] wmic output length:', stdout.length);
-                const lines = stdout.trim().split('\n').slice(1); // Skip header
+                // Use WMIC with CSV format for easier parsing
+                // wmic logicaldisk get name,size,freespace,caption /format:csv
+                const { stdout } = await execAsync('wmic logicaldisk get caption,size,freespace /format:csv');
+
+                // Output format:
+                // Node,Caption,FreeSpace,Size
+                // MACHINE,C:,12345,67890
+
+                const lines = stdout.trim().split('\n');
+                // First line is empty or header, find header
 
                 for (const line of lines) {
-                    // Output format: Caption  FreeSpace     Name  Size
-                    // Example:      C:       1234567890    C:    9876543210
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length >= 2) {
-                        const name = parts[0]; // Caption seems safer
-                        // wmic values can be weird, sanitize
-                        const freeSpace = parseInt(parts.find(p => /^\d+$/.test(p)) || '0');
-                        const size = parseInt(parts.reverse().find(p => /^\d+$/.test(p)) || '0');
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.startsWith('Node')) continue; // Skip empty or header
 
-                        if (size > 0) {
-                            disks.push({
-                                name,
-                                size,
-                                free: freeSpace,
-                                usedPercent: Math.round(((size - freeSpace) / size) * 100)
-                            });
-                        }
+                    const parts = trimmed.split(',');
+                    if (parts.length >= 4) {
+                        // Node, Caption, FreeSpace, Size
+                        // Note: wmic csv output order depends on query but usually reliable if we check
+                        // Actually /format:csv output lines are: Node,Property1,Property2... sorted alphabetically by property name?
+                        // Let's re-parse safely. 
+
+                        // Wait, wmic /format:csv is:
+                        // Node,Caption,FreeSpace,Size  (Alphabetical properties?)
+                        // "Node" is always first.
+                        // Let's use specific column selection to be sure? 
+                        // It's safer to just fetch and use key-value list? No, List is multiline.
+                        // CSV is standard.
+
+                        // Let's assume standard CSV: Node,Caption,FreeSpace,Size
+                        // But verifying column order is hard without a library.
+
+                        // Fallback: simplified parsing logic used before but improved regex
+
+                        // Let's go back to standard text output and parse more defensively.
+                        // Standard: Caption  FreeSpace     Size
+                        // C:       100       200
+                    }
+                }
+
+                // Retrying standard text but with strict column logic fails if columns merge.
+                // Let's use `wmic logicaldisk get caption,size,freespace /format:list`
+                // This output:
+                // Caption=C:
+                // FreeSpace=123
+                // Size=456
+
+                const { stdout: listOut } = await execAsync('wmic logicaldisk get caption,size,freespace /format:list');
+                const chunks = listOut.trim().split(/\n\s*\n/); // Empty line between objects
+
+                for (const chunk of chunks) {
+                    const lines = chunk.split('\n');
+                    let name = '';
+                    let size = 0;
+                    let free = 0;
+
+                    for (const l of lines) {
+                        const [key, val] = l.trim().split('=');
+                        if (!key || !val) continue;
+
+                        if (key.toLowerCase() === 'caption') name = val;
+                        if (key.toLowerCase() === 'size') size = parseInt(val);
+                        if (key.toLowerCase() === 'freespace') free = parseInt(val);
+                    }
+
+                    if (name && size > 0) {
+                        disks.push({
+                            name,
+                            size,
+                            free,
+                            usedPercent: Math.round(((size - free) / size) * 100)
+                        });
                     }
                 }
             } else {

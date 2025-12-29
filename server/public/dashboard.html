@@ -3784,6 +3784,9 @@
                         <div class="fm-drive-usage">
                             <div class="fm-drive-bar" style="width: ${d.usedPercent}%"></div>
                         </div>
+                        <div style="font-size:10px; color:var(--text-tertiary); margin-top:2px;">
+                            ${formatSize(d.size - d.free)} used of ${formatSize(d.size)}
+                        </div>
                     </div>
                 </div>
             `).join('');
