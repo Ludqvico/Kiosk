@@ -2677,74 +2677,7 @@
             }
         }
 
-        /* Gallery Grid */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 24px;
-        }
-
-        .gallery-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-        }
-
-        .gallery-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .gallery-thumb {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .play-overlay {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .gallery-card:hover .play-overlay {
-            opacity: 1;
-        }
-
-        .gallery-info {
-            padding: 16px;
-        }
-
-        .gallery-title {
-            font-weight: 600;
-            margin-bottom: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-primary);
-        }
-
-        .gallery-meta {
-            font-size: 13px;
-            color: var(--text-tertiary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* Gallery Styles are now integrated into global table styles */
     </style>
 </head>
 
@@ -3003,9 +2936,8 @@
                     </button>
                 </div>
 
-                <div class="gallery-grid" id="galleryContainer">
-                    <!-- Gallery Items -->
-                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">
+                <div id="galleryContainer">
+                    <div style="text-align: center; padding: 40px; color: var(--text-tertiary);">
                         Loading gallery...
                     </div>
                 </div>
@@ -5628,39 +5560,82 @@
 
         async function loadGallery() {
             const container = document.getElementById('galleryContainer');
-            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">Loading gallery...</div>';
+            container.innerHTML = '<div>Loading gallery...</div>';
 
             try {
                 const res = await fetch('/api/recordings');
                 const recordings = await res.json();
 
                 if (recordings.length === 0) {
-                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">No recordings found.</div>';
+                    container.innerHTML = '<div class="empty-state">No recordings found.</div>';
                     return;
                 }
 
-                container.innerHTML = recordings.map(rec => `
-                <div class="gallery-card" onclick="window.open('${rec.url}', '_blank')">
-                    <div class="gallery-thumb">
-                        <video src="${rec.url}#t=1" class="gallery-video" preload="metadata"></video>
-                        <div class="play-overlay">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                        </div>
+                // Sort by date descending
+                recordings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                let html = `
+                    <div class="table-container">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Date & Time</th>
+                                    <th>Size</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                html += recordings.map(rec => {
+                    // Try to find client hostname if it looks like a client ID or hostname in the filename
+                    // Filenames are typically: eagleeye-ID-TIMESTAMP.webm
+                    let clientDisplay = 'System';
+                    const parts = rec.filename.split('-');
+                    if (parts.length >= 2) {
+                        const potentialId = parts[1];
+                        // If it's a known client, use its name
+                        const client = clients.get(potentialId);
+                        if (client) {
+                            clientDisplay = client.customName || client.hostname;
+                        } else {
+                            clientDisplay = potentialId;
+                        }
+                    }
+
+                    return `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-primary);"></div>
+                                    <span style="font-weight: 500;">${clientDisplay}</span>
+                                </div>
+                            </td>
+                            <td>${new Date(rec.createdAt).toLocaleString()}</td>
+                            <td>${(rec.size / 1024 / 1024).toFixed(1)} MB</td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                    <button class="secondary" style="padding: 4px 12px; font-size: 12px;" onclick="window.open('${rec.url}', '_blank')">
+                                        View
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                html += `
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="gallery-info">
-                        <div class="gallery-title">${rec.filename}</div>
-                        <div class="gallery-meta">
-                            <span>${new Date(rec.createdAt).toLocaleString()}</span>
-                            <span>${(rec.size / 1024 / 1024).toFixed(1)} MB</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+                `;
+
+                container.innerHTML = html;
 
             } catch (error) {
-                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--danger);">Failed to load recordings.</div>';
+                console.error('Gallery load error:', error);
+                container.innerHTML = '<div style="color: var(--danger); padding: 20px;">Failed to load recordings.</div>';
             }
         }
     </script>

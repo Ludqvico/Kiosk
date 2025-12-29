@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,117 +27,220 @@
         }
 
         .remote-header {
-            background: #2a2a2a;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            border-bottom: 1px solid #3a3a3a;
-            gap: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        .remote-title-group {
+            display: flex;
+            flex-direction: column;
         }
 
         .remote-title {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .remote-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .control-label {
-            font-size: 13px;
-            color: #aaa;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            background: #555;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .toggle-switch.active {
-            background: #4CAF50;
-        }
-
-        .toggle-switch.disabled {
-            background: #f44336;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.3s;
-        }
-
-        .toggle-switch.active .toggle-slider {
-            transform: translateX(20px);
-        }
-
-        .toggle-switch.disabled .toggle-slider {
-            transform: translateX(20px);
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
         }
 
         .remote-status {
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
+        .remote-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ee-control-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .status-indicator.connecting {
-            background: #ffa500;
-            animation: pulse 1.5s infinite;
+        .ee-control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
 
-        .status-indicator.connected {
-            background: #4CAF50;
+        .ee-control-btn.active {
+            background: rgba(66, 153, 225, 0.2);
+            border-color: #4299e1;
+            color: #4299e1;
         }
 
-        .status-indicator.disconnected {
-            background: #f44336;
+        .ee-control-btn.recording {
+            background: rgba(245, 101, 101, 0.2);
+            border-color: #f56565;
+            color: #f56565;
+            animation: pulse-red 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(245, 101, 101, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 101, 101, 0);
+            }
+        }
+
+        .header-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 15px;
         }
 
         .close-btn {
-            background: #f44336;
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 4px;
+            background: rgba(245, 101, 101, 0.1);
+            border: 1px solid rgba(245, 101, 101, 0.2);
+            color: #f56565;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
         }
 
         .close-btn:hover {
-            background: #d32f2f;
+            background: #f56565;
+            color: white;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #2d3748;
+            border-radius: 16px;
+            width: 350px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-group:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            accent-color: #4299e1;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-start {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #3182ce;
+        }
+
+        #recordingTimer {
+            font-family: monospace;
+            color: #f56565;
+            font-weight: 700;
+            font-size: 14px;
+            display: none;
         }
 
         .remote-screen {
@@ -190,7 +294,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .loading-text {
@@ -206,38 +312,99 @@
         }
     </style>
 </head>
+
 <body>
     <div class="remote-container">
         <div class="remote-header">
-            <div class="remote-title" id="remoteTitle">Remote Desktop - WebRTC</div>
+            <div class="remote-title-group">
+                <div class="remote-title" id="remoteTitle">Remote Desktop - WebRTC</div>
+                <div class="remote-status">
+                    <div class="status-indicator connecting" id="statusIndicator"></div>
+                    <span id="statusText">Connecting...</span>
+                    <span id="recordingTimer"> | 00:00</span>
+                </div>
+            </div>
 
             <div class="remote-controls">
-                <div class="control-group">
-                    <span class="control-label">Mouse</span>
-                    <div class="toggle-switch active" id="toggleMouse" onclick="toggleMouseControl()">
-                        <div class="toggle-slider"></div>
-                    </div>
-                </div>
+                <button class="ee-control-btn active" id="btnMouse" onclick="toggleMouseControl()"
+                    title="Toggle Mouse Control">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 6v6a3 3 0 1 1-6 0V6a3 3 0 0 1 6 0z"></path>
+                        <path d="M12 19V5"></path>
+                    </svg>
+                </button>
 
-                <div class="control-group">
-                    <span class="control-label">Keyboard</span>
-                    <div class="toggle-switch active" id="toggleKeyboard" onclick="toggleKeyboardControl()">
-                        <div class="toggle-slider"></div>
-                    </div>
-                </div>
+                <button class="ee-control-btn active" id="btnKeyboard" onclick="toggleKeyboardControl()"
+                    title="Toggle Keyboard Control">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                        <path d="M6 8h.01"></path>
+                        <path d="M10 8h.01"></path>
+                        <path d="M14 8h.01"></path>
+                        <path d="M18 8h.01"></path>
+                        <path d="M6 12h.01"></path>
+                        <path d="M10 12h.01"></path>
+                        <path d="M14 12h.01"></path>
+                        <path d="M18 12h.01"></path>
+                        <path d="M7 16h10"></path>
+                    </svg>
+                </button>
+
+                <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+
+                <button class="ee-control-btn" id="btnRecord" onclick="openRecordModal()" title="Record Screen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
             </div>
 
-            <div class="remote-status">
-                <div class="status-indicator connecting" id="statusIndicator"></div>
-                <span id="statusText">Connecting...</span>
+            <div class="header-right">
+                <button class="close-btn" onclick="closeRemote()">Close Session</button>
             </div>
-            <button class="close-btn" onclick="closeRemote()">Close</button>
         </div>
+
         <div class="remote-screen">
             <video id="remoteVideo" autoplay playsinline></video>
             <div class="loading-overlay" id="loadingOverlay">
                 <div class="spinner"></div>
                 <div class="loading-text" id="loadingText">Connecting to client...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Options Modal -->
+    <div class="modal-overlay" id="recordModal">
+        <div class="modal">
+            <div class="modal-title">Recording Settings</div>
+
+            <div class="form-group">
+                <label class="checkbox-group">
+                    <input type="checkbox" id="recSystemAudio" checked>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">Include System Audio</div>
+                        <div style="font-size: 12px; color: #a0aec0;">Capture sounds from the remote client</div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-group">
+                    <input type="checkbox" id="recAdminMic">
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">Include Your Microphone</div>
+                        <div style="font-size: 12px; color: #a0aec0;">Record your voiceover/comments</div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeRecordModal()">Cancel</button>
+                <button class="btn-start" onclick="startRecording()">Start Recording</button>
             </div>
         </div>
     </div>
@@ -271,6 +438,13 @@
         // Control states
         let mouseEnabled = true;
         let keyboardEnabled = true;
+
+        // Recording states
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let recordingStartTime = 0;
+        let recordingInterval = null;
 
         // WebRTC Configuration
         const config = {
@@ -602,31 +776,164 @@
 
             video.classList.remove('active');
             isConnected = false;
+            if (isRecording) stopRecording();
         }
 
-        // Toggle functions
+        // --- Recording Logic ---
+        function openRecordModal() {
+            if (isRecording) {
+                stopRecording();
+                return;
+            }
+            document.getElementById('recordModal').classList.add('active');
+        }
+
+        function closeRecordModal() {
+            document.getElementById('recordModal').classList.remove('active');
+        }
+
+        async function startRecording() {
+            closeRecordModal();
+            recordedChunks = [];
+
+            try {
+                const stream = video.srcObject;
+                if (!stream) throw new Error('No stream available');
+
+                // Get options
+                const includeSystemAudio = document.getElementById('recSystemAudio').checked;
+                const includeAdminMic = document.getElementById('recAdminMic').checked;
+
+                const tracks = [];
+
+                // Add video track
+                tracks.push(stream.getVideoTracks()[0]);
+
+                // Handle Audio Mixing
+                let audioStream = null;
+                const audioContext = new AudioContext();
+                const destination = audioContext.createMediaStreamDestination();
+
+                let hasAudio = false;
+
+                // 1. Remote System Audio
+                if (includeSystemAudio && stream.getAudioTracks().length > 0) {
+                    const remoteSource = audioContext.createMediaStreamSource(new MediaStream([stream.getAudioTracks()[0]]));
+                    remoteSource.connect(destination);
+                    hasAudio = true;
+                }
+
+                // 2. Admin Microphone
+                if (includeAdminMic) {
+                    try {
+                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        const micSource = audioContext.createMediaStreamSource(micStream);
+                        micSource.connect(destination);
+                        hasAudio = true;
+                    } catch (err) {
+                        console.warn('Admin microphone access denied or not found');
+                    }
+                }
+
+                const finalStream = new MediaStream(tracks);
+                if (hasAudio) {
+                    finalStream.addTrack(destination.stream.getAudioTracks()[0]);
+                }
+
+                mediaRecorder = new MediaRecorder(finalStream, {
+                    mimeType: 'video/webm;codecs=vp9,opus'
+                });
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = saveRecording;
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // UI Update
+                const btnRecord = document.getElementById('btnRecord');
+                btnRecord.classList.add('recording');
+                btnRecord.title = 'Stop Recording';
+
+                document.getElementById('recordingTimer').style.display = 'inline';
+                recordingStartTime = Date.now();
+                recordingInterval = setInterval(updateRecordingTimer, 1000);
+
+            } catch (err) {
+                console.error('Error starting recording:', err);
+                alert('Recording failed: ' + err.message);
+            }
+        }
+
+        function updateRecordingTimer() {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('recordingTimer').textContent = ` | ${m}:${s}`;
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            clearInterval(recordingInterval);
+
+            const btnRecord = document.getElementById('btnRecord');
+            btnRecord.classList.remove('recording');
+            btnRecord.title = 'Record Screen';
+            document.getElementById('recordingTimer').style.display = 'none';
+        }
+
+        async function saveRecording() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const formData = new FormData();
+            const fileName = `remote-${clientId}-${Date.now()}.webm`;
+            formData.append('recording', blob, fileName);
+
+            try {
+                const res = await fetch('/api/recordings/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    console.log('Recording uploaded successfully');
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (err) {
+                console.error('Save recording error:', err);
+                // Fallback to local download if upload fails
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+            }
+        }
+
+        // --- Toggle functions (Refactored) ---
         function toggleMouseControl() {
             mouseEnabled = !mouseEnabled;
-            const toggle = document.getElementById('toggleMouse');
+            const btn = document.getElementById('btnMouse');
             if (mouseEnabled) {
-                toggle.classList.add('active');
-                toggle.classList.remove('disabled');
+                btn.classList.add('active');
             } else {
-                toggle.classList.remove('active');
-                toggle.classList.add('disabled');
+                btn.classList.remove('active');
             }
             console.log('[Remote] Mouse control:', mouseEnabled ? 'enabled' : 'disabled');
         }
 
         function toggleKeyboardControl() {
             keyboardEnabled = !keyboardEnabled;
-            const toggle = document.getElementById('toggleKeyboard');
+            const btn = document.getElementById('btnKeyboard');
             if (keyboardEnabled) {
-                toggle.classList.add('active');
-                toggle.classList.remove('disabled');
+                btn.classList.add('active');
             } else {
-                toggle.classList.remove('active');
-                toggle.classList.add('disabled');
+                btn.classList.remove('active');
             }
             console.log('[Remote] Keyboard control:', keyboardEnabled ? 'enabled' : 'disabled');
         }
@@ -645,4 +952,5 @@
         });
     </script>
 </body>
+
 </html>
