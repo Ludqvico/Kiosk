@@ -113,7 +113,7 @@ function showBlockedPageInBrowser() {
       });
 
       // Send Windows notification
-      sendWindowsNotification('Rete Bloccata', 'Accesso a Internet disabilitato.');
+      // sendWindowsNotification('Rete Bloccata', 'Accesso a Internet disabilitato.');
 
       // Start browser watcher to redirect any new browser instances
       startBrowserWatcher();
