@@ -1,5 +1,5 @@
 {
-  "name": "school-kiosk",
+  "name": "kiosk-manager",
   "version": "1.0.0",
   "description": "Multi-platform kiosk system for schools",
   "main": "dist/main.js",
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.school.kiosk",
-    "productName": "SchoolKiosk",
+    "productName": "Kiosk Manager",
     "directories": {
       "output": "release"
     },

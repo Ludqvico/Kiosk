@@ -16,7 +16,7 @@ export class ServerConnection {
   private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
   private onExecuteVbsCallback: ((scriptContent: string) => void) | null = null;
   private onBlockInternetCallback: ((block: boolean) => void) | null = null;
-  private onCustomNotificationCallback: ((notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => void) | null = null;
+  private onCustomNotificationCallback: ((notification: { title: string, message: string, icon?: string, delay?: number }) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -125,7 +125,7 @@ export class ServerConnection {
     });
 
     // Custom Notification
-    this.socket.on('server:custom-notification', (notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => {
+    this.socket.on('server:custom-notification', (notification: { title: string, message: string, icon?: string, delay?: number }) => {
       console.log('[ServerConnection] Ricevuto notifica personalizzata:', notification.title);
       if (this.onCustomNotificationCallback) {
         this.onCustomNotificationCallback(notification);
@@ -229,7 +229,7 @@ export class ServerConnection {
     this.onBlockInternetCallback = callback;
   }
 
-  onCustomNotification(callback: (notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => void) {
+  onCustomNotification(callback: (notification: { title: string, message: string, icon?: string, delay?: number }) => void) {
     this.onCustomNotificationCallback = callback;
   }
 

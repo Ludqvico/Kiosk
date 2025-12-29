@@ -231,7 +231,7 @@ function showUnblockedPageInBrowser() {
 }
 
 // Show custom notification
-function showCustomNotification(notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) {
+function showCustomNotification(notification: { title: string, message: string, icon?: string, delay?: number }) {
   const { Notification } = require('electron');
 
   if (!Notification.isSupported()) {
@@ -260,13 +260,6 @@ function showCustomNotification(notification: { title: string, message: string, 
   } else {
     // No icon - use default
     notifOptions.icon = path.join(__dirname, '../renderer/kiosk-icon.png');
-  }
-
-  // Handle image (Windows 10+ supports this)
-  if (notification.image && notification.image.startsWith('data:')) {
-    const tempImagePath = saveBase64ToTemp(notification.image, 'custom-notif-image.png');
-    // Note: Electron Notification doesn't support 'image' property on all platforms
-    // We'll just use the icon for now
   }
 
   const electronNotif = new Notification(notifOptions);
@@ -791,7 +784,7 @@ function connectToServer() {
     }
   });
 
-  serverConnection.onCustomNotification((notification: { title: string, message: string, icon?: string, image?: string, delay?: number }) => {
+  serverConnection.onCustomNotification((notification: { title: string, message: string, icon?: string, delay?: number }) => {
     console.log('[Main] Received custom notification:', notification.title);
 
     const delay = notification.delay || 0;
