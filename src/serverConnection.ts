@@ -29,6 +29,7 @@ export class ServerConnection {
       reconnectionAttempts: this.maxReconnectAttempts
     });
 
+    this.processEventQueue(); // Process queued events
     this.setupEventHandlers();
   }
 
@@ -329,8 +330,22 @@ export class ServerConnection {
   }
 
   // Allow main.ts to register custom socket event listeners
+  private eventQueue: Array<{ event: string, callback: (...args: any[]) => void }> = [];
+
   on(event: string, callback: (...args: any[]) => void) {
     if (this.socket) {
+      this.socket.on(event, callback);
+    } else {
+      // Queue event handler if socket is not yet initialized
+      this.eventQueue.push({ event, callback });
+    }
+  }
+
+  // Call this after socket creation in connect()
+  private processEventQueue() {
+    if (!this.socket) return;
+    while (this.eventQueue.length > 0) {
+      const { event, callback } = this.eventQueue.shift()!;
       this.socket.on(event, callback);
     }
   }
