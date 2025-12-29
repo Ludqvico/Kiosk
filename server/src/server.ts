@@ -50,6 +50,11 @@ let eventIdCounter = 0;
 // WebRTC signaling state
 // Map<clientId, adminSocketId> - tracks active remote desktop sessions
 const activeWebRTCSessions = new Map<string, string>();
+const activeEagleEyeSessions = new Map<string, string>();
+
+// Ensure recordings directory exists
+const RECORDINGS_DIR = path.join(__dirname, '../public/recordings');
+fs.mkdir(RECORDINGS_DIR, { recursive: true }).catch(err => console.error('Failed to create recordings dir:', err));
 
 // Helper per loggare eventi
 function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>) {
@@ -184,6 +189,76 @@ app.get('/api/activity-log/export', (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename=activity-log-${new Date().toISOString()}.csv`);
   res.send(csv);
+});
+
+// API Recordings
+app.get('/api/recordings', async (req, res) => {
+  try {
+    const files = await fs.readdir(RECORDINGS_DIR);
+    const recordings = [];
+
+    for (const file of files) {
+      if (file.endsWith('.webm') || file.endsWith('.mp4')) {
+        const stats = await fs.stat(path.join(RECORDINGS_DIR, file));
+        recordings.push({
+          filename: file,
+          size: stats.size,
+          createdAt: stats.birthtime,
+          url: `/recordings/${file}`
+        });
+      }
+    }
+
+    // Sort logic (newest first)
+    recordings.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    res.json(recordings);
+  } catch (error) {
+    console.error('Error listing recordings:', error);
+    res.status(500).json({ error: 'Failed to list recordings' });
+  }
+});
+
+app.post('/api/recordings', express.raw({ type: 'video/*', limit: '500mb' }), async (req, res) => {
+  try {
+    const filename = req.headers['x-filename'] as string || `recording_${Date.now()}.webm`;
+    // Sanitize filename
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '');
+    const clientName = req.headers['x-client-name'] as string || 'Unknown';
+
+    // Create final filename with client name if not present
+    const finalFilename = safeFilename.includes(clientName) ? safeFilename : `${clientName}_${safeFilename}`;
+
+    const filePath = path.join(RECORDINGS_DIR, finalFilename);
+
+    // If body is buffer (express.raw)
+    if (Buffer.isBuffer(req.body)) {
+      await fs.writeFile(filePath, req.body);
+    } else {
+      // Fallback or pipe if not parsed as buffer (though express.raw handles it)
+      const writeStream = fsSync.createWriteStream(filePath);
+      req.pipe(writeStream);
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', () => resolve(null));
+        writeStream.on('error', reject);
+      });
+    }
+
+    console.log(`[Server] Recording saved: ${finalFilename}`);
+
+    logActivity({
+      type: 'diagnostics', // reusing type or create new? 'diagnostics' is fine for generic logs or create new interface entry?
+      // I'll stick to 'diagnostics' for now to avoid interface errors or I can add 'recording' type strictly if I update interface.
+      // But for safety in specific tool editing, I'll use details.
+      details: `Recording saved: ${finalFilename}`,
+      clientId: 'server'
+    });
+
+    res.json({ success: true, filename: finalFilename, url: `/recordings/${finalFilename}` });
+  } catch (error) {
+    console.error('Error saving recording:', error);
+    res.status(500).json({ error: 'Failed to save recording' });
+  }
 });
 
 // Socket.io - Gestione connessioni
@@ -563,6 +638,37 @@ io.on('connection', (socket) => {
         details: `WebRTC remote desktop session stopped`
       });
     }
+  });
+
+  // Admin Start EagleEye
+  socket.on('admin:start-eagleeye', (clientId: string) => {
+    console.log(`[Admin] Start EagleEye for client ${clientId}`);
+    const client = connectedClients.get(clientId);
+    if (client) {
+      activeEagleEyeSessions.set(clientId, socket.id);
+      io.to(clientId).emit('server:start-eagleeye');
+
+      logActivity({
+        type: 'diagnostics',
+        clientId: clientId,
+        clientHostname: client.hostname,
+        details: 'Started EagleEye session'
+      });
+    }
+  });
+
+  // Admin Stop EagleEye
+  socket.on('admin:stop-eagleeye', (clientId: string) => {
+    console.log(`[Admin] Stop EagleEye for client ${clientId}`);
+    if (connectedClients.has(clientId)) {
+      io.to(clientId).emit('server:stop-eagleeye');
+      activeEagleEyeSessions.delete(clientId);
+    }
+  });
+
+  // Admin EagleEye Signal
+  socket.on('admin:eagleeye-signal', (data: { clientId: string, signal: any }) => {
+    io.to(data.clientId).emit('server:eagleeye-signal', data.signal);
   });
 
   // Admin blocca/sblocca input del client

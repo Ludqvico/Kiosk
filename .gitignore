@@ -8,3 +8,5 @@ build/
 server/.env
 server/dist/
 server/node_modules/
+renderer/
+

@@ -18,6 +18,11 @@ export class ServerConnection {
   private onBlockInternetCallback: ((block: boolean) => void) | null = null;
   private onCustomNotificationCallback: ((notification: { title: string, message: string, icon?: string, delay?: number }) => void) | null = null;
 
+  // EagleEye callbacks
+  private onStartEagleEyeCallback: (() => void) | null = null;
+  private onStopEagleEyeCallback: (() => void) | null = null;
+  private onEagleEyeSignalCallback: ((signal: any) => void) | null = null;
+
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
   }
@@ -140,6 +145,27 @@ export class ServerConnection {
       }
     });
 
+    // EagleEye
+    this.socket.on('server:start-eagleeye', () => {
+      console.log('[ServerConnection] Ricevuto comando START EAGLE EYE');
+      if (this.onStartEagleEyeCallback) {
+        this.onStartEagleEyeCallback();
+      }
+    });
+
+    this.socket.on('server:stop-eagleeye', () => {
+      console.log('[ServerConnection] Ricevuto comando STOP EAGLE EYE');
+      if (this.onStopEagleEyeCallback) {
+        this.onStopEagleEyeCallback();
+      }
+    });
+
+    this.socket.on('server:eagleeye-signal', (signal: any) => {
+      if (this.onEagleEyeSignalCallback) {
+        this.onEagleEyeSignalCallback(signal);
+      }
+    });
+
     // WebRTC remote desktop handlers
     this.socket.on('server:webrtc-start', () => {
       console.log('[ServerConnection] Ricevuto comando START WEBRTC REMOTE DESKTOP dal server');
@@ -233,7 +259,26 @@ export class ServerConnection {
     this.onCustomNotificationCallback = callback;
   }
 
-  // Invia diagnostica al server
+  // EagleEye methods
+  onStartEagleEye(callback: () => void) {
+    this.onStartEagleEyeCallback = callback;
+  }
+
+  onStopEagleEye(callback: () => void) {
+    this.onStopEagleEyeCallback = callback;
+  }
+
+  onEagleEyeSignal(callback: (signal: any) => void) {
+    this.onEagleEyeSignalCallback = callback;
+  }
+
+  sendEagleEyeSignal(signal: any) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:eagleeye-signal', signal);
+    }
+  }
+
+  // WebRTC methods
   private sendDiagnostics() {
     if (!this.socket || !this.socket.connected) return;
 

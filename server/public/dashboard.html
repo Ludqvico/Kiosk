@@ -2520,6 +2520,195 @@
             gap: 8px;
             z-index: 50;
         }
+
+        /* EagleEye Styles */
+        .eagleeye-container {
+            background: #000;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            /* aspect-ratio: 16/9; */
+            height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .eagleeye-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .eagleeye-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-tertiary);
+            transition: opacity 0.3s;
+        }
+
+        .eagleeye-placeholder.hidden {
+            display: none;
+        }
+
+        .eagleeye-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+        }
+
+        .ee-control-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .ee-control-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .ee-control-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .record-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .record-btn-inner {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--danger);
+            transition: all 0.2s;
+        }
+
+        .record-btn:hover {
+            border-color: var(--danger);
+            transform: scale(1.05);
+        }
+
+        .record-btn.recording {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .record-btn.recording .record-btn-inner {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .gallery-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .gallery-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .gallery-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-overlay {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .gallery-card:hover .play-overlay {
+            opacity: 1;
+        }
+
+        .gallery-info {
+            padding: 16px;
+        }
+
+        .gallery-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-primary);
+        }
+
+        .gallery-meta {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -2555,6 +2744,14 @@
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
                     Activity Log
+                </div>
+                <div class="nav-item" onclick="switchPage('gallery')" id="nav-gallery">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <polygon points="11 9 15 12 11 15 11 9"></polygon>
+                    </svg>
+                    Gallery
                 </div>
             </nav>
         </aside>
@@ -2750,6 +2947,31 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Gallery Page -->
+            <div class="page-view" id="galleryPage">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Gallery</h1>
+                        <div class="page-subtitle">Recorded EagleEye sessions</div>
+                    </div>
+                    <button class="secondary" onclick="loadGallery()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                            <path
+                                d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <div class="gallery-grid" id="galleryContainer">
+                    <!-- Gallery Items -->
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">
+                        Loading gallery...
+                    </div>
                 </div>
             </div>
         </main>
@@ -3042,21 +3264,6 @@
         // Note: Navigation is handled via onclick attributes in HTML
 
         function switchPage(page) {
-            // Update nav - use ID matching instead of data-page
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-
-            // Add active class to the clicked nav item
-            const navItem = document.getElementById(`nav-${page}`);
-            if (navItem) {
-                navItem.classList.add('active');
-            }
-
-            // Update page view
-            document.querySelectorAll('.page-view').forEach(view => {
-                view.classList.remove('active');
-            });
 
             if (page === 'stations') {
                 document.getElementById('stationsPage').classList.add('active');
@@ -3182,6 +3389,13 @@
                                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                         </svg>
                                         Send Notification
+                                    </button>
+                                    <button class="client-dropdown-item" onclick="openEagleEyeModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                            <circle cx="12" cy="13" r="4"></circle>
+                                        </svg>
+                                        EagleEye
                                     </button>
                                     <button class="client-dropdown-item" onclick="toggleInternetBlock('${client.id}', !${client.internetBlocked || false}); toggleClientMenu('${client.id}', event)">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -5034,6 +5248,295 @@
             </div>
         </div>
     </div>
+    <!-- EagleEye Modal -->
+    <div class="modal-overlay" id="eagleEyeModal">
+        <div class="modal eagleeye-modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="eagleEyeTitle">EagleEye - Client</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="recordingTimer"
+                        style="font-family: monospace; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity 0.3s; color: var(--danger); font-weight: 700;">00:00</span>
+                    <button class="modal-close" onclick="closeEagleEyeModal()">×</button>
+                </div>
+            </div>
+
+            <div class="eagleeye-container">
+                <video id="eagleEyeVideo" class="eagleeye-video" autoplay playsinline muted></video>
+                <div class="eagleeye-placeholder" id="eagleEyePlaceholder">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                        </path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                        <line x1="2" y1="2" x2="22" y2="22"></line>
+                    </svg>
+                    <span id="eagleEyeStatus">Waiting for connection...</span>
+                </div>
+            </div>
+
+            <div class="eagleeye-controls">
+                <button class="ee-control-btn" id="btnMicToggle" onclick="toggleEagleEyeAudio()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    Muted
+                </button>
+
+                <div class="record-btn" id="btnRecord" onclick="toggleEagleEyeRecording()" title="Start Recording">
+                    <div class="record-btn-inner"></div>
+                </div>
+
+                <!-- Spacer to center record button -->
+                <div style="width: 100px; text-align: right;">
+                    <span style="font-size: 12px; color: var(--text-tertiary);">Rec to Gallery</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ================= EAGLE EYE LOGIC ================= */
+        let eagleEyePeerConnection = null;
+        let eagleEyeRecordingTimer = null;
+        let eagleEyeMediaRecorder = null;
+        let eagleEyeRecordedChunks = [];
+        let currentEagleEyeClientId = null;
+        let isEagleEyeMuted = true;
+        let isEagleEyeRecording = false;
+
+        // Socket Listeners
+        socket.on('server:start-eagleeye', () => {
+            console.log('EagleEye started confirmed by server');
+            document.getElementById('eagleEyePlaceholder').classList.add('hidden');
+            document.getElementById('eagleEyeStatus').textContent = 'Connected (Waiting for stream...)';
+        });
+
+        socket.on('server:eagleeye-signal', async (signal) => {
+            if (!eagleEyePeerConnection && signal.type === 'offer') {
+                setupEagleEyeConnection();
+            }
+
+            if (!eagleEyePeerConnection) return;
+
+            try {
+                if (signal.type === 'offer') {
+                    await eagleEyePeerConnection.setRemoteDescription(new RTCSessionDescription(signal.offer));
+                    const answer = await eagleEyePeerConnection.createAnswer();
+                    await eagleEyePeerConnection.setLocalDescription(answer);
+                    socket.emit('admin:eagleeye-signal', {
+                        clientId: currentEagleEyeClientId,
+                        signal: { type: 'answer', answer }
+                    });
+                } else if (signal.type === 'candidate') {
+                    await eagleEyePeerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
+                } else if (signal.type === 'error') {
+                    alert('EagleEye Error: ' + signal.message);
+                    closeEagleEyeModal();
+                } else if (signal.type === 'error-camera') {
+                    document.getElementById('eagleEyePlaceholder').classList.remove('hidden');
+                    document.getElementById('eagleEyeStatus').textContent = 'Webcam/Mic not found on client device!';
+                    document.getElementById('eagleEyeStatus').style.color = 'var(--danger)';
+                } else if (signal.type === 'error-permission') {
+                    document.getElementById('eagleEyePlaceholder').classList.remove('hidden');
+                    document.getElementById('eagleEyeStatus').textContent = 'Permission denied on client device!';
+                    document.getElementById('eagleEyeStatus').style.color = 'var(--danger)';
+                }
+            } catch (e) {
+                console.error('Signaling error', e);
+            }
+        });
+
+        function openEagleEyeModal(clientId) {
+            currentEagleEyeClientId = clientId;
+            const client = clients.get(clientId);
+            document.getElementById('eagleEyeTitle').textContent = `EagleEye - ${client ? client.hostname : clientId}`;
+            document.getElementById('eagleEyeModal').classList.add('active');
+
+            // Reset UI
+            document.getElementById('eagleEyeVideo').srcObject = null;
+            document.getElementById('eagleEyePlaceholder').classList.remove('hidden');
+            document.getElementById('eagleEyeStatus').textContent = 'Connecting...';
+            document.getElementById('eagleEyeStatus').style.color = 'var(--text-tertiary)';
+            const btn = document.getElementById('btnMicToggle');
+            btn.classList.remove('active');
+            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Muted`;
+            isEagleEyeMuted = true;
+
+            // Start session
+            setupEagleEyeConnection();
+            socket.emit('admin:start-eagleeye', clientId);
+        }
+
+        function closeEagleEyeModal() {
+            if (isEagleEyeRecording) {
+                toggleEagleEyeRecording();
+            }
+
+            if (currentEagleEyeClientId) {
+                socket.emit('admin:stop-eagleeye', currentEagleEyeClientId);
+            }
+
+            if (eagleEyePeerConnection) {
+                eagleEyePeerConnection.close();
+                eagleEyePeerConnection = null;
+            }
+
+            document.getElementById('eagleEyeVideo').srcObject = null;
+            document.getElementById('eagleEyeModal').classList.remove('active');
+            currentEagleEyeClientId = null;
+        }
+
+        function setupEagleEyeConnection() {
+            if (eagleEyePeerConnection) return;
+
+            const config = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            };
+
+            eagleEyePeerConnection = new RTCPeerConnection(config);
+
+            eagleEyePeerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('admin:eagleeye-signal', {
+                        clientId: currentEagleEyeClientId,
+                        signal: { type: 'candidate', candidate: event.candidate }
+                    });
+                }
+            };
+
+            eagleEyePeerConnection.ontrack = (event) => {
+                const videoEl = document.getElementById('eagleEyeVideo');
+                videoEl.srcObject = event.streams[0];
+                document.getElementById('eagleEyePlaceholder').classList.add('hidden');
+            };
+        }
+
+        function toggleEagleEyeAudio() {
+            isEagleEyeMuted = !isEagleEyeMuted;
+            const videoEl = document.getElementById('eagleEyeVideo');
+            const btn = document.getElementById('btnMicToggle');
+
+            videoEl.muted = isEagleEyeMuted;
+
+            if (isEagleEyeMuted) {
+                btn.classList.remove('active');
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Muted`;
+            } else {
+                btn.classList.add('active');
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Active`;
+            }
+        }
+
+        function toggleEagleEyeRecording() {
+            const btn = document.getElementById('btnRecord');
+            const timerEl = document.getElementById('recordingTimer');
+            const client = clients.get(currentEagleEyeClientId);
+
+            if (isEagleEyeRecording) {
+                eagleEyeMediaRecorder.stop();
+                isEagleEyeRecording = false;
+                btn.classList.remove('recording');
+                timerEl.style.opacity = '0';
+                clearInterval(eagleEyeRecordingTimer);
+            } else {
+                const stream = document.getElementById('eagleEyeVideo').srcObject;
+                if (!stream) {
+                    alert('No stream to record');
+                    return;
+                }
+
+                eagleEyeRecordedChunks = [];
+                eagleEyeMediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+                eagleEyeMediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) eagleEyeRecordedChunks.push(e.data);
+                };
+
+                eagleEyeMediaRecorder.onstop = async () => {
+                    const blob = new Blob(eagleEyeRecordedChunks, { type: 'video/webm' });
+                    const clientName = client ? client.hostname : 'unknown';
+
+                    try {
+                        const response = await fetch('/api/recordings', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'video/webm',
+                                'x-client-name': clientName
+                            },
+                            body: blob
+                        });
+
+                        if (response.ok) {
+                            console.log('Recording saved');
+                            alert('Recording saved to Gallery');
+                        }
+                    } catch (e) {
+                        console.error('Upload failed', e);
+                        alert('Failed to save recording');
+                    }
+                };
+
+                eagleEyeMediaRecorder.start();
+                isEagleEyeRecording = true;
+                btn.classList.add('recording');
+                timerEl.style.opacity = '1';
+
+                let seconds = 0;
+                eagleEyeRecordingTimer = setInterval(() => {
+                    seconds++;
+                    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    const s = (seconds % 60).toString().padStart(2, '0');
+                    timerEl.textContent = `${m}:${s}`;
+                }, 1000);
+            }
+        }
+
+        async function loadGallery() {
+            const container = document.getElementById('galleryContainer');
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">Loading gallery...</div>';
+
+            try {
+                const res = await fetch('/api/recordings');
+                const recordings = await res.json();
+
+                if (recordings.length === 0) {
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">No recordings found.</div>';
+                    return;
+                }
+
+                container.innerHTML = recordings.map(rec => `
+                <div class="gallery-card" onclick="window.open('${rec.url}', '_blank')">
+                    <div class="gallery-thumb">
+                        <video src="${rec.url}#t=1" class="gallery-video" preload="metadata"></video>
+                        <div class="play-overlay">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="gallery-info">
+                        <div class="gallery-title">${rec.filename}</div>
+                        <div class="gallery-meta">
+                            <span>${new Date(rec.createdAt).toLocaleString()}</span>
+                            <span>${(rec.size / 1024 / 1024).toFixed(1)} MB</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            } catch (error) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--danger);">Failed to load recordings.</div>';
+            }
+        }
+    </script>
 </body>
 
 </html>
