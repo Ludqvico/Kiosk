@@ -386,37 +386,37 @@ function logoutClient() {
   app.quit();
 }
 
-// ========== INPUT BLOCKING - RAW INPUT API ==========
-// Windows: Usa RegisterRawInputDevices con RIDEV_NOLEGACY per bloccare input FISICI
-// robotjs usa SendInput API che BYPASSA RawInput → funziona sempre!
+// ========== INPUT BLOCKING - HIDE WINDOW + BLOCK SCREEN ==========
+// SOLUZIONE DEFINITIVA: Nascondi mainWindow, mostra schermo nero
+// L'utente locale vede SOLO nero e non può fare NULLA
+// robotjs controlla apps/desktop SOTTO lo schermo nero → funziona!
 
 let inputBlocked = false;
-let inputBlockOverlay: BrowserWindow | null = null;
-let inputBlockProcess: any = null;
+let blockScreen: BrowserWindow | null = null;
 let blockedShortcuts: string[] = [];
 
-function createInputBlockOverlay() {
-  if (inputBlockOverlay) {
-    console.log('[Main] Overlay già esistente');
+function createBlockScreen() {
+  if (blockScreen) {
+    console.log('[Main] Block screen già esistente');
     return;
   }
 
-  console.log('[Main] 🔒 Creazione overlay visivo (cursore not-allowed)...');
+  console.log('[Main] 🔒 Creazione schermo di blocco NERO fullscreen...');
 
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.bounds;
 
-  inputBlockOverlay = new BrowserWindow({
+  blockScreen = new BrowserWindow({
     width,
     height,
     x: 0,
     y: 0,
     frame: false,
-    transparent: true,
+    transparent: false, // NERO SOLIDO, non trasparente
     alwaysOnTop: true,
     skipTaskbar: true,
-    focusable: false,
+    focusable: true, // DEVE catturare eventi
     resizable: false,
     movable: false,
     minimizable: false,
@@ -424,14 +424,15 @@ function createInputBlockOverlay() {
     closable: false,
     fullscreen: true,
     hasShadow: false,
+    backgroundColor: '#000000', // Nero
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
     }
   });
 
-  // HTML SOLO per mostrare cursore not-allowed - NON blocca input
-  const overlayHTML = `
+  // HTML con schermo nero e messaggio
+  const blockHTML = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -444,31 +445,57 @@ function createInputBlockOverlay() {
           body {
             width: 100vw;
             height: 100vh;
-            background: transparent;
+            background: #000;
             overflow: hidden;
             cursor: not-allowed !important;
-            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-family: system-ui, sans-serif;
+            font-size: 24px;
+            user-select: none;
           }
         </style>
       </head>
-      <body></body>
+      <body>
+        <div>🔒 Device Locked - Remote Control Active</div>
+        <script>
+          // Blocca TUTTI gli eventi
+          const block = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          };
+
+          ['contextmenu', 'mousedown', 'mouseup', 'click', 'dblclick',
+           'keydown', 'keyup', 'keypress', 'wheel',
+           'touchstart', 'touchmove', 'touchend'].forEach(evt => {
+            document.addEventListener(evt, block, true);
+          });
+        </script>
+      </body>
     </html>
   `;
 
-  inputBlockOverlay.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(overlayHTML)}`);
-  inputBlockOverlay.setIgnoreMouseEvents(true); // NON cattura eventi - solo mostra cursore
-  inputBlockOverlay.setAlwaysOnTop(true, 'screen-saver', 1);
-  inputBlockOverlay.setVisibleOnAllWorkspaces(true);
-  inputBlockOverlay.setFullScreen(true);
+  blockScreen.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(blockHTML)}`);
+  blockScreen.setAlwaysOnTop(true, 'screen-saver', 1);
+  blockScreen.setFullScreen(true);
 
-  console.log('[Main] ✅ Overlay visivo creato (cursore not-allowed)');
+  // Blocca TUTTI gli input prima che vengano processati
+  blockScreen.webContents.on('before-input-event', (event, input) => {
+    event.preventDefault();
+    console.log('[BlockScreen] 🚫 Evento bloccato:', input.type, input.key || 'mouse');
+  });
+
+  console.log('[Main] ✅ Schermo di blocco NERO creato (fullscreen)');
 }
 
-function destroyInputBlockOverlay() {
-  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-    inputBlockOverlay.close();
-    inputBlockOverlay = null;
-    console.log('[Main] ✅ Overlay distrutto');
+function destroyBlockScreen() {
+  if (blockScreen && !blockScreen.isDestroyed()) {
+    blockScreen.close();
+    blockScreen = null;
+    console.log('[Main] ✅ Schermo di blocco distrutto');
   }
 }
 
@@ -530,90 +557,26 @@ function blockUserInput() {
     return;
   }
 
-  console.log('[Main] ⛓️  BLOCCO INPUT FISICI (hardware) ⛓️');
-  console.log('[Main] 🔐 robotjs (SendInput) continua a funzionare normalmente');
+  console.log('[Main] ⛓️  BLOCCO COMPLETO UTENTE ⛓️');
+  console.log('[Main] 🖥️  Nascondo mainWindow, mostro schermo NERO');
+  console.log('[Main] 🔐 robotjs controlla apps/desktop SOTTO lo schermo nero');
   inputBlocked = true;
 
-  const platform = process.platform;
-
-  if (platform === 'win32') {
-    // Windows: USA RAW INPUT API con RIDEV_NOLEGACY
-    const { spawn } = require('child_process');
-    const path = require('path');
-    const fs = require('fs');
-
-    // Path corretto: dist/native/win/ quando compiliamo
-    const scriptPath = path.join(__dirname, 'native/win/RawInputBlocker.ps1');
-
-    console.log('[Main] 🔒 Avvio blocco Windows con Raw Input API...');
-    console.log('[Main] __dirname:', __dirname);
-    console.log('[Main] Script path:', scriptPath);
-
-    // Verifica che il file esista
-    if (!fs.existsSync(scriptPath)) {
-      console.error('[Main] ❌❌❌ FILE NON TROVATO:', scriptPath);
-      console.error('[Main] Il file RawInputBlocker.ps1 non esiste!');
-      console.error('[Main] Controlla che npm run build abbia copiato i file nativi');
-      inputBlocked = false;
-      return;
-    }
-
-    console.log('[Main] ✓ File trovato, spawning PowerShell process...');
-
-    // Spawn PowerShell process che registra Raw Input devices
-    inputBlockProcess = spawn('powershell.exe', [
-      '-NoProfile',
-      '-ExecutionPolicy', 'Bypass',
-      '-File', scriptPath,
-      'block'
-    ], {
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    console.log('[Main] ✓ Process spawned, PID:', inputBlockProcess.pid);
-
-    inputBlockProcess.stdout?.on('data', (data: Buffer) => {
-      const output = data.toString().trim();
-      console.log('[RawInputBlocker] stdout:', output);
-
-      if (output === 'BLOCKED') {
-        console.log('[Main] ✅✅✅ INPUT FISICI BLOCCATI (RegisterRawInputDevices + RIDEV_NOLEGACY)');
-        console.log('[Main] ℹ️  SendInput (robotjs) BYPASSA Raw Input → controllo remoto funziona!');
-      } else if (output.startsWith('ERROR')) {
-        console.error('[Main] ❌ Errore blocco:', output);
-      } else if (output.startsWith('INFO')) {
-        console.log('[Main]', output);
-      }
-    });
-
-    inputBlockProcess.stderr?.on('data', (data: Buffer) => {
-      const error = data.toString().trim();
-      console.error('[RawInputBlocker] stderr:', error);
-    });
-
-    inputBlockProcess.on('error', (error: Error) => {
-      console.error('[Main] ❌❌❌ ERRORE SPAWNING PROCESS:', error.message);
-      console.error('[Main] Stack:', error.stack);
-      inputBlocked = false;
-      inputBlockProcess = null;
-    });
-
-    inputBlockProcess.on('exit', (code: number, signal: string) => {
-      console.log('[Main] 🔓 Processo RawInputBlocker terminato');
-      console.log('[Main] Exit code:', code);
-      console.log('[Main] Signal:', signal);
-      inputBlocked = false;
-      inputBlockProcess = null;
-    });
+  // NASCONDI mainWindow
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide();
+    console.log('[Main] ✅ mainWindow NASCOSTA');
   }
 
-  // Crea overlay visivo per mostrare cursore not-allowed
-  createInputBlockOverlay();
+  // MOSTRA schermo nero fullscreen di blocco
+  createBlockScreen();
 
   // Blocca shortcuts di sistema
   blockSystemShortcuts();
 
-  console.log('[Main] ✅ INPUT FISICI BLOCCATI + Overlay visivo attivo');
+  console.log('[Main] ✅✅✅ BLOCCO COMPLETO ATTIVO');
+  console.log('[Main] L\'utente vede SOLO schermo nero');
+  console.log('[Main] robotjs può controllare desktop/apps sotto');
 }
 
 function unblockUserInput() {
@@ -622,48 +585,24 @@ function unblockUserInput() {
     return;
   }
 
-  console.log('[Main] 🔓 SBLOCCO INPUT FISICI');
+  console.log('[Main] 🔓 SBLOCCO UTENTE');
   inputBlocked = false;
 
-  const platform = process.platform;
+  // DISTRUGGI schermo nero
+  destroyBlockScreen();
 
-  if (platform === 'win32' && inputBlockProcess) {
-    // Windows: crea file di stop per far uscire il process dal loop
-    const fs = require('fs');
-    const os = require('os');
-    const path = require('path');
-
-    const stopFile = path.join(os.tmpdir(), 'rawinput_blocker_stop.flag');
-
-    try {
-      fs.writeFileSync(stopFile, 'STOP');
-      console.log('[Main] ✓ File di stop creato:', stopFile);
-
-      // Aspetta un po' e poi killa il processo se ancora attivo
-      setTimeout(() => {
-        if (inputBlockProcess && !inputBlockProcess.killed) {
-          inputBlockProcess.kill();
-          inputBlockProcess = null;
-          console.log('[Main] ✓ Processo RawInputBlocker terminato forzatamente');
-        }
-      }, 2000);
-    } catch (error) {
-      console.error('[Main] Errore durante sblocco:', error);
-      // Killa comunque il processo
-      if (inputBlockProcess) {
-        inputBlockProcess.kill();
-        inputBlockProcess = null;
-      }
-    }
+  // MOSTRA mainWindow
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+    console.log('[Main] ✅ mainWindow MOSTRATA');
   }
-
-  // Rimuovi overlay
-  destroyInputBlockOverlay();
 
   // Sblocca shortcuts
   unblockSystemShortcuts();
 
   console.log('[Main] ✅✅✅ INPUT SBLOCCATO');
+  console.log('[Main] mainWindow visibile, schermo nero distrutto');
 }
 
 // ========== REMOTE DESKTOP (WebRTC) ==========
@@ -924,11 +863,8 @@ app.on('will-quit', () => {
   if (inputInjection) {
     inputInjection.cleanup();
   }
-  if (inputBlockProcess) {
-    inputBlockProcess.kill();
-  }
-  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-    inputBlockOverlay.destroy();
+  if (blockScreen && !blockScreen.isDestroyed()) {
+    blockScreen.destroy();
   }
 });
 
