@@ -611,6 +611,229 @@
         .modal-actions button {
             flex: 1;
         }
+
+        /* Three Dots Menu */
+        .client-menu-button {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            line-height: 1;
+            transition: all 0.15s;
+        }
+
+        .client-menu-button:hover {
+            background: var(--color-bg);
+            color: var(--color-text-primary);
+        }
+
+        .client-menu-button:active {
+            transform: none;
+        }
+
+        .client-header-info {
+            flex: 1;
+        }
+
+        .client-menu-container {
+            position: relative;
+        }
+
+        .client-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-width: 200px;
+            z-index: 100;
+            margin-top: 4px;
+        }
+
+        .client-dropdown.active {
+            display: block;
+        }
+
+        .client-dropdown-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .client-dropdown-item:hover {
+            background: var(--color-bg);
+        }
+
+        .client-dropdown-item:first-child {
+            border-radius: 4px 4px 0 0;
+        }
+
+        .client-dropdown-item:last-child {
+            border-radius: 0 0 4px 4px;
+        }
+
+        .client-dropdown-divider {
+            height: 1px;
+            background: var(--color-border);
+            margin: 4px 0;
+        }
+
+        /* Rename Modal */
+        .modal-input-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            gap: 0;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .view-toggle-btn {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .view-toggle-btn:not(:last-child) {
+            border-right: 1px solid var(--color-border);
+        }
+
+        .view-toggle-btn:hover {
+            background: var(--color-bg);
+        }
+
+        .view-toggle-btn.active {
+            background: #000;
+            color: white;
+        }
+
+        /* Table View */
+        .clients-table-container {
+            display: none;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .clients-table-container.active {
+            display: block;
+        }
+
+        .clients-grid.hidden {
+            display: none;
+        }
+
+        .clients-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .clients-table th {
+            background: var(--color-bg);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .clients-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: middle;
+        }
+
+        .clients-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .clients-table tr:hover {
+            background: var(--color-bg);
+        }
+
+        .clients-table .client-name-cell {
+            font-weight: 600;
+        }
+
+        .clients-table .client-id-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+        }
+
+        .clients-table .actions-cell {
+            display: flex;
+            gap: 6px;
+        }
+
+        .clients-table .actions-cell button {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .table-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -670,6 +893,25 @@
                     <button onclick="lockAll()">Lock All Stations</button>
                     <button onclick="unlockAll()">Unlock All Stations</button>
                     <button class="secondary" onclick="refreshStations()">Refresh</button>
+                    <div class="view-toggle" style="margin-left: auto;">
+                        <button class="view-toggle-btn active" onclick="toggleView('cards')">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="2" y="2" width="5" height="5" rx="1"/>
+                                <rect x="9" y="2" width="5" height="5" rx="1"/>
+                                <rect x="2" y="9" width="5" height="5" rx="1"/>
+                                <rect x="9" y="9" width="5" height="5" rx="1"/>
+                            </svg>
+                            Cards
+                        </button>
+                        <button class="view-toggle-btn" onclick="toggleView('table')">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="2" y1="4" x2="14" y2="4"/>
+                                <line x1="2" y1="8" x2="14" y2="8"/>
+                                <line x1="2" y1="12" x2="14" y2="12"/>
+                            </svg>
+                            Table
+                        </button>
+                    </div>
                 </div>
 
                 <div id="clientsContainer" class="clients-grid">
@@ -677,6 +919,28 @@
                         <div class="empty-state-title">No stations connected</div>
                         <div class="empty-state-text">Stations will appear here when they connect to the server</div>
                     </div>
+                </div>
+
+                <div id="clientsTableContainer" class="clients-table-container">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Client ID</th>
+                                <th>Platform</th>
+                                <th>Status</th>
+                                <th>Connected</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                            <tr>
+                                <td colspan="6" class="table-empty-state">
+                                    No stations connected
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -789,6 +1053,27 @@
         </div>
     </div>
 
+    <!-- Rename Client Modal -->
+    <div class="modal-overlay" id="renameModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Rename Station</h2>
+                <button class="modal-close" onclick="closeRenameModal()">×</button>
+            </div>
+            <div class="modal-input-group">
+                <label class="modal-input-label">Station Name</label>
+                <input type="text" id="renameInput" class="modal-input" placeholder="Enter custom name..." maxlength="50">
+                <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 6px;">
+                    This name will be saved and persist across sessions
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeRenameModal()">Cancel</button>
+                <button onclick="saveClientName()">Save Name</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const clients = new Map();
@@ -868,6 +1153,9 @@
         });
 
         function renderClients() {
+            // Apply custom names to all clients
+            applyCustomNames();
+
             const container = document.getElementById('clientsContainer');
 
             if (clients.size === 0) {
@@ -878,6 +1166,11 @@
                     </div>
                 `;
                 updateStats();
+
+                // Also update table view if active
+                if (currentView === 'table') {
+                    renderTableView();
+                }
                 return;
             }
 
@@ -885,13 +1178,33 @@
             container.innerHTML = clientsArray.map(client => `
                 <div class="client-card ${client.locked ? 'locked' : ''}">
                     <div class="client-header">
-                        <div>
-                            <div class="client-title">${client.hostname}</div>
+                        <div class="client-header-info">
+                            <div class="client-title">${client.customName || client.hostname}</div>
                             <div class="client-id">${client.id.substring(0, 12)}...</div>
                         </div>
-                        <span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">
-                            ${client.locked ? 'Locked' : 'Unlocked'}
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">
+                                ${client.locked ? 'Locked' : 'Unlocked'}
+                            </span>
+                            <div class="client-menu-container">
+                                <button class="client-menu-button" onclick="toggleClientMenu('${client.id}', event)">⋮</button>
+                                <div class="client-dropdown" id="menu-${client.id}">
+                                    <button class="client-dropdown-item" onclick="openRenameModal('${client.id}', '${client.customName || client.hostname}')">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M11 2L14 5L6 13H3V10L11 2Z"/>
+                                        </svg>
+                                        Rename Station
+                                    </button>
+                                    <div class="client-dropdown-divider"></div>
+                                    <button class="client-dropdown-item" onclick="toggleStartup('${client.id}')">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M8 2L10 6H14L11 9L12 14L8 11L4 14L5 9L2 6H6L8 2Z"/>
+                                        </svg>
+                                        Add to Startup
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="client-meta">
                         <div class="client-meta-item">
@@ -918,6 +1231,11 @@
             `).join('');
 
             updateStats();
+
+            // Also update table view if active
+            if (currentView === 'table') {
+                renderTableView();
+            }
         }
 
         function updateStats() {
@@ -1157,6 +1475,202 @@
             }
         });
 
+        // ========== CLIENT MENU & RENAME MODAL ==========
+        let currentRenameClientId = null;
+        const clientCustomNames = new Map();
+
+        // Load saved custom names from localStorage
+        function loadCustomNames() {
+            try {
+                const saved = localStorage.getItem('clientCustomNames');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    Object.entries(parsed).forEach(([id, name]) => {
+                        clientCustomNames.set(id, name);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load custom names:', error);
+            }
+        }
+
+        // Save custom names to localStorage
+        function saveCustomNames() {
+            try {
+                const obj = {};
+                clientCustomNames.forEach((name, id) => {
+                    obj[id] = name;
+                });
+                localStorage.setItem('clientCustomNames', JSON.stringify(obj));
+            } catch (error) {
+                console.error('Failed to save custom names:', error);
+            }
+        }
+
+        // Apply custom names to clients
+        function applyCustomNames() {
+            clients.forEach((client, id) => {
+                if (clientCustomNames.has(id)) {
+                    client.customName = clientCustomNames.get(id);
+                }
+            });
+        }
+
+        // Toggle client dropdown menu
+        function toggleClientMenu(clientId, event) {
+            event.stopPropagation();
+            const menu = document.getElementById(`menu-${clientId}`);
+            const isActive = menu.classList.contains('active');
+
+            // Close all other menus
+            document.querySelectorAll('.client-dropdown').forEach(m => {
+                m.classList.remove('active');
+            });
+
+            // Toggle current menu
+            if (!isActive) {
+                menu.classList.add('active');
+            }
+        }
+
+        // Close all menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.client-menu-container')) {
+                document.querySelectorAll('.client-dropdown').forEach(menu => {
+                    menu.classList.remove('active');
+                });
+            }
+        });
+
+        // Open rename modal
+        function openRenameModal(clientId, currentName) {
+            currentRenameClientId = clientId;
+            const input = document.getElementById('renameInput');
+            input.value = currentName;
+            document.getElementById('renameModal').classList.add('active');
+
+            // Focus input and select text
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 100);
+        }
+
+        // Close rename modal
+        function closeRenameModal() {
+            document.getElementById('renameModal').classList.remove('active');
+            currentRenameClientId = null;
+        }
+
+        // Save client custom name
+        function saveClientName() {
+            const newName = document.getElementById('renameInput').value.trim();
+
+            if (!newName) {
+                alert('Please enter a valid name');
+                return;
+            }
+
+            if (currentRenameClientId) {
+                // Save to map and localStorage
+                clientCustomNames.set(currentRenameClientId, newName);
+                saveCustomNames();
+
+                // Update client object
+                const client = clients.get(currentRenameClientId);
+                if (client) {
+                    client.customName = newName;
+                    renderClients();
+                }
+
+                console.log(`Renamed client ${currentRenameClientId} to "${newName}"`);
+            }
+
+            closeRenameModal();
+        }
+
+        // Handle Enter key in rename modal
+        document.getElementById('renameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveClientName();
+            }
+        });
+
+        // Close rename modal when clicking outside
+        document.getElementById('renameModal').addEventListener('click', (e) => {
+            if (e.target.id === 'renameModal') {
+                closeRenameModal();
+            }
+        });
+
+        // Toggle startup (front-end only for now)
+        function toggleStartup(clientId) {
+            alert('Add to Startup feature - Front-end placeholder\n\nThis will be implemented to add the client to system startup menu in a future update.');
+            console.log(`Toggle startup for client: ${clientId}`);
+        }
+
+        // ========== VIEW TOGGLE (CARDS VS TABLE) ==========
+        let currentView = 'cards';
+
+        function toggleView(viewType) {
+            currentView = viewType;
+
+            // Update toggle buttons
+            document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.view-toggle-btn').classList.add('active');
+
+            // Show/hide views
+            if (viewType === 'cards') {
+                document.getElementById('clientsContainer').classList.remove('hidden');
+                document.getElementById('clientsTableContainer').classList.remove('active');
+            } else if (viewType === 'table') {
+                document.getElementById('clientsContainer').classList.add('hidden');
+                document.getElementById('clientsTableContainer').classList.add('active');
+                renderTableView();
+            }
+        }
+
+        function renderTableView() {
+            const tbody = document.getElementById('clientsTableBody');
+
+            if (clients.size === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="table-empty-state">
+                            No stations connected
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const clientsArray = Array.from(clients.values());
+            tbody.innerHTML = clientsArray.map(client => `
+                <tr>
+                    <td class="client-name-cell">${client.customName || client.hostname}</td>
+                    <td class="client-id-cell">${client.id.substring(0, 12)}...</td>
+                    <td><span class="platform-badge ${client.platform}">${client.platform}</span></td>
+                    <td><span class="status-badge ${client.locked ? 'locked' : 'unlocked'}">${client.locked ? 'Locked' : 'Unlocked'}</span></td>
+                    <td>${formatTime(client.connectedAt)}</td>
+                    <td>
+                        <div class="actions-cell">
+                            ${client.locked
+                                ? `<button class="secondary" onclick="unlockClient('${client.id}')">Unlock</button>`
+                                : `<button onclick="lockClient('${client.id}')">Lock</button>`
+                            }
+                            <button class="secondary" onclick="requestDiagnostics('${client.id}')">Diagnostics</button>
+                            <button class="secondary" onclick="rebootClient('${client.id}')">Reboot</button>
+                            <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.customName || client.hostname}')">Shutdown</button>
+                            <button class="secondary" onclick="logoutClient('${client.id}')">Logout</button>
+                            <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.customName || client.hostname}')">Remote</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
         // ========== REMOTE CONTROL ==========
         function startRemoteControl(clientId, hostname) {
             // Apri pagina dedicata fullscreen in nuova finestra
@@ -1270,6 +1784,9 @@
         });
 
         // ===== Initial Load =====
+        // Load custom names first
+        loadCustomNames();
+
         fetch('/api/clients')
             .then(res => res.json())
             .then(clientsData => {
