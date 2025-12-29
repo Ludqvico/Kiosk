@@ -53,7 +53,7 @@ export class InputInjection {
 
       if (output.includes('READY')) {
         this.psReady = true;
-        console.log('[InputInjection] ✓ PowerShell process ready');
+        console.log('[InputInjection] PowerShell process ready');
       } else if (output.trim() !== 'True' && output.trim() !== '') {
         // Log only meaningful output, skip "True" success returns
         console.log('[InputInjection] PowerShell stdout:', output.trim());

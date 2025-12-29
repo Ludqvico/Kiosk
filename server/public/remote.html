@@ -225,13 +225,6 @@
                         <div class="toggle-slider"></div>
                     </div>
                 </div>
-
-                <div class="control-group">
-                    <span class="control-label">Block Client Input</span>
-                    <div class="toggle-switch" id="toggleBlockInput" onclick="toggleBlockClientInput()">
-                        <div class="toggle-slider"></div>
-                    </div>
-                </div>
             </div>
 
             <div class="remote-status">
@@ -278,7 +271,6 @@
         // Control states
         let mouseEnabled = true;
         let keyboardEnabled = true;
-        let blockClientInput = false;
 
         // WebRTC Configuration
         const config = {
@@ -639,34 +631,7 @@
             console.log('[Remote] Keyboard control:', keyboardEnabled ? 'enabled' : 'disabled');
         }
 
-        function toggleBlockClientInput() {
-            blockClientInput = !blockClientInput;
-            const toggle = document.getElementById('toggleBlockInput');
-
-            if (blockClientInput) {
-                toggle.classList.add('disabled');
-                console.log('[Remote] Blocking client input...');
-            } else {
-                toggle.classList.remove('disabled');
-                console.log('[Remote] Unblocking client input...');
-            }
-
-            // Send command to client to block/unblock input
-            socket.emit('admin:block-client-input', {
-                clientId: clientId,
-                block: blockClientInput
-            });
-        }
-
         function closeRemote() {
-            // Unblock client input before closing
-            if (blockClientInput) {
-                socket.emit('admin:block-client-input', {
-                    clientId: clientId,
-                    block: false
-                });
-            }
-
             // Stop remote desktop
             socket.emit('admin:stop-remote-desktop', clientId);
             cleanup();
@@ -675,14 +640,6 @@
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            // Unblock client input before closing
-            if (blockClientInput) {
-                socket.emit('admin:block-client-input', {
-                    clientId: clientId,
-                    block: false
-                });
-            }
-
             socket.emit('admin:stop-remote-desktop', clientId);
             cleanup();
         });

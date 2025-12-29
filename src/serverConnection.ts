@@ -14,7 +14,6 @@ export class ServerConnection {
   private onWebRTCStartCallback: (() => void) | null = null;
   private onWebRTCStopCallback: (() => void) | null = null;
   private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
-  private onBlockInputCallback: ((block: boolean) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -38,7 +37,7 @@ export class ServerConnection {
 
     // Connessione riuscita
     this.socket.on('connect', () => {
-      console.log('[ServerConnection] ✓ Connesso al server');
+      console.log('[ServerConnection] Connesso al server');
       this.reconnectAttempts = 0;
 
       // Registra questo client
@@ -70,14 +69,14 @@ export class ServerConnection {
 
     // Comandi dal server
     this.socket.on('server:lock', () => {
-      console.log('[ServerConnection] 🔒 Ricevuto comando LOCK dal server');
+      console.log('[ServerConnection] Ricevuto comando LOCK dal server');
       if (this.onLockCallback) {
         this.onLockCallback();
       }
     });
 
     this.socket.on('server:unlock', () => {
-      console.log('[ServerConnection] 🔓 Ricevuto comando UNLOCK dal server');
+      console.log('[ServerConnection] Ricevuto comando UNLOCK dal server');
       if (this.onUnlockCallback) {
         this.onUnlockCallback();
       }
@@ -85,7 +84,7 @@ export class ServerConnection {
 
     // Comando reboot
     this.socket.on('server:reboot', () => {
-      console.log('[ServerConnection] 🔄 Ricevuto comando REBOOT dal server');
+      console.log('[ServerConnection] Ricevuto comando REBOOT dal server');
       if (this.onRebootCallback) {
         this.onRebootCallback();
       }
@@ -93,13 +92,13 @@ export class ServerConnection {
 
     // Richiesta diagnostica
     this.socket.on('server:request-diagnostics', () => {
-      console.log('[ServerConnection] 📊 Ricevuta richiesta DIAGNOSTICS dal server');
+      console.log('[ServerConnection] Ricevuta richiesta DIAGNOSTICS dal server');
       this.sendDiagnostics();
     });
 
     // Comando shutdown
     this.socket.on('server:shutdown', (data: { delay: number }) => {
-      console.log(`[ServerConnection] 🔌 Ricevuto comando SHUTDOWN dal server (delay: ${data.delay}s)`);
+      console.log(`[ServerConnection] Ricevuto comando SHUTDOWN dal server (delay: ${data.delay}s)`);
       if (this.onShutdownCallback) {
         this.onShutdownCallback(data.delay);
       }
@@ -107,7 +106,7 @@ export class ServerConnection {
 
     // Comando logout
     this.socket.on('server:logout', () => {
-      console.log('[ServerConnection] 🚪 Ricevuto comando LOGOUT dal server');
+      console.log('[ServerConnection] Ricevuto comando LOGOUT dal server');
       if (this.onLogoutCallback) {
         this.onLogoutCallback();
       }
@@ -132,13 +131,6 @@ export class ServerConnection {
       console.log('[ServerConnection] Ricevuto segnale WebRTC dal server:', signal.type);
       if (this.onWebRTCSignalCallback) {
         this.onWebRTCSignalCallback(signal);
-      }
-    });
-
-    this.socket.on('server:block-input', (block: boolean) => {
-      console.log(`[ServerConnection] Ricevuto comando ${block ? 'BLOCK' : 'UNBLOCK'} INPUT dal server`);
-      if (this.onBlockInputCallback) {
-        this.onBlockInputCallback(block);
       }
     });
   }
@@ -267,10 +259,6 @@ export class ServerConnection {
   // Registra callback per segnali WebRTC
   onWebRTCSignal(callback: (signal: any) => void) {
     this.onWebRTCSignalCallback = callback;
-  }
-
-  onBlockInput(callback: (block: boolean) => void) {
-    this.onBlockInputCallback = callback;
   }
 
   // Invia segnale WebRTC al server

@@ -315,14 +315,6 @@ function connectToServer() {
     }
   });
 
-  serverConnection.onBlockInput((block) => {
-    console.log(`[Main] Ricevuto comando ${block ? 'BLOCK' : 'UNBLOCK'} INPUT dal server`);
-    if (block) {
-      blockUserInput();
-    } else {
-      unblockUserInput();
-    }
-  });
 
   // Connetti
   serverConnection.connect();
@@ -384,225 +376,6 @@ function logoutClient() {
   }
 
   app.quit();
-}
-
-// ========== INPUT BLOCKING - HIDE WINDOW + BLOCK SCREEN ==========
-// SOLUZIONE DEFINITIVA: Nascondi mainWindow, mostra schermo nero
-// L'utente locale vede SOLO nero e non può fare NULLA
-// robotjs controlla apps/desktop SOTTO lo schermo nero → funziona!
-
-let inputBlocked = false;
-let blockScreen: BrowserWindow | null = null;
-let blockedShortcuts: string[] = [];
-
-function createBlockScreen() {
-  if (blockScreen) {
-    console.log('[Main] Block screen già esistente');
-    return;
-  }
-
-  console.log('[Main] 🔒 Creazione schermo di blocco NERO fullscreen...');
-
-  const { screen } = require('electron');
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.bounds;
-
-  blockScreen = new BrowserWindow({
-    width,
-    height,
-    x: 0,
-    y: 0,
-    frame: false,
-    transparent: false, // NERO SOLIDO, non trasparente
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    focusable: true, // DEVE catturare eventi
-    resizable: false,
-    movable: false,
-    minimizable: false,
-    maximizable: false,
-    closable: false,
-    fullscreen: true,
-    hasShadow: false,
-    backgroundColor: '#000000', // Nero
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  });
-
-  // HTML con schermo nero e messaggio
-  const blockHTML = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            cursor: not-allowed !important;
-          }
-          body {
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-            overflow: hidden;
-            cursor: not-allowed !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-family: system-ui, sans-serif;
-            font-size: 24px;
-            user-select: none;
-          }
-        </style>
-      </head>
-      <body>
-        <div>🔒 Device Locked - Remote Control Active</div>
-        <script>
-          // Blocca TUTTI gli eventi
-          const block = e => {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-          };
-
-          ['contextmenu', 'mousedown', 'mouseup', 'click', 'dblclick',
-           'keydown', 'keyup', 'keypress', 'wheel',
-           'touchstart', 'touchmove', 'touchend'].forEach(evt => {
-            document.addEventListener(evt, block, true);
-          });
-        </script>
-      </body>
-    </html>
-  `;
-
-  blockScreen.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(blockHTML)}`);
-  blockScreen.setAlwaysOnTop(true, 'screen-saver', 1);
-  blockScreen.setFullScreen(true);
-
-  // Blocca TUTTI gli input prima che vengano processati
-  blockScreen.webContents.on('before-input-event', (event, input) => {
-    event.preventDefault();
-    console.log('[BlockScreen] 🚫 Evento bloccato:', input.type, input.key || 'mouse');
-  });
-
-  console.log('[Main] ✅ Schermo di blocco NERO creato (fullscreen)');
-}
-
-function destroyBlockScreen() {
-  if (blockScreen && !blockScreen.isDestroyed()) {
-    blockScreen.close();
-    blockScreen = null;
-    console.log('[Main] ✅ Schermo di blocco distrutto');
-  }
-}
-
-function blockSystemShortcuts() {
-  const { globalShortcut } = require('electron');
-
-  // Lista completa di shortcut da bloccare
-  const shortcuts = [
-    'CommandOrControl+Escape',
-    'Alt+Tab',
-    'Alt+F4',
-    'CommandOrControl+Alt+Delete',
-    'CommandOrControl+Shift+Escape',
-    'CommandOrControl+R',
-    'F5',
-    'CommandOrControl+W',
-    'CommandOrControl+Q',
-    'CommandOrControl+N',
-    'CommandOrControl+T',
-    'CommandOrControl+Shift+N',
-    'F11',
-    'CommandOrControl+L',
-    'CommandOrControl+D',
-    'Alt+Escape',
-    'CommandOrControl+Shift+Q'
-  ];
-
-  shortcuts.forEach(shortcut => {
-    try {
-      const registered = globalShortcut.register(shortcut, () => {
-        console.log(`[Main] 🚫 Shortcut bloccata: ${shortcut}`);
-        // Non fare nulla - blocca la shortcut
-      });
-      if (registered) {
-        blockedShortcuts.push(shortcut);
-      }
-    } catch (error) {
-      // Alcune shortcut potrebbero non essere registrabili
-    }
-  });
-
-  console.log(`[Main] ✅ ${blockedShortcuts.length} shortcuts bloccate`);
-}
-
-function unblockSystemShortcuts() {
-  const { globalShortcut } = require('electron');
-
-  blockedShortcuts.forEach(shortcut => {
-    globalShortcut.unregister(shortcut);
-  });
-
-  blockedShortcuts = [];
-  console.log('[Main] ✅ Shortcuts sbloccate');
-}
-
-function blockUserInput() {
-  if (inputBlocked) {
-    console.log('[Main] Input già bloccato');
-    return;
-  }
-
-  console.log('[Main] ⛓️  BLOCCO COMPLETO UTENTE ⛓️');
-  console.log('[Main] 🖥️  Nascondo mainWindow, mostro schermo NERO');
-  console.log('[Main] 🔐 robotjs controlla apps/desktop SOTTO lo schermo nero');
-  inputBlocked = true;
-
-  // NASCONDI mainWindow
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.hide();
-    console.log('[Main] ✅ mainWindow NASCOSTA');
-  }
-
-  // MOSTRA schermo nero fullscreen di blocco
-  createBlockScreen();
-
-  // Blocca shortcuts di sistema
-  blockSystemShortcuts();
-
-  console.log('[Main] ✅✅✅ BLOCCO COMPLETO ATTIVO');
-  console.log('[Main] L\'utente vede SOLO schermo nero');
-  console.log('[Main] robotjs può controllare desktop/apps sotto');
-}
-
-function unblockUserInput() {
-  if (!inputBlocked) {
-    console.log('[Main] Input non era bloccato');
-    return;
-  }
-
-  console.log('[Main] 🔓 SBLOCCO UTENTE');
-  inputBlocked = false;
-
-  // DISTRUGGI schermo nero
-  destroyBlockScreen();
-
-  // MOSTRA mainWindow
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.show();
-    mainWindow.focus();
-    console.log('[Main] ✅ mainWindow MOSTRATA');
-  }
-
-  // Sblocca shortcuts
-  unblockSystemShortcuts();
-
-  console.log('[Main] ✅✅✅ INPUT SBLOCCATO');
-  console.log('[Main] mainWindow visibile, schermo nero distrutto');
 }
 
 // ========== REMOTE DESKTOP (WebRTC) ==========
@@ -690,11 +463,6 @@ function stopRemoteDesktop() {
   if (inputInjection) {
     inputInjection.cleanup();
     inputInjection = null;
-  }
-
-  // Unblock client input if it was blocked
-  if (inputBlocked) {
-    unblockUserInput();
   }
 
   console.log('[Main] WebRTC remote desktop stopped');
@@ -862,9 +630,6 @@ app.on('will-quit', () => {
   }
   if (inputInjection) {
     inputInjection.cleanup();
-  }
-  if (blockScreen && !blockScreen.isDestroyed()) {
-    blockScreen.destroy();
   }
 });
 
