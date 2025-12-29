@@ -9,7 +9,7 @@ import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
 import { FileManager } from './fileManager';
 import { sendWindowsNotification } from './notification';
-import { startProxyServer, stopProxyServer } from './proxyServer';
+import { startBlockedWebServer, stopBlockedWebServer } from './proxyServer';
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
@@ -62,16 +62,35 @@ function enableFirewallBlock() {
     if (index >= commands.length) {
       console.log('[Firewall] All commands executed - Block ENABLED');
 
-      // Start local proxy server
-      startProxyServer();
+      // Start local web server on port 80
+      startBlockedWebServer();
 
-      // Configure Windows to use the proxy
-      exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f', (err) => {
-        if (err) console.error('[Proxy] Error enabling proxy:', err.message);
-      });
-      exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "localhost:8888" /f', (err) => {
-        if (err) console.error('[Proxy] Error setting proxy server:', err.message);
-        else console.log('[Proxy] Windows proxy configured to localhost:8888');
+      // Modify Windows hosts file to redirect common domains to localhost
+      const hostsPath = 'C:\\\\Windows\\\\System32\\\\drivers\\\\etc\\\\hosts';
+      const hostsEntries = `
+# Kiosk Internet Block - START
+127.0.0.1 google.com
+127.0.0.1 www.google.com
+127.0.0.1 bing.com
+127.0.0.1 www.bing.com
+127.0.0.1 facebook.com
+127.0.0.1 www.facebook.com
+127.0.0.1 youtube.com
+127.0.0.1 www.youtube.com
+127.0.0.1 twitter.com
+127.0.0.1 www.twitter.com
+127.0.0.1 instagram.com
+127.0.0.1 www.instagram.com
+127.0.0.1 office.com
+127.0.0.1 www.office.com
+127.0.0.1 microsoft.com
+127.0.0.1 www.microsoft.com
+# Kiosk Internet Block - END
+`;
+
+      exec(`echo ${hostsEntries.replace(/\n/g, ' & echo ')} >> ${hostsPath}`, (err) => {
+        if (err) console.error('[Hosts] Error modifying hosts file:', err.message);
+        else console.log('[Hosts] Hosts file modified - domains redirected to localhost');
       });
 
       // After firewall is enabled, show blocked page
@@ -136,13 +155,14 @@ function showBlockedPageInBrowser() {
 function disableFirewallBlock() {
   console.log('[Firewall] Disabling internet block...');
 
-  // Stop proxy server
-  stopProxyServer();
+  // Stop web server
+  stopBlockedWebServer();
 
-  // Disable Windows proxy
-  exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f', (err) => {
-    if (err) console.error('[Proxy] Error disabling proxy:', err.message);
-    else console.log('[Proxy] Windows proxy disabled');
+  // Clean up hosts file - remove Kiosk entries
+  const hostsPath = 'C:\\\\Windows\\\\System32\\\\drivers\\\\etc\\\\hosts';
+  exec(`powershell -Command "(Get-Content '${hostsPath}') | Where-Object { $_ -notmatch 'Kiosk Internet Block' -and $_ -notmatch '127.0.0.1 google' -and $_ -notmatch '127.0.0.1 www.google' -and $_ -notmatch '127.0.0.1 bing' -and $_ -notmatch '127.0.0.1 www.bing' -and $_ -notmatch '127.0.0.1 facebook' -and $_ -notmatch '127.0.0.1 www.facebook' -and $_ -notmatch '127.0.0.1 youtube' -and $_ -notmatch '127.0.0.1 www.youtube' -and $_ -notmatch '127.0.0.1 twitter' -and $_ -notmatch '127.0.0.1 www.twitter' -and $_ -notmatch '127.0.0.1 instagram' -and $_ -notmatch '127.0.0.1 www.instagram' -and $_ -notmatch '127.0.0.1 office' -and $_ -notmatch '127.0.0.1 www.office' -and $_ -notmatch '127.0.0.1 microsoft' -and $_ -notmatch '127.0.0.1 www.microsoft' } | Set-Content '${hostsPath}'"`, (err) => {
+    if (err) console.error('[Hosts] Error cleaning hosts file:', err.message);
+    else console.log('[Hosts] Hosts file cleaned');
   });
 
   const commands = [
@@ -188,24 +208,18 @@ function showUnblockedPageInBrowser() {
 }
 
 
-// Cleanup on exit - always restore normal policy and stop proxy
+// Cleanup on exit - always restore normal policy and stop web server
 app.on('will-quit', () => {
   if (process.platform === 'win32' && isInternetBlocked) {
-    console.log('[Cleanup] Restoring firewall and proxy settings...');
+    console.log('[Cleanup] Restoring firewall settings and stopping web server...');
 
-    // Stop proxy server
-    stopProxyServer();
+    // Stop web server
+    stopBlockedWebServer();
 
     try {
       // Restore firewall policy
       require('child_process').execSync(
         `netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound`,
-        { stdio: 'ignore' }
-      );
-
-      // Disable Windows proxy
-      require('child_process').execSync(
-        `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f`,
         { stdio: 'ignore' }
       );
     } catch (e) {

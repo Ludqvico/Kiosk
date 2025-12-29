@@ -2,23 +2,23 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 
-let proxyServer: http.Server | null = null;
+let webServer: http.Server | null = null;
 
-export function startProxyServer(): void {
-    if (proxyServer) {
-        console.log('[ProxyServer] Already running');
+export function startBlockedWebServer(): void {
+    if (webServer) {
+        console.log('[WebServer] Already running');
         return;
     }
 
-    console.log('[ProxyServer] Starting on localhost:8888...');
+    console.log('[WebServer] Starting on port 80...');
 
     // Read blocked.html content
     const blockedHtmlPath = path.join(__dirname, '../renderer/blocked.html');
     const blockedHtml = fs.readFileSync(blockedHtmlPath, 'utf-8');
 
     // Create HTTP server that serves blocked.html for ALL requests
-    proxyServer = http.createServer((req, res) => {
-        console.log(`[ProxyServer] Intercepted request: ${req.url}`);
+    webServer = http.createServer((req, res) => {
+        console.log(`[WebServer] Request: ${req.headers.host}${req.url}`);
 
         res.writeHead(200, {
             'Content-Type': 'text/html; charset=utf-8',
@@ -27,26 +27,30 @@ export function startProxyServer(): void {
         res.end(blockedHtml);
     });
 
-    proxyServer.listen(8888, 'localhost', () => {
-        console.log('[ProxyServer] Listening on http://localhost:8888');
+    webServer.listen(80, '0.0.0.0', () => {
+        console.log('[WebServer] Listening on http://0.0.0.0:80');
     });
 
-    proxyServer.on('error', (err) => {
-        console.error('[ProxyServer] Error:', err.message);
+    webServer.on('error', (err: any) => {
+        if (err.code === 'EACCES') {
+            console.error('[WebServer] ERROR: Port 80 requires Administrator privileges');
+        } else {
+            console.error('[WebServer] Error:', err.message);
+        }
     });
 }
 
-export function stopProxyServer(): void {
-    if (!proxyServer) {
-        console.log('[ProxyServer] Not running');
+export function stopBlockedWebServer(): void {
+    if (!webServer) {
+        console.log('[WebServer] Not running');
         return;
     }
 
-    console.log('[ProxyServer] Stopping...');
+    console.log('[WebServer] Stopping...');
 
-    proxyServer.close(() => {
-        console.log('[ProxyServer] Stopped');
+    webServer.close(() => {
+        console.log('[WebServer] Stopped');
     });
 
-    proxyServer = null;
+    webServer = null;
 }
