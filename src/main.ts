@@ -32,9 +32,9 @@ console.log('[Config] STANDALONE_MODE:', STANDALONE_MODE);
 const FIREWALL_RULE_NAME = 'KioskInternetBlock';
 
 function enableFirewallBlock() {
-  console.log('[Firewall] Enabling internet block...');
+  console.log('[Firewall] Enabling internet block via netsh...');
 
-  // Extract server hostname/IP from SERVER_URL
+  // Extract server IP from SERVER_URL
   let serverHost = 'localhost';
   try {
     const url = new URL(SERVER_URL);
@@ -43,63 +43,73 @@ function enableFirewallBlock() {
     console.error('[Firewall] Failed to parse SERVER_URL, using localhost');
   }
 
-  // PowerShell commands to:
-  // 1. Create a rule that blocks ALL outbound traffic
-  // 2. Create exception for the kiosk server
-  // 3. Create exception for localhost (for internal communication)
-  const psCommands = `
-    # Remove existing rules if any
-    Remove-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}*" -ErrorAction SilentlyContinue
+  // Use netsh to:
+  // 1. Set default outbound policy to BLOCK
+  // 2. Add exception for kiosk server
+  const commands = [
+    // First add allow rules (before blocking)
+    `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowServer" dir=out action=allow remoteip=${serverHost}`,
+    `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowLocalhost" dir=out action=allow remoteip=127.0.0.1`,
+    `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowDNS" dir=out action=allow protocol=udp remoteport=53`,
+    // Then set default policy to block all outbound
+    `netsh advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound`,
+  ];
 
-    # Block ALL outbound traffic
-    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_BlockAll" -Direction Outbound -Action Block -Enabled True
-
-    # Allow localhost
-    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_AllowLocalhost" -Direction Outbound -Action Allow -RemoteAddress 127.0.0.1,::1 -Enabled True
-
-    # Allow kiosk server
-    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_AllowServer" -Direction Outbound -Action Allow -RemoteAddress ${serverHost} -Enabled True
-
-    # Allow DNS (needed for hostname resolution if server uses hostname)
-    New-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}_AllowDNS" -Direction Outbound -Action Allow -RemotePort 53 -Protocol UDP -Enabled True
-
-    Write-Host "Firewall block enabled"
-  `;
-
-  exec(`powershell -ExecutionPolicy Bypass -Command "${psCommands.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error('[Firewall] Error enabling block:', error.message);
-      console.error('[Firewall] stderr:', stderr);
-    } else {
-      console.log('[Firewall] Block ENABLED successfully');
-      console.log('[Firewall] stdout:', stdout);
+  // Execute commands sequentially
+  const execCommand = (index: number) => {
+    if (index >= commands.length) {
+      console.log('[Firewall] All commands executed - Block ENABLED');
+      return;
     }
-  });
+
+    exec(commands[index], (error, stdout, stderr) => {
+      if (error) {
+        console.error(`[Firewall] Command ${index} error:`, error.message);
+      } else {
+        console.log(`[Firewall] Command ${index} OK:`, commands[index].substring(0, 50) + '...');
+      }
+      execCommand(index + 1);
+    });
+  };
+
+  execCommand(0);
 }
 
 function disableFirewallBlock() {
   console.log('[Firewall] Disabling internet block...');
 
-  const psCommand = `Remove-NetFirewallRule -DisplayName "${FIREWALL_RULE_NAME}*" -ErrorAction SilentlyContinue; Write-Host "Firewall block disabled"`;
+  const commands = [
+    // Restore default policy (allow outbound)
+    `netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound`,
+    // Remove our rules
+    `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowServer"`,
+    `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowLocalhost"`,
+    `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowDNS"`,
+  ];
 
-  exec(`powershell -ExecutionPolicy Bypass -Command "${psCommand}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error('[Firewall] Error disabling block:', error.message);
-    } else {
-      console.log('[Firewall] Block DISABLED successfully');
-    }
+  commands.forEach((cmd, i) => {
+    exec(cmd, (error) => {
+      if (error) {
+        console.error(`[Firewall] Cleanup ${i} error:`, error.message);
+      }
+    });
   });
+
+  console.log('[Firewall] Block DISABLED');
 }
 
-// Cleanup on exit - always remove firewall rules
+// Cleanup on exit - always restore normal policy
 app.on('will-quit', () => {
   if (process.platform === 'win32' && isInternetBlocked) {
     console.log('[Firewall] Cleanup on exit...');
-    // Synchronous cleanup attempt
-    require('child_process').execSync(
-      `powershell -ExecutionPolicy Bypass -Command "Remove-NetFirewallRule -DisplayName '${FIREWALL_RULE_NAME}*' -ErrorAction SilentlyContinue"`,
-      { stdio: 'ignore' }
-    );
+    try {
+      require('child_process').execSync(
+        `netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound`,
+        { stdio: 'ignore' }
+      );
+    } catch (e) {
+      // Ignore errors on cleanup
+    }
   }
 });
 
