@@ -3531,15 +3531,21 @@
         function handleCustomIcon(input) {
             const file = input.files[0];
             if (file) {
+                console.log('Reading custom icon file:', file.name);
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    console.log('File read successfully');
                     selectedNotifIcon = e.target.result;
 
                     // Remove selected class from emoji buttons
                     document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('selected'));
 
                     updateNotificationPreview();
+
+                    // Reset input so validation logic fires even if same file selected again
+                    input.value = '';
                 };
+                reader.onerror = (err) => console.error('Error reading file:', err);
                 reader.readAsDataURL(file);
             }
         }

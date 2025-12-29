@@ -453,7 +453,7 @@ io.on('connection', (socket) => {
   });
 
   // Admin Send Custom Notification
-  socket.on('admin:send-custom-notification', (data: { clientId: string, notification: { title: string, message: string, icon?: string, image?: string, delay?: number } }) => {
+  socket.on('admin:send-custom-notification', (data: { clientId: string, notification: { title: string, message: string, icon?: string, delay?: number } }) => {
     console.log(`[Admin] Send Custom Notification to ${data.clientId}`);
     const client = connectedClients.get(data.clientId);
     if (!client) {
