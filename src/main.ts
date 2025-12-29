@@ -173,24 +173,37 @@ function showUnblockedPageInBrowser() {
 function sendWindowsNotification(title: string, message: string) {
   console.log(`[Notification] Sending: ${title}`);
 
-  // Use PowerShell to send Windows toast notification
-  const psScript = `
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
-    $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
-    $textNodes = $template.GetElementsByTagName("text")
-    $textNodes.Item(0).AppendChild($template.CreateTextNode("${title.replace(/'/g, "''")}")) > $null
-    $textNodes.Item(1).AppendChild($template.CreateTextNode("${message.replace(/'/g, "''")}")) > $null
-    $toast = [Windows.UI.Notifications.ToastNotification]::new($template)
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Kiosk Management").Show($toast)
-  `;
+  // Create a PowerShell script file for reliable execution
+  const tempDir = os.tmpdir();
+  const scriptPath = path.join(tempDir, `notify_${Date.now()}.ps1`);
 
-  exec(`powershell -ExecutionPolicy Bypass -Command "${psScript.replace(/\n/g, ' ')}"`, (error) => {
-    if (error) {
-      console.error('[Notification] Error:', error.message);
-    } else {
-      console.log('[Notification] Sent successfully');
-    }
-  });
+  const psScript = `
+Add-Type -AssemblyName System.Windows.Forms
+$notification = New-Object System.Windows.Forms.NotifyIcon
+$notification.Icon = [System.Drawing.SystemIcons]::Information
+$notification.BalloonTipTitle = "${title}"
+$notification.BalloonTipText = "${message}"
+$notification.Visible = $true
+$notification.ShowBalloonTip(5000)
+Start-Sleep -Seconds 5
+$notification.Dispose()
+`;
+
+  fs.writeFile(scriptPath, psScript, 'utf-8')
+    .then(() => {
+      exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, (error) => {
+        if (error) {
+          console.error('[Notification] Error:', error.message);
+        } else {
+          console.log('[Notification] Sent successfully');
+        }
+        // Cleanup script file
+        fs.unlink(scriptPath).catch(() => { });
+      });
+    })
+    .catch((err) => {
+      console.error('[Notification] Failed to write script:', err);
+    });
 }
 
 // Browser watcher - periodically checks and redirects to blocked page
