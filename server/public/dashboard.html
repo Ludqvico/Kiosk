@@ -822,15 +822,36 @@
         .diagnostics-bento {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+            gap: 12px;
         }
 
         .diag-card {
             background: var(--bg-primary);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
-            padding: 20px;
+            padding: 16px;
             transition: all var(--transition-base);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Highlight decoration */
+        .diag-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .diag-card:hover::after {
+            opacity: 1;
         }
 
         .diag-card:hover {
@@ -838,53 +859,90 @@
             box-shadow: var(--shadow-md);
         }
 
-        .diag-card.large {
-            grid-column: span 2;
+        .diag-card.full-width {
+            grid-column: 1 / -1;
         }
 
-        .diag-card.medium {
-            grid-column: span 1;
+        /* Chart specific */
+        .diag-card.chart-card {
+            min-height: 200px;
         }
 
         .diag-card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-light);
+            align-items: flex-start;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
         }
 
-        .diag-card-header h3 {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
+        .header-left h3 {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
             margin: 0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
         }
 
-        .diag-metric {
-            font-size: 24px;
+        .current-metric-value {
+            font-size: 28px;
             font-weight: 700;
             color: var(--text-primary);
+            line-height: 1.1;
+            font-feature-settings: "tnum";
         }
 
-        .diag-card-content {
+        .diag-metric-sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .diag-chart-area {
+            flex-grow: 1;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            margin-top: auto;
+            height: 100px;
+            padding-top: 20px;
+            position: relative;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border-radius: 2px 2px 0 0;
+            transition: height 0.3s ease, background 0.3s ease;
+            min-height: 4px;
+        }
+
+        .chart-bar.active {
+            background: var(--accent-primary);
+        }
+
+        .chart-bar:hover {
+            filter: brightness(1.2);
+        }
+
+        .diag-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .diag-info-item {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-        }
-
-        .diag-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
+            gap: 2px;
         }
 
         .diag-label {
-            font-size: 13px;
+            font-size: 11px;
             color: var(--text-secondary);
         }
 
@@ -892,21 +950,31 @@
             font-size: 13px;
             font-weight: 600;
             color: var(--text-primary);
-        }
-
-        /* Progress Bar for Diagnostics */
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--border-light);
-            border-radius: 99px;
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .progress-fill {
-            height: 100%;
+        /* Uptime Badge */
+        .uptime-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-secondary);
             border-radius: 99px;
-            transition: width 0.3s ease;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+
+        .uptime-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success-dim);
         }
 
         .shutdown-timer {
@@ -1382,6 +1450,46 @@
         }
 
         // ===== Navigation ===== 
+        // Diagnostics History Buffer
+        const diagnosticsHistory = new Map(); // clientId -> { cpu: [], memory: [] }
+        const MAX_HISTORY_POINTS = 30;
+
+        function updateDiagnosticsHistory(clientId, cpu, memory) {
+            if (!diagnosticsHistory.has(clientId)) {
+                diagnosticsHistory.set(clientId, { cpu: [], memory: [] });
+            }
+
+            const history = diagnosticsHistory.get(clientId);
+
+            history.cpu.push(cpu);
+            if (history.cpu.length > MAX_HISTORY_POINTS) history.cpu.shift();
+
+            history.memory.push(memory);
+            if (history.memory.length > MAX_HISTORY_POINTS) history.memory.shift();
+
+            return history;
+        }
+
+        function renderTrendChart(data, colorClass = 'accent-primary') {
+            // Generate bars HTML
+            // We return a flex container of bars
+            const bars = data.map(value => {
+                let colorVar = 'var(--accent-primary)';
+                if (value > 80) colorVar = 'var(--danger)';
+                else if (value > 50) colorVar = 'var(--warning)';
+                else colorVar = 'var(--success)';
+
+                return `<div class="chart-bar" style="height: ${Math.max(value, 4)}%; background: ${colorVar}"></div>`;
+            }).join('');
+
+            // Fill remaining space with empty bars if not enough data
+            const emptyBarsCount = MAX_HISTORY_POINTS - data.length;
+            const emptyBars = Array(Math.max(0, emptyBarsCount)).fill(0)
+                .map(() => `<div class="chart-bar" style="height: 2px; opacity: 0.2; background: var(--text-secondary)"></div>`).join('');
+
+            return emptyBars + bars;
+        }
+
         // Note: Navigation is handled via onclick attributes in HTML
 
         function switchPage(page) {
@@ -1724,6 +1832,9 @@
         function requestDiagnostics(clientId) {
             const client = clients.get(clientId);
             console.log(`Requesting diagnostics from ${client?.hostname || clientId}`);
+
+            // Clear history for this client on new session
+            diagnosticsHistory.delete(clientId);
 
             currentDiagnosticsClientId = clientId;
 
@@ -2089,66 +2200,71 @@
                 }
 
                 console.log('Stats data valid, rendering...');
-                const memUsedPercent = ((stats.memUsed / stats.memTotal) * 100).toFixed(1);
+                const memUsedPercent = parseFloat(((stats.memUsed / stats.memTotal) * 100).toFixed(1));
+
+                // Update History
+                const history = updateDiagnosticsHistory(clientId, stats.cpuLoad, memUsedPercent);
 
                 content.innerHTML = `
                     <div class="diagnostics-bento">
                         <!-- Large card: System Overview -->
-                        <div class="diag-card large">
-                            <div class="diag-card-header">
-                                <h3>System Overview</h3>
+                        <div class="diag-card full-width" style="min-height: auto; padding-bottom: 20px;">
+                            <div class="diag-card-header" style="margin-bottom: 12px; border: none; padding: 0;">
+                                <div class="header-left">
+                                    <h3>System Overview</h3>
+                                    <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">
+                                        ${stats.hostname} <span style="font-weight: 400; color: var(--text-secondary); font-size: 14px;">(${stats.platform})</span>
+                                    </div>
+                                </div>
+                                <div class="uptime-badge">
+                                    <div class="uptime-dot"></div>
+                                    Uptime: ${formatUptime(stats.uptime)}
+                                </div>
                             </div>
-                            <div class="diag-card-content">
-                                <div class="diag-info-row">
-                                    <span class="diag-label">Hostname</span>
-                                    <span class="diag-value">${stats.hostname}</span>
+                            
+                            <div class="diag-info-grid">
+                                <div class="diag-info-item">
+                                    <div class="diag-label">Node Version</div>
+                                    <div class="diag-value">${stats.nodeVersion}</div>
                                 </div>
-                                <div class="diag-info-row">
-                                    <span class="diag-label">Platform</span>
-                                    <span class="diag-value">${stats.platform} (${stats.arch})</span>
+                                <div class="diag-info-item">
+                                    <div class="diag-label">Architecture</div>
+                                    <div class="diag-value">${stats.arch}</div>
                                 </div>
-                                <div class="diag-info-row">
-                                    <span class="diag-label">Node Version</span>
-                                    <span class="diag-value">${stats.nodeVersion}</span>
-                                </div>
-                                <div class="diag-info-row">
-                                    <span class="diag-label">Uptime</span>
-                                    <span class="diag-value">${formatUptime(stats.uptime)}</span>
+                                <div class="diag-info-item" style="grid-column: span 2;">
+                                    <div class="diag-label">CPU Model</div>
+                                    <div class="diag-value" style="white-space: normal; line-height: 1.3;">${stats.cpuModel}</div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Medium card: CPU -->
-                        <div class="diag-card medium">
+                        <div class="diag-card chart-card">
                             <div class="diag-card-header">
-                                <h3>CPU Usage</h3>
-                                <span class="diag-metric">${stats.cpuLoad.toFixed(1)}%</span>
+                                <div class="header-left">
+                                    <h3>CPU Usage</h3>
+                                    <div class="diag-metric-sub">Percent Load</div>
+                                </div>
+                                <div class="current-metric-value">${stats.cpuLoad.toFixed(1)}%</div>
                             </div>
-                            <div class="diag-card-content">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: ${stats.cpuLoad}%; background: ${stats.cpuLoad > 80 ? 'var(--danger)' : stats.cpuLoad > 50 ? 'var(--warning)' : 'var(--success)'}"></div>
-                                </div>
-                                <div class="diag-info-row" style="margin-top: 12px;">
-                                    <span class="diag-label">Model</span>
-                                    <span class="diag-value" style="font-size: 11px;">${stats.cpuModel.substring(0, 40)}...</span>
-                                </div>
+                            
+                            <div class="diag-chart-area">
+                                ${renderTrendChart(history.cpu)}
                             </div>
                         </div>
                         
                         <!-- Medium card: Memory -->
-                        <div class="diag-card medium">
+                        <div class="diag-card chart-card">
                             <div class="diag-card-header">
-                                <h3>Memory</h3>
-                                <span class="diag-metric">${memUsedPercent}%</span>
+                                <div class="header-left">
+                                    <h3>Memory</h3>
+                                    <div class="diag-metric-sub">${Math.round(stats.memUsed / 1024 / 1024)} / ${Math.round(stats.memTotal / 1024 / 1024)} MB</div>
+                                </div>
+                                <div class="current-metric-value">${memUsedPercent}%</div>
                             </div>
-                            <div class="diag-card-content">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: ${memUsedPercent}%; background: ${memUsedPercent > 80 ? 'var(--danger)' : memUsedPercent > 50 ? 'var(--warning)' : 'var(--success)'}"></div>
-                                </div>
-                                <div class="diag-info-row" style="margin-top: 12px;">
-                                    <span class="diag-label">Used / Total</span>
-                                    <span class="diag-value">${Math.round(stats.memUsed / 1024 / 1024)} MB / ${Math.round(stats.memTotal / 1024 / 1024)} MB</span>
-                                </div>
+                            
+                            <div class="diag-chart-area">
+                                ${renderTrendChart(history.memory)}
                             </div>
                         </div>
                     </div>
