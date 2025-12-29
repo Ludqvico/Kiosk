@@ -17,80 +17,71 @@ export class FileManager {
             const disks: Array<{ name: string; size: number; free: number; usedPercent: number }> = [];
 
             if (platform === 'win32') {
-                console.log('[FileManager] Platform is win32, executing wmic...');
-                // Use WMIC on Windows
-                // Use WMIC with CSV format for easier parsing
-                // wmic logicaldisk get name,size,freespace,caption /format:csv
-                const { stdout } = await execAsync('wmic logicaldisk get caption,size,freespace /format:csv');
+                console.log('[FileManager] Platform is win32, executing PowerShell for disks...');
+                try {
+                    // Use PowerShell to get JSON output - far more reliable than parsing WMIC text
+                    const cmd = `powershell -NoProfile -Command "Get-WmiObject Win32_LogicalDisk | Select-Object DeviceID, Size, FreeSpace | ConvertTo-Json"`;
+                    const { stdout } = await execAsync(cmd);
+                    const output = stdout.trim();
 
-                // Output format:
-                // Node,Caption,FreeSpace,Size
-                // MACHINE,C:,12345,67890
+                    if (output) {
+                        let data = JSON.parse(output);
+                        // ConvertTo-Json returns a single object if only one result, or an array
+                        if (!Array.isArray(data)) {
+                            data = [data];
+                        }
 
-                const lines = stdout.trim().split('\n');
-                // First line is empty or header, find header
+                        for (const disk of data) {
+                            const name = disk.DeviceID;
+                            const size = parseInt(disk.Size || '0');
+                            const free = parseInt(disk.FreeSpace || '0');
 
-                for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (!trimmed || trimmed.startsWith('Node')) continue; // Skip empty or header
-
-                    const parts = trimmed.split(',');
-                    if (parts.length >= 4) {
-                        // Node, Caption, FreeSpace, Size
-                        // Note: wmic csv output order depends on query but usually reliable if we check
-                        // Actually /format:csv output lines are: Node,Property1,Property2... sorted alphabetically by property name?
-                        // Let's re-parse safely. 
-
-                        // Wait, wmic /format:csv is:
-                        // Node,Caption,FreeSpace,Size  (Alphabetical properties?)
-                        // "Node" is always first.
-                        // Let's use specific column selection to be sure? 
-                        // It's safer to just fetch and use key-value list? No, List is multiline.
-                        // CSV is standard.
-
-                        // Let's assume standard CSV: Node,Caption,FreeSpace,Size
-                        // But verifying column order is hard without a library.
-
-                        // Fallback: simplified parsing logic used before but improved regex
-
-                        // Let's go back to standard text output and parse more defensively.
-                        // Standard: Caption  FreeSpace     Size
-                        // C:       100       200
+                            if (name && size > 0) {
+                                disks.push({
+                                    name,
+                                    size,
+                                    free,
+                                    usedPercent: Math.round(((size - free) / size) * 100)
+                                });
+                            }
+                        }
                     }
-                }
+                } catch (psError) {
+                    console.error('[FileManager] PowerShell failed:', psError);
+                    // Fallback to WMIC if PowerShell fails (e.g. very old systems or restricted execution policy)
+                    console.log('[FileManager] Attempting WMIC fallback...');
+                    try {
+                        const { stdout } = await execAsync('wmic logicaldisk get caption,size,freespace /format:csv');
+                        const lines = stdout.trim().split('\n');
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (!trimmed || trimmed.startsWith('Node')) continue;
 
-                // Retrying standard text but with strict column logic fails if columns merge.
-                // Let's use `wmic logicaldisk get caption,size,freespace /format:list`
-                // This output:
-                // Caption=C:
-                // FreeSpace=123
-                // Size=456
+                            // CSV: Node,Caption,FreeSpace,Size  (Usually)
+                            // But safest is to try to find the parts that look like C: and numbers
+                            const parts = trimmed.split(',');
+                            // Simple heuristic search for the drive data
+                            const name = parts.find(p => /^[A-Z]:$/i.test(p));
+                            // Find two large numbers
+                            const numbers = parts.filter(p => /^\d+$/.test(p)).map(p => parseInt(p)).sort((a, b) => b - a);
 
-                const { stdout: listOut } = await execAsync('wmic logicaldisk get caption,size,freespace /format:list');
-                const chunks = listOut.trim().split(/\n\s*\n/); // Empty line between objects
+                            if (name && numbers.length >= 2) {
+                                const size = numbers[0]; // Largest is size
+                                const free = numbers[1]; // Smaller is free (usually)
+                                // Only caveat: if free > size? Impossible physically.
 
-                for (const chunk of chunks) {
-                    const lines = chunk.split('\n');
-                    let name = '';
-                    let size = 0;
-                    let free = 0;
-
-                    for (const l of lines) {
-                        const [key, val] = l.trim().split('=');
-                        if (!key || !val) continue;
-
-                        if (key.toLowerCase() === 'caption') name = val;
-                        if (key.toLowerCase() === 'size') size = parseInt(val);
-                        if (key.toLowerCase() === 'freespace') free = parseInt(val);
-                    }
-
-                    if (name && size > 0) {
-                        disks.push({
-                            name,
-                            size,
-                            free,
-                            usedPercent: Math.round(((size - free) / size) * 100)
-                        });
+                                if (size > 0) {
+                                    disks.push({
+                                        name,
+                                        size,
+                                        free,
+                                        usedPercent: Math.round(((size - free) / size) * 100)
+                                    });
+                                }
+                            }
+                        }
+                    } catch (wmicError) {
+                        console.error('[FileManager] WMIC fallback failed:', wmicError);
                     }
                 }
             } else {
