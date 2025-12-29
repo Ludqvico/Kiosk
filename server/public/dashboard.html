@@ -1259,24 +1259,24 @@
             updateUI();
         });
 
-        socket.on('client:connected', (client) => {
+        socket.on('admin:client-connected', (client) => {
             console.log('[Dashboard] Client connected:', client);
             clients.set(client.id, client);
             addActivityLogEntry('connect', client.id, `Connected from ${client.hostname}`);
             updateUI();
         });
 
-        socket.on('client:disconnected', (clientId) => {
-            console.log('[Dashboard] Client disconnected:', clientId);
-            const client = clients.get(clientId);
+        socket.on('admin:client-disconnected', (data) => {
+            console.log('[Dashboard] Client disconnected:', data.clientId);
+            const client = clients.get(data.clientId);
             if (client) {
-                addActivityLogEntry('disconnect', clientId, `Disconnected from ${client.hostname}`);
+                addActivityLogEntry('disconnect', data.clientId, `Disconnected from ${client.hostname}`);
             }
-            clients.delete(clientId);
+            clients.delete(data.clientId);
             updateUI();
         });
 
-        socket.on('client:status-changed', (data) => {
+        socket.on('admin:client-status', (data) => {
             console.log('[Dashboard] Client status changed:', data);
             const client = clients.get(data.clientId);
             if (client) {
@@ -1547,16 +1547,16 @@
 
         // Client actions
         function lockClient(clientId) {
-            socket.emit('admin:lock', clientId);
+            socket.emit('admin:lock-client', clientId);
         }
 
         function unlockClient(clientId) {
-            socket.emit('admin:unlock', clientId);
+            socket.emit('admin:unlock-client', clientId);
         }
 
         function rebootClient(clientId) {
             if (confirm('Are you sure you want to reboot this station?')) {
-                socket.emit('admin:reboot', clientId);
+                socket.emit('admin:reboot-client', clientId);
                 addActivityLogEntry('reboot', clientId, 'Reboot command sent');
             }
         }

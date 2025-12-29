@@ -240,6 +240,13 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Admin richiede lista client
+  socket.on('admin:request-clients-list', () => {
+    console.log('[Admin] Richiesta lista client');
+    const clientsList = Array.from(connectedClients.values());
+    socket.emit('clients:list', clientsList);
+  });
+
   // Comandi dall'admin ai client
   socket.on('admin:lock-client', (clientId: string) => {
     console.log(`[Admin] Richiesta lock per client: ${clientId}`);
