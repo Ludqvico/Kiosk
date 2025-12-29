@@ -67,15 +67,6 @@ function createWindow() {
     e.preventDefault();
   });
 
-  // BLOCCO INPUT LOCALE quando inputBlocked = true
-  // Questo blocca SOLO input fisici locali, NON quelli che arrivano da webrtc:input IPC
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (inputBlocked) {
-      event.preventDefault();
-      console.log('[Main] 🚫 Input locale bloccato:', input.type, input.key || input.code);
-    }
-  });
-
   // Previeni navigazione
   mainWindow.webContents.on('will-navigate', (e) => {
     e.preventDefault();
@@ -395,11 +386,13 @@ function logoutClient() {
   app.quit();
 }
 
-// ========== INPUT BLOCKING - BYPASS INTELLIGENTE ==========
-// Blocca input FISICO locale ma permette input REMOTO da robotjs tramite bypass temporaneo
+// ========== INPUT BLOCKING - RAW INPUT API ==========
+// Windows: Usa RegisterRawInputDevices con RIDEV_NOLEGACY per bloccare input FISICI
+// robotjs usa SendInput API che BYPASSA RawInput → funziona sempre!
 
 let inputBlocked = false;
 let inputBlockOverlay: BrowserWindow | null = null;
+let inputBlockProcess: any = null;
 let blockedShortcuts: string[] = [];
 
 function createInputBlockOverlay() {
@@ -408,7 +401,7 @@ function createInputBlockOverlay() {
     return;
   }
 
-  console.log('[Main] 🔒 Creazione overlay blocco input con bypass intelligente...');
+  console.log('[Main] 🔒 Creazione overlay visivo (cursore not-allowed)...');
 
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -423,7 +416,7 @@ function createInputBlockOverlay() {
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    focusable: false, // NON focusable - lascia passare gli eventi al layer sotto
+    focusable: false,
     resizable: false,
     movable: false,
     minimizable: false,
@@ -437,7 +430,7 @@ function createInputBlockOverlay() {
     }
   });
 
-  // HTML SOLO per mostrare cursore not-allowed - NON blocca nulla
+  // HTML SOLO per mostrare cursore not-allowed - NON blocca input
   const overlayHTML = `
     <!DOCTYPE html>
     <html>
@@ -468,7 +461,7 @@ function createInputBlockOverlay() {
   inputBlockOverlay.setVisibleOnAllWorkspaces(true);
   inputBlockOverlay.setFullScreen(true);
 
-  console.log('[Main] ✅ Overlay visivo creato (solo cursore not-allowed)');
+  console.log('[Main] ✅ Overlay visivo creato (cursore not-allowed)');
 }
 
 function destroyInputBlockOverlay() {
@@ -537,19 +530,64 @@ function blockUserInput() {
     return;
   }
 
-  console.log('[Main] ⛓️  BLOCCO INPUT LOCALE UTENTE ⛓️');
-  console.log('[Main] 🔐 L\'admin può ANCORA controllare da remoto via WebRTC');
+  console.log('[Main] ⛓️  BLOCCO INPUT FISICI (hardware) ⛓️');
+  console.log('[Main] 🔐 robotjs (SendInput) continua a funzionare normalmente');
   inputBlocked = true;
 
-  // Crea overlay fullscreen che blocca interazioni locali
-  // L'overlay cattura gli eventi del mouse/tastiera locali
+  const platform = process.platform;
+
+  if (platform === 'win32') {
+    // Windows: USA RAW INPUT API con RIDEV_NOLEGACY
+    const { spawn } = require('child_process');
+    const path = require('path');
+
+    const scriptPath = path.join(__dirname, '../src/native/win/RawInputBlocker.ps1');
+
+    console.log('[Main] 🔒 Avvio blocco Windows con Raw Input API...');
+    console.log('[Main] Script path:', scriptPath);
+
+    // Spawn PowerShell process che registra Raw Input devices
+    inputBlockProcess = spawn('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', scriptPath,
+      'block'
+    ], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    inputBlockProcess.stdout?.on('data', (data: Buffer) => {
+      const output = data.toString().trim();
+      console.log('[RawInputBlocker] stdout:', output);
+
+      if (output === 'BLOCKED') {
+        console.log('[Main] ✅✅✅ INPUT FISICI BLOCCATI (RegisterRawInputDevices + RIDEV_NOLEGACY)');
+        console.log('[Main] ℹ️  SendInput (robotjs) BYPASSA Raw Input → controllo remoto funziona!');
+      } else if (output.startsWith('ERROR')) {
+        console.error('[Main] ❌ Errore blocco:', output);
+      } else if (output.startsWith('INFO')) {
+        console.log('[Main]', output);
+      }
+    });
+
+    inputBlockProcess.stderr?.on('data', (data: Buffer) => {
+      console.error('[RawInputBlocker] stderr:', data.toString().trim());
+    });
+
+    inputBlockProcess.on('exit', (code: number) => {
+      console.log('[Main] 🔓 Processo RawInputBlocker terminato con codice:', code);
+      inputBlocked = false;
+      inputBlockProcess = null;
+    });
+  }
+
+  // Crea overlay visivo per mostrare cursore not-allowed
   createInputBlockOverlay();
 
   // Blocca shortcuts di sistema
   blockSystemShortcuts();
 
-  console.log('[Main] ✅✅✅ INPUT LOCALE BLOCCATO');
-  console.log('[Main] ℹ️  robotjs (controllo remoto) funziona normalmente perché inietta eventi sotto l\'overlay');
+  console.log('[Main] ✅ INPUT FISICI BLOCCATI + Overlay visivo attivo');
 }
 
 function unblockUserInput() {
@@ -558,8 +596,40 @@ function unblockUserInput() {
     return;
   }
 
-  console.log('[Main] 🔓 SBLOCCO INPUT UTENTE');
+  console.log('[Main] 🔓 SBLOCCO INPUT FISICI');
   inputBlocked = false;
+
+  const platform = process.platform;
+
+  if (platform === 'win32' && inputBlockProcess) {
+    // Windows: crea file di stop per far uscire il process dal loop
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+
+    const stopFile = path.join(os.tmpdir(), 'rawinput_blocker_stop.flag');
+
+    try {
+      fs.writeFileSync(stopFile, 'STOP');
+      console.log('[Main] ✓ File di stop creato:', stopFile);
+
+      // Aspetta un po' e poi killa il processo se ancora attivo
+      setTimeout(() => {
+        if (inputBlockProcess && !inputBlockProcess.killed) {
+          inputBlockProcess.kill();
+          inputBlockProcess = null;
+          console.log('[Main] ✓ Processo RawInputBlocker terminato forzatamente');
+        }
+      }, 2000);
+    } catch (error) {
+      console.error('[Main] Errore durante sblocco:', error);
+      // Killa comunque il processo
+      if (inputBlockProcess) {
+        inputBlockProcess.kill();
+        inputBlockProcess = null;
+      }
+    }
+  }
 
   // Rimuovi overlay
   destroyInputBlockOverlay();
@@ -827,6 +897,9 @@ app.on('will-quit', () => {
   }
   if (inputInjection) {
     inputInjection.cleanup();
+  }
+  if (inputBlockProcess) {
+    inputBlockProcess.kill();
   }
   if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
     inputBlockOverlay.destroy();
