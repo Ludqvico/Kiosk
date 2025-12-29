@@ -3774,7 +3774,12 @@
         function renderDrives(disks) {
             fmState.drives = disks;
             const container = document.getElementById('fm-drives-list');
-            container.innerHTML = disks.map(d => `
+            container.innerHTML = disks.map(d => {
+                let colorClass = '';
+                if (d.usedPercent > 90) colorClass = 'danger';
+                else if (d.usedPercent > 75) colorClass = 'warning';
+
+                return `
                 <div class="fm-drive-item ${fmState.currentPath.startsWith(d.name) ? 'active' : ''}" onclick="fmLoadPath('${d.name.replace(/\\/g, '\\\\')}')">
                     <div class="fm-drive-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -3782,14 +3787,14 @@
                     <div class="fm-drive-info">
                         <div class="fm-drive-name">${d.name}</div>
                         <div class="fm-drive-usage">
-                            <div class="fm-drive-bar" style="width: ${d.usedPercent}%"></div>
+                            <div class="fm-drive-bar ${colorClass}" style="width: ${d.usedPercent}%"></div>
                         </div>
                         <div style="font-size:10px; color:var(--text-tertiary); margin-top:2px;">
                             ${formatSize(d.size - d.free)} used of ${formatSize(d.size)}
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function renderShortcuts(platform) {
