@@ -246,6 +246,9 @@ app.post('/api/recordings', express.raw({ type: 'video/*', limit: '500mb' }), as
 
     console.log(`[Server] Recording saved: ${finalFilename}`);
 
+    // Notify all admins to refresh gallery
+    io.emit('server:new-recording', { filename: finalFilename, url: `/recordings/${finalFilename}` });
+
     logActivity({
       type: 'diagnostics', // reusing type or create new? 'diagnostics' is fine for generic logs or create new interface entry?
       // I'll stick to 'diagnostics' for now to avoid interface errors or I can add 'recording' type strictly if I update interface.

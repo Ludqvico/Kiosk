@@ -7,6 +7,70 @@
     <title>Remote Desktop - WebRTC</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        /* Arha Font Family */
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaThinTrial-BF6764ee7eefcf0.otf') format('opentype');
+            font-weight: 100;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaExtralightTrial-BF6764ee7ee3c59.otf') format('opentype');
+            font-weight: 200;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaLightTrial-BF6764ee7ee42b5.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaRegularTrial-BF6764ee7f00a5e.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaMediumTrial-BF6764ee7ee3a17.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaSemiboldTrial-BF6764ee7eea214.otf') format('opentype');
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaBoldTrial-BF6764ee7ec8ea8.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaExtraboldTrial-BF6764ee7ed613e.otf') format('opentype');
+            font-weight: 800;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaBlackTrial-BF6764ee7ec9aa0.otf') format('opentype');
+            font-weight: 900;
+            font-style: normal;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,7 +78,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Arha', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #1a1a1a;
             color: #ffffff;
             overflow: hidden;
@@ -241,6 +305,63 @@
             font-weight: 700;
             font-size: 14px;
             display: none;
+        }
+
+        /* Toast Styles */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid #48bb78;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 300px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.active {
+            transform: translateX(0);
+        }
+
+        .toast-title {
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-msg {
+            font-size: 13px;
+            color: #a0aec0;
+        }
+
+        .toast-cta {
+            margin-top: 8px;
+            color: #48bb78;
+            font-weight: 600;
+            font-size: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            text-align: left;
+            text-decoration: underline;
         }
 
         .remote-screen {
@@ -875,19 +996,54 @@
             document.getElementById('recordingTimer').style.display = 'none';
         }
 
+        function showToast(filename) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#48bb78" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Recording Saved
+                </div>
+                <div class="toast-msg">Successfully uploaded <strong>${filename}</strong> to Gallery.</div>
+                <button class="toast-cta" onclick="window.opener ? window.opener.switchPage('gallery') : alert('Go to Gallery in Dashboard')">View in Gallery</button>
+            `;
+            container.appendChild(toast);
+
+            // Initial animation
+            setTimeout(() => toast.classList.add('active'), 100);
+
+            // Remove after 6s
+            setTimeout(() => {
+                toast.classList.remove('active');
+                setTimeout(() => toast.remove(), 400);
+            }, 6000);
+        }
+
         async function saveRecording() {
+            if (recordedChunks.length === 0) return;
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const formData = new FormData();
             const fileName = `remote-${clientId}-${Date.now()}.webm`;
-            formData.append('recording', blob, fileName);
 
             try {
-                const res = await fetch('/api/recordings/upload', {
+                // Send as raw blob with custom headers
+                const res = await fetch('/api/recordings', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'video/webm',
+                        'x-filename': fileName,
+                        'x-client-name': clientAlias || clientId
+                    },
+                    body: blob
                 });
+
                 if (res.ok) {
                     console.log('Recording uploaded successfully');
+                    showToast(fileName);
                 } else {
                     throw new Error('Upload failed');
                 }
@@ -938,6 +1094,7 @@
             cleanup();
         });
     </script>
+    <div id="toast-container" class="toast-container"></div>
 </body>
 
 </html>

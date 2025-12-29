@@ -5,11 +5,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Management</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        /* Arha Font Family */
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaThinTrial-BF6764ee7eefcf0.otf') format('opentype');
+            font-weight: 100;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaExtralightTrial-BF6764ee7ee3c59.otf') format('opentype');
+            font-weight: 200;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaLightTrial-BF6764ee7ee42b5.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaRegularTrial-BF6764ee7f00a5e.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaMediumTrial-BF6764ee7ee3a17.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaSemiboldTrial-BF6764ee7eea214.otf') format('opentype');
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaBoldTrial-BF6764ee7ec8ea8.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaExtraboldTrial-BF6764ee7ed613e.otf') format('opentype');
+            font-weight: 800;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'Arha';
+            src: url('/fonts/CopyrightBolditalicStudio-ArhaBlackTrial-BF6764ee7ec9aa0.otf') format('opentype');
+            font-weight: 900;
+            font-style: normal;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -61,7 +122,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Arha', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.5;
@@ -3316,6 +3377,15 @@
                 loadGallery();
             }
         }
+
+        // Automatically refresh gallery when a new recording is saved
+        socket.on('server:new-recording', (data) => {
+            console.log('[Gallery] New recording received:', data.filename);
+            const galleryPage = document.getElementById('galleryPage');
+            if (galleryPage && galleryPage.classList.contains('active')) {
+                loadGallery();
+            }
+        });
 
         // ===== Stations Management =====
         socket.on('admin:client-connected', (client) => {
