@@ -2522,17 +2522,24 @@
         }
 
         /* EagleEye Styles */
+        .eagleeye-modal {
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         .eagleeye-container {
             background: #000;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
             position: relative;
-            /* aspect-ratio: 16/9; */
-            height: 500px;
+            flex: 1;
+            min-height: 400px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            overflow: hidden;
         }
 
         .eagleeye-video {
@@ -2542,12 +2549,18 @@
         }
 
         .eagleeye-placeholder {
+            position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 15px;
             color: var(--text-tertiary);
             transition: opacity 0.3s;
+            text-align: center;
+            background: #000;
+            z-index: 10;
         }
 
         .eagleeye-placeholder.hidden {
@@ -2559,22 +2572,22 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
-            padding: 15px;
+            padding: 20px;
             background: var(--bg-tertiary);
-            border-radius: var(--radius-lg);
+            flex-shrink: 0;
         }
 
         .ee-control-btn {
             background: var(--bg-secondary);
             border: 1px solid var(--border-medium);
             color: var(--text-primary);
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 500;
+            justify-content: center;
             transition: all 0.2s;
         }
 
@@ -5249,10 +5262,11 @@
         </div>
     </div>
     <!-- EagleEye Modal -->
+    <!-- EagleEye Modal -->
     <div class="modal-overlay" id="eagleEyeModal">
         <div class="modal eagleeye-modal">
             <div class="modal-header">
-                <h2 class="modal-title" id="eagleEyeTitle">EagleEye - Client</h2>
+                <h2 class="modal-title" id="eagleEyeTitle">EagleEye Input</h2>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <span id="recordingTimer"
                         style="font-family: monospace; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity 0.3s; color: var(--danger); font-weight: 700;">00:00</span>
@@ -5275,26 +5289,39 @@
             </div>
 
             <div class="eagleeye-controls">
-                <button class="ee-control-btn" id="btnMicToggle" onclick="toggleEagleEyeAudio()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                <button class="ee-control-btn active" id="btnMicToggle" onclick="toggleEagleEyeAudio()"
+                    title="Toggle Microphone">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
-                        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                         <line x1="12" y1="19" x2="12" y2="23"></line>
                         <line x1="8" y1="23" x2="16" y2="23"></line>
                     </svg>
-                    Muted
                 </button>
 
-                <div class="record-btn" id="btnRecord" onclick="toggleEagleEyeRecording()" title="Start Recording">
+                <button class="ee-control-btn active" id="btnVideoToggle" onclick="toggleEagleEyeVideo()"
+                    title="Toggle Video">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 7l-7 5 7 5V7z"></path>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                </button>
+
+                <div class="record-btn disabled" id="btnRecord" onclick="toggleEagleEyeRecording()"
+                    title="Start Recording">
                     <div class="record-btn-inner"></div>
                 </div>
 
-                <!-- Spacer to center record button -->
-                <div style="width: 100px; text-align: right;">
-                    <span style="font-size: 12px; color: var(--text-tertiary);">Rec to Gallery</span>
-                </div>
+                <button class="ee-control-btn" onclick="closeEagleEyeModal(); switchPage('gallery');"
+                    title="Open Gallery">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <polygon points="11 9 15 12 11 15 11 9"></polygon>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
@@ -5306,14 +5333,17 @@
         let eagleEyeMediaRecorder = null;
         let eagleEyeRecordedChunks = [];
         let currentEagleEyeClientId = null;
-        let isEagleEyeMuted = true;
+
+        // State
+        let isEagleEyeAudioEnabled = true;
+        let isEagleEyeVideoEnabled = true;
         let isEagleEyeRecording = false;
 
         // Socket Listeners
         socket.on('server:start-eagleeye', () => {
             console.log('EagleEye started confirmed by server');
             document.getElementById('eagleEyePlaceholder').classList.add('hidden');
-            document.getElementById('eagleEyeStatus').textContent = 'Connected (Waiting for stream...)';
+            document.getElementById('eagleEyeStatus').textContent = 'Connected';
         });
 
         socket.on('server:eagleeye-signal', async (signal) => {
@@ -5354,7 +5384,10 @@
         function openEagleEyeModal(clientId) {
             currentEagleEyeClientId = clientId;
             const client = clients.get(clientId);
-            document.getElementById('eagleEyeTitle').textContent = `EagleEye - ${client ? client.hostname : clientId}`;
+
+            // Use custom name if available, else hostname
+            const displayName = client ? (client.customName || client.hostname) : clientId;
+            document.getElementById('eagleEyeTitle').textContent = `EagleEye - ${displayName}`;
             document.getElementById('eagleEyeModal').classList.add('active');
 
             // Reset UI
@@ -5362,10 +5395,14 @@
             document.getElementById('eagleEyePlaceholder').classList.remove('hidden');
             document.getElementById('eagleEyeStatus').textContent = 'Connecting...';
             document.getElementById('eagleEyeStatus').style.color = 'var(--text-tertiary)';
-            const btn = document.getElementById('btnMicToggle');
-            btn.classList.remove('active');
-            btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Muted`;
-            isEagleEyeMuted = true;
+
+            // Reset controls state
+            isEagleEyeAudioEnabled = true;
+            isEagleEyeVideoEnabled = true;
+            updateEagleEyeControls();
+
+            // Disable Record until connected
+            document.getElementById('btnRecord').classList.add('disabled');
 
             // Start session
             setupEagleEyeConnection();
@@ -5416,27 +5453,88 @@
                 const videoEl = document.getElementById('eagleEyeVideo');
                 videoEl.srcObject = event.streams[0];
                 document.getElementById('eagleEyePlaceholder').classList.add('hidden');
+
+                // Connected! Update controls
+                updateEagleEyeControls();
             };
         }
 
-        function toggleEagleEyeAudio() {
-            isEagleEyeMuted = !isEagleEyeMuted;
+        function updateEagleEyeControls() {
             const videoEl = document.getElementById('eagleEyeVideo');
-            const btn = document.getElementById('btnMicToggle');
+            const stream = videoEl.srcObject;
 
-            videoEl.muted = isEagleEyeMuted;
+            const btnMic = document.getElementById('btnMicToggle');
+            const btnVideo = document.getElementById('btnVideoToggle');
+            const btnRecord = document.getElementById('btnRecord');
 
-            if (isEagleEyeMuted) {
-                btn.classList.remove('active');
-                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Muted`;
-            } else {
-                btn.classList.add('active');
-                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Active`;
+            // Default state if no stream
+            if (!stream) {
+                btnRecord.classList.add('disabled');
+                return;
             }
+
+            // --- AUDIO ---
+            const audioTracks = stream.getAudioTracks();
+            if (audioTracks.length > 0) {
+                audioTracks[0].enabled = isEagleEyeAudioEnabled;
+                // Local mute to prevent echo
+                videoEl.muted = true;
+            }
+
+            if (isEagleEyeAudioEnabled) {
+                btnMic.classList.add('active');
+                btnMic.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+            } else {
+                btnMic.classList.remove('active');
+                btnMic.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+            }
+
+            // --- VIDEO ---
+            const videoTracks = stream.getVideoTracks();
+            if (videoTracks.length > 0) {
+                videoTracks[0].enabled = isEagleEyeVideoEnabled;
+            }
+
+            if (isEagleEyeVideoEnabled) {
+                btnVideo.classList.add('active');
+                btnVideo.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`;
+                videoEl.style.opacity = '1';
+            } else {
+                btnVideo.classList.remove('active');
+                btnVideo.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+                // We can show placeholder if video is off, or just black
+                // videoEl.style.opacity = '0'; // Keep it active but black or invisible?
+                // If opacity is 0, we might want to show placeholder?
+                // But we might want users to know connection is still alive.
+                // Opacity 0 makes it black (since bg is black). That's fine.
+                videoEl.style.opacity = '0';
+            }
+
+            // --- RECORD BUTTON ---
+            // Disable if BOTH are disabled, or just if stream invalid
+            if (!isEagleEyeAudioEnabled && !isEagleEyeVideoEnabled) {
+                btnRecord.classList.add('disabled');
+                if (isEagleEyeRecording) toggleEagleEyeRecording();
+            } else {
+                btnRecord.classList.remove('disabled');
+            }
+        }
+
+        function toggleEagleEyeAudio() {
+            isEagleEyeAudioEnabled = !isEagleEyeAudioEnabled;
+            updateEagleEyeControls();
+        }
+
+        function toggleEagleEyeVideo() {
+            isEagleEyeVideoEnabled = !isEagleEyeVideoEnabled;
+            updateEagleEyeControls();
         }
 
         function toggleEagleEyeRecording() {
             const btn = document.getElementById('btnRecord');
+            // Check disabled state
+            if (btn.classList.contains('disabled')) return;
+
             const timerEl = document.getElementById('recordingTimer');
             const client = clients.get(currentEagleEyeClientId);
 
@@ -5448,13 +5546,17 @@
                 clearInterval(eagleEyeRecordingTimer);
             } else {
                 const stream = document.getElementById('eagleEyeVideo').srcObject;
-                if (!stream) {
-                    alert('No stream to record');
-                    return;
-                }
+                if (!stream) return;
 
                 eagleEyeRecordedChunks = [];
-                eagleEyeMediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                // Note: MediaRecorder records the stream tracks.
+                try {
+                    eagleEyeMediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                } catch (e) {
+                    console.error("MediaRecorder error", e);
+                    alert("Recording not supported on this browser.");
+                    return;
+                }
 
                 eagleEyeMediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) eagleEyeRecordedChunks.push(e.data);
@@ -5462,21 +5564,24 @@
 
                 eagleEyeMediaRecorder.onstop = async () => {
                     const blob = new Blob(eagleEyeRecordedChunks, { type: 'video/webm' });
-                    const clientName = client ? client.hostname : 'unknown';
+                    // Use alias for filename if possible
+                    const clientName = client ? (client.customName || client.hostname) : 'unknown';
+                    // Sanitize name for header
+                    const safeName = clientName.replace(/[^a-zA-Z0-9-_]/g, '_');
 
                     try {
                         const response = await fetch('/api/recordings', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'video/webm',
-                                'x-client-name': clientName
+                                'x-client-name': safeName
                             },
                             body: blob
                         });
 
                         if (response.ok) {
                             console.log('Recording saved');
-                            alert('Recording saved to Gallery');
+                            // Show success
                         }
                     } catch (e) {
                         console.error('Upload failed', e);
