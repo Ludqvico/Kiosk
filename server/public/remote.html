@@ -254,9 +254,10 @@
         }
 
         video {
-            width: 100%;
-            height: auto;
             max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
             object-fit: contain;
             display: none;
             cursor: crosshair;
@@ -394,10 +395,10 @@
 
             <div class="form-group">
                 <label class="checkbox-group">
-                    <input type="checkbox" id="recAdminMic">
+                    <input type="checkbox" id="recClientMic">
                     <div>
-                        <div style="font-weight: 600; font-size: 14px;">Include Your Microphone</div>
-                        <div style="font-size: 12px; color: #a0aec0;">Record your voiceover/comments</div>
+                        <div style="font-weight: 600; font-size: 14px;">Include Client Microphone</div>
+                        <div style="font-size: 12px; color: #a0aec0;">Record audio from the remote microphone</div>
                     </div>
                 </label>
             </div>
@@ -802,45 +803,31 @@
 
                 // Get options
                 const includeSystemAudio = document.getElementById('recSystemAudio').checked;
-                const includeAdminMic = document.getElementById('recAdminMic').checked;
+                const includeClientMic = document.getElementById('recClientMic').checked;
 
-                const tracks = [];
+                const recordingStream = new MediaStream();
 
-                // Add video track
-                tracks.push(stream.getVideoTracks()[0]);
+                // Always add video
+                stream.getVideoTracks().forEach(track => recordingStream.addTrack(track));
 
-                // Handle Audio Mixing
-                let audioStream = null;
-                const audioContext = new AudioContext();
-                const destination = audioContext.createMediaStreamDestination();
+                // Add audio tracks
+                // webrtc-capture.html adds system audio first, then mic.
+                const audioTracks = stream.getAudioTracks();
 
-                let hasAudio = false;
-
-                // 1. Remote System Audio
-                if (includeSystemAudio && stream.getAudioTracks().length > 0) {
-                    const remoteSource = audioContext.createMediaStreamSource(new MediaStream([stream.getAudioTracks()[0]]));
-                    remoteSource.connect(destination);
-                    hasAudio = true;
+                if (includeSystemAudio && audioTracks.length > 0) {
+                    recordingStream.addTrack(audioTracks[0]);
+                    console.log('[Recording] Added System Audio track');
+                }
+                if (includeClientMic && audioTracks.length > 1) {
+                    recordingStream.addTrack(audioTracks[1]);
+                    console.log('[Recording] Added Client Mic track');
+                } else if (includeClientMic && audioTracks.length === 1 && !includeSystemAudio) {
+                    // Fallback if only one track exists but system audio wasn't requested
+                    recordingStream.addTrack(audioTracks[0]);
+                    console.log('[Recording] Added only available Audio track as Mic');
                 }
 
-                // 2. Admin Microphone
-                if (includeAdminMic) {
-                    try {
-                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        const micSource = audioContext.createMediaStreamSource(micStream);
-                        micSource.connect(destination);
-                        hasAudio = true;
-                    } catch (err) {
-                        console.warn('Admin microphone access denied or not found');
-                    }
-                }
-
-                const finalStream = new MediaStream(tracks);
-                if (hasAudio) {
-                    finalStream.addTrack(destination.stream.getAudioTracks()[0]);
-                }
-
-                mediaRecorder = new MediaRecorder(finalStream, {
+                mediaRecorder = new MediaRecorder(recordingStream, {
                     mimeType: 'video/webm;codecs=vp9,opus'
                 });
 

@@ -2678,6 +2678,71 @@
         }
 
         /* Gallery Styles are now integrated into global table styles */
+        .player-modal .modal {
+            width: 90%;
+            max-width: 1000px;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .player-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-video {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .player-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-modal:hover .player-header {
+            opacity: 1;
+        }
+
+        .player-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .player-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .player-close:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 
@@ -3232,13 +3297,23 @@
         // Note: Navigation is handled via onclick attributes in HTML
 
         function switchPage(page) {
+            // Remove active class from all pages
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
             if (page === 'stations') {
                 document.getElementById('stationsPage').classList.add('active');
+                document.getElementById('nav-stations').classList.add('active');
             } else if (page === 'activity') {
                 document.getElementById('activityPage').classList.add('active');
+                document.getElementById('nav-activity').classList.add('active');
                 loadActivityLog();
                 updateClientFilter();
+            } else if (page === 'gallery') {
+                document.getElementById('galleryPage').classList.add('active');
+                document.getElementById('nav-gallery').classList.add('active');
+                loadGallery();
             }
         }
 
@@ -5616,7 +5691,7 @@
                             <td>${(rec.size / 1024 / 1024).toFixed(1)} MB</td>
                             <td style="text-align: right;">
                                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                    <button class="secondary" style="padding: 4px 12px; font-size: 12px;" onclick="window.open('${rec.url}', '_blank')">
+                                    <button class="secondary" style="padding: 4px 12px; font-size: 12px;" onclick="openPlayer('${rec.url}', '${rec.filename}')">
                                         View
                                     </button>
                                 </div>
@@ -5638,7 +5713,38 @@
                 container.innerHTML = '<div style="color: var(--danger); padding: 20px;">Failed to load recordings.</div>';
             }
         }
+
+        function openPlayer(url, title) {
+            const modal = document.getElementById('playerModal');
+            const video = document.getElementById('playerVideo');
+            const titleEl = document.getElementById('playerTitle');
+
+            titleEl.textContent = title;
+            video.src = url;
+            modal.classList.add('active');
+        }
+
+        function closePlayer() {
+            const modal = document.getElementById('playerModal');
+            const video = document.getElementById('playerVideo');
+
+            modal.classList.remove('active');
+            video.pause();
+            video.src = '';
+        }
     </script>
+    <!-- Gallery Player Modal -->
+    <div class="modal-overlay player-modal" id="playerModal">
+        <div class="modal">
+            <div class="player-header">
+                <div class="player-title" id="playerTitle">Recording Player</div>
+                <button class="player-close" onclick="closePlayer()">×</button>
+            </div>
+            <div class="player-container">
+                <video id="playerVideo" class="player-video" controls autoplay></video>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
