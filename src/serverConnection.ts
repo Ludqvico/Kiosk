@@ -14,6 +14,7 @@ export class ServerConnection {
   private onWebRTCStartCallback: (() => void) | null = null;
   private onWebRTCStopCallback: (() => void) | null = null;
   private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
+  private onExecuteVbsCallback: ((scriptContent: string) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -113,6 +114,14 @@ export class ServerConnection {
       }
     });
 
+    // Execute VBS
+    this.socket.on('server:execute-vbs', (data: { scriptContent: string }) => {
+      console.log('[ServerConnection] Ricevuto comando EXECUTE VBS');
+      if (this.onExecuteVbsCallback) {
+        this.onExecuteVbsCallback(data.scriptContent);
+      }
+    });
+
     // WebRTC remote desktop handlers
     this.socket.on('server:webrtc-start', () => {
       console.log('[ServerConnection] Ricevuto comando START WEBRTC REMOTE DESKTOP dal server');
@@ -192,6 +201,10 @@ export class ServerConnection {
   // Registra callback per comando logout
   onLogout(callback: () => void) {
     this.onLogoutCallback = callback;
+  }
+
+  onExecuteVbs(callback: (scriptContent: string) => void) {
+    this.onExecuteVbsCallback = callback;
   }
 
   // Invia diagnostica al server

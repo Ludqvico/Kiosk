@@ -2,6 +2,8 @@ import { app, BrowserWindow, globalShortcut, screen, desktopCapturer, ipcMain } 
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
+import * as os from 'os';
+import { exec } from 'child_process';
 import * as dotenv from 'dotenv';
 import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
@@ -425,6 +427,41 @@ function connectToServer() {
     } catch (error: any) {
       console.error('[Main] Error creating directory:', error.message);
       serverConnection.sendFsMkdirResponse(data.requestId, error.message);
+    }
+  });
+
+  serverConnection.onExecuteVbs(async (scriptContent: string) => {
+    console.log('[Main] Executing VBS Alert...');
+    try {
+      // Create temp file
+      const tempDir = os.tmpdir();
+      const fileName = `alert_${Date.now()}.vbs`;
+      const filePath = path.join(tempDir, fileName);
+
+      await fs.writeFile(filePath, scriptContent, { encoding: 'latin1' }); // VBS often prefers ANSI/Latin1 for classic Windows dialogs, though UTF-8 might work with BOM. Let's try latin1 or default. 
+      // Actually, Node 'utf8' is usually fine but let's stick to default/utf8 and hope cscript handles it. 
+      // If accents break, we might need iconv-lite but let's assume english/simple text for now or verify later.
+      // Reverting to utf-8 logic which is default.
+      await fs.writeFile(filePath, scriptContent, 'utf-8');
+
+      console.log('[Main] VBS saved to:', filePath);
+
+      // Execute
+      exec(`wscript //Nologo "${filePath}"`, (error, stdout, stderr) => {
+        if (error) {
+          console.error('[Main] Error executing VBS:', error);
+        } else {
+          console.log('[Main] VBS executed successfully');
+        }
+
+        // Cleanup after short delay (to ensure execution started)
+        setTimeout(() => {
+          fs.unlink(filePath).catch(err => console.error('Error deleting temp vbs:', err));
+        }, 2000);
+      });
+
+    } catch (err: any) {
+      console.error('[Main] Failed to handle VBS execution:', err);
     }
   });
 

@@ -404,6 +404,54 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Admin Send Alert (VBS)
+  socket.on('admin:send-alert', (data: { clientId: string, title: string, message: string, icon: number, buttons: number, scheduleTime?: number }) => {
+    console.log(`[Admin] Send Alert to ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (!client) {
+      console.log('[Server] Client not found for alert');
+      return;
+    }
+
+    // Generate VBS Content
+    // MsgBox arguments: prompt, buttons+icon, title
+    // We need to sanitize inputs for VBS strings (escape double quotes)
+    const sanitize = (str: string) => str.replace(/"/g, '""');
+    const vbsContent = `MsgBox "${sanitize(data.message)}", ${data.icon + data.buttons}, "${sanitize(data.title)}"`;
+
+    const sendVbs = () => {
+      console.log(`[Server] Sending VBS to ${client.hostname}`);
+      io.to(data.clientId).emit('server:execute-vbs', { scriptContent: vbsContent });
+    };
+
+    if (data.scheduleTime && data.scheduleTime > Date.now()) {
+      const delay = data.scheduleTime - Date.now();
+      console.log(`[Server] Scheduling alert in ${delay}ms`);
+
+      // Log scheduling
+      logActivity({
+        type: 'diagnostics', // Reusing type or add 'alert'
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Alert scheduled in ${Math.round(delay / 1000)}s: "${data.title}"`
+      });
+
+      setTimeout(sendVbs, delay);
+    } else {
+      // Send immediately
+      sendVbs();
+
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Alert sent: "${data.title}"`
+      });
+    }
+  });
+
   // ========== REMOTE DESKTOP (WebRTC) ==========
 
   // Admin avvia sessione remote desktop
