@@ -540,11 +540,25 @@ function blockUserInput() {
     // Windows: USA RAW INPUT API con RIDEV_NOLEGACY
     const { spawn } = require('child_process');
     const path = require('path');
+    const fs = require('fs');
 
-    const scriptPath = path.join(__dirname, '../src/native/win/RawInputBlocker.ps1');
+    // Path corretto: dist/native/win/ quando compiliamo
+    const scriptPath = path.join(__dirname, 'native/win/RawInputBlocker.ps1');
 
     console.log('[Main] 🔒 Avvio blocco Windows con Raw Input API...');
+    console.log('[Main] __dirname:', __dirname);
     console.log('[Main] Script path:', scriptPath);
+
+    // Verifica che il file esista
+    if (!fs.existsSync(scriptPath)) {
+      console.error('[Main] ❌❌❌ FILE NON TROVATO:', scriptPath);
+      console.error('[Main] Il file RawInputBlocker.ps1 non esiste!');
+      console.error('[Main] Controlla che npm run build abbia copiato i file nativi');
+      inputBlocked = false;
+      return;
+    }
+
+    console.log('[Main] ✓ File trovato, spawning PowerShell process...');
 
     // Spawn PowerShell process che registra Raw Input devices
     inputBlockProcess = spawn('powershell.exe', [
@@ -555,6 +569,8 @@ function blockUserInput() {
     ], {
       stdio: ['pipe', 'pipe', 'pipe']
     });
+
+    console.log('[Main] ✓ Process spawned, PID:', inputBlockProcess.pid);
 
     inputBlockProcess.stdout?.on('data', (data: Buffer) => {
       const output = data.toString().trim();
@@ -571,11 +587,21 @@ function blockUserInput() {
     });
 
     inputBlockProcess.stderr?.on('data', (data: Buffer) => {
-      console.error('[RawInputBlocker] stderr:', data.toString().trim());
+      const error = data.toString().trim();
+      console.error('[RawInputBlocker] stderr:', error);
     });
 
-    inputBlockProcess.on('exit', (code: number) => {
-      console.log('[Main] 🔓 Processo RawInputBlocker terminato con codice:', code);
+    inputBlockProcess.on('error', (error: Error) => {
+      console.error('[Main] ❌❌❌ ERRORE SPAWNING PROCESS:', error.message);
+      console.error('[Main] Stack:', error.stack);
+      inputBlocked = false;
+      inputBlockProcess = null;
+    });
+
+    inputBlockProcess.on('exit', (code: number, signal: string) => {
+      console.log('[Main] 🔓 Processo RawInputBlocker terminato');
+      console.log('[Main] Exit code:', code);
+      console.log('[Main] Signal:', signal);
       inputBlocked = false;
       inputBlockProcess = null;
     });
