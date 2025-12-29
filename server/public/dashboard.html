@@ -1632,6 +1632,28 @@
         </div>
     </div>
 
+    <!-- File Rename Modal -->
+    <div class="modal-overlay" id="fileRenameModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Rename File</h2>
+            </div>
+            <div class="modal-body">
+                <div class="modal-input-group">
+                    <label class="modal-input-label">New Name</label>
+                    <input type="text" class="modal-input" id="newFileName" placeholder="Enter file name...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeFileRenameModal()">Cancel</button>
+                <button class="primary" onclick="saveFileName()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Context Menu -->
+    <div id="fileContextMenu" class="context-menu" style="display: none;"></div>
+
     <script>
         const socket = io();
         let clients = new Map();
@@ -1646,6 +1668,8 @@
         let fileExplorerCurrentPath = '/';
         let fileExplorerCurrentFiles = [];
         let fileExplorerPendingRequests = new Map();
+        let fileExplorerContextMenuFile = null;
+        let fileExplorerRenamingFile = null;
 
         // Socket connection
         socket.on('connect', () => {
@@ -2390,10 +2414,186 @@
             return div.innerHTML;
         }
 
-        // Show context menu (placeholder for now)
+        // Show context menu
         function showFileContextMenu(event, file) {
-            // Will be implemented with context menu feature
-            console.log('Context menu for:', file);
+            fileExplorerContextMenuFile = file;
+            const menu = document.getElementById('fileContextMenu');
+
+            // Build context menu based on file type
+            let menuItems = [];
+
+            if (file.isDirectory) {
+                // Folder context menu
+                menuItems = [
+                    { icon: '📂', label: 'Open', action: () => navigateToPath(file.path) },
+                    { separator: true },
+                    { icon: '✏️', label: 'Rename', action: () => openFileRenameModal(file) },
+                    { icon: '📋', label: 'Copy Path', action: () => copyToClipboard(file.path) },
+                    { separator: true },
+                    { icon: '🗑️', label: 'Delete', action: () => deleteFile(file), danger: true }
+                ];
+            } else {
+                // File context menu
+                const isTextFile = isEditableTextFile(file.name);
+                menuItems = [
+                    { icon: '💾', label: 'Download', action: () => downloadFile(file) },
+                ];
+
+                if (isTextFile) {
+                    menuItems.push({ icon: '📝', label: 'Edit', action: () => openFileEditor(file) });
+                }
+
+                menuItems.push(
+                    { separator: true },
+                    { icon: '✏️', label: 'Rename', action: () => openFileRenameModal(file) },
+                    { icon: '📋', label: 'Copy Path', action: () => copyToClipboard(file.path) },
+                    { separator: true },
+                    { icon: '🗑️', label: 'Delete', action: () => deleteFile(file), danger: true }
+                );
+            }
+
+            // Generate menu HTML
+            menu.innerHTML = menuItems.map(item => {
+                if (item.separator) {
+                    return '<div class="context-menu-separator"></div>';
+                }
+                return `
+                    <div class="context-menu-item ${item.danger ? 'danger' : ''}" onclick="handleContextMenuAction(${menuItems.indexOf(item)})">
+                        <span>${item.icon}</span>
+                        <span>${item.label}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Store actions for later
+            menu.dataset.actions = JSON.stringify(menuItems.map(item => item.action ? true : false));
+            window.fileContextMenuActions = menuItems.map(item => item.action);
+
+            // Position menu
+            menu.style.left = event.pageX + 'px';
+            menu.style.top = event.pageY + 'px';
+            menu.style.display = 'block';
+
+            // Close menu on click outside
+            setTimeout(() => {
+                document.addEventListener('click', closeFileContextMenu, { once: true });
+            }, 0);
+        }
+
+        // Handle context menu action
+        function handleContextMenuAction(index) {
+            if (window.fileContextMenuActions && window.fileContextMenuActions[index]) {
+                window.fileContextMenuActions[index]();
+            }
+            closeFileContextMenu();
+        }
+
+        // Close context menu
+        function closeFileContextMenu() {
+            const menu = document.getElementById('fileContextMenu');
+            menu.style.display = 'none';
+            fileExplorerContextMenuFile = null;
+        }
+
+        // Check if file is editable text file
+        function isEditableTextFile(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const editableExts = ['txt', 'md', 'log', 'json', 'xml', 'yml', 'yaml', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'html', 'css', 'sh', 'bat', 'ini', 'conf', 'cfg'];
+            return editableExts.includes(ext);
+        }
+
+        // Copy text to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('[File Explorer] Copied to clipboard:', text);
+            }).catch(err => {
+                console.error('[File Explorer] Failed to copy:', err);
+            });
+        }
+
+        // Download file
+        function downloadFile(file) {
+            const requestId = Date.now().toString() + Math.random().toString(36);
+            fileExplorerPendingRequests.set(requestId, {
+                clientId: fileExplorerCurrentClient,
+                path: file.path,
+                type: 'read',
+                filename: file.name
+            });
+
+            socket.emit('admin:fs-read', {
+                clientId: fileExplorerCurrentClient,
+                path: file.path,
+                requestId
+            });
+        }
+
+        // Delete file or folder
+        function deleteFile(file) {
+            const confirmMsg = file.isDirectory
+                ? `Are you sure you want to delete the folder "${file.name}" and all its contents?`
+                : `Are you sure you want to delete the file "${file.name}"?`;
+
+            if (!confirm(confirmMsg)) return;
+
+            const requestId = Date.now().toString() + Math.random().toString(36);
+            fileExplorerPendingRequests.set(requestId, {
+                clientId: fileExplorerCurrentClient,
+                path: file.path,
+                type: 'delete'
+            });
+
+            socket.emit('admin:fs-delete', {
+                clientId: fileExplorerCurrentClient,
+                path: file.path,
+                requestId
+            });
+        }
+
+        // Open file rename modal
+        function openFileRenameModal(file) {
+            fileExplorerRenamingFile = file;
+            document.getElementById('newFileName').value = file.name;
+            document.getElementById('fileRenameModal').style.display = 'flex';
+        }
+
+        // Close file rename modal
+        function closeFileRenameModal() {
+            document.getElementById('fileRenameModal').style.display = 'none';
+            fileExplorerRenamingFile = null;
+        }
+
+        // Save renamed file
+        function saveFileName() {
+            const newName = document.getElementById('newFileName').value.trim();
+            if (!newName || !fileExplorerRenamingFile) return;
+
+            const oldPath = fileExplorerRenamingFile.path;
+            const parentPath = oldPath.substring(0, oldPath.lastIndexOf('/')) || '/';
+            const newPath = parentPath === '/' ? '/' + newName : parentPath + '/' + newName;
+
+            const requestId = Date.now().toString() + Math.random().toString(36);
+            fileExplorerPendingRequests.set(requestId, {
+                clientId: fileExplorerCurrentClient,
+                oldPath,
+                newPath,
+                type: 'move'
+            });
+
+            socket.emit('admin:fs-move', {
+                clientId: fileExplorerCurrentClient,
+                oldPath,
+                newPath,
+                requestId
+            });
+
+            closeFileRenameModal();
+        }
+
+        // Open file editor (placeholder for now)
+        function openFileEditor(file) {
+            console.log('[File Explorer] Opening editor for:', file);
+            // Will be implemented in the next task
         }
 
         // Socket event handlers for File Explorer
@@ -2426,6 +2626,72 @@
             } else {
                 // Refresh current directory
                 refreshCurrentPath();
+            }
+        });
+
+        socket.on('admin:fs-read-response', (data) => {
+            const request = fileExplorerPendingRequests.get(data.requestId);
+            if (!request) return;
+
+            fileExplorerPendingRequests.delete(data.requestId);
+
+            if (data.error) {
+                alert('Error reading file: ' + data.error);
+                console.error('[File Explorer] Read error:', data.error);
+            } else {
+                // Download file
+                const blob = new Blob([data.result], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = request.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        socket.on('admin:fs-delete-response', (data) => {
+            const request = fileExplorerPendingRequests.get(data.requestId);
+            if (!request) return;
+
+            fileExplorerPendingRequests.delete(data.requestId);
+
+            if (data.error) {
+                alert('Error deleting file: ' + data.error);
+                console.error('[File Explorer] Delete error:', data.error);
+            } else {
+                // Refresh current directory
+                refreshCurrentPath();
+            }
+        });
+
+        socket.on('admin:fs-move-response', (data) => {
+            const request = fileExplorerPendingRequests.get(data.requestId);
+            if (!request) return;
+
+            fileExplorerPendingRequests.delete(data.requestId);
+
+            if (data.error) {
+                alert('Error moving file: ' + data.error);
+                console.error('[File Explorer] Move error:', data.error);
+            } else {
+                // Refresh current directory
+                refreshCurrentPath();
+            }
+        });
+
+        // File rename modal event listeners
+        document.getElementById('fileRenameModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeFileRenameModal();
+            }
+        });
+
+        document.getElementById('newFileName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveFileName();
             }
         });
     </script>
