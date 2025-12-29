@@ -169,41 +169,21 @@ function showUnblockedPageInBrowser() {
   });
 }
 
-// Windows Toast Notification
+// Windows Notification using msg.exe
 function sendWindowsNotification(title: string, message: string) {
   console.log(`[Notification] Sending: ${title}`);
 
-  // Create a PowerShell script file for reliable execution
-  const tempDir = os.tmpdir();
-  const scriptPath = path.join(tempDir, `notify_${Date.now()}.ps1`);
+  // Use Windows msg.exe for simple notification popup
+  // Format: msg * /TIME:5 "Title: Message"
+  const notificationText = `Kiosk Manager\n\n${title}\n${message}`;
 
-  const psScript = `
-Add-Type -AssemblyName System.Windows.Forms
-$notification = New-Object System.Windows.Forms.NotifyIcon
-$notification.Icon = [System.Drawing.SystemIcons]::Information
-$notification.BalloonTipTitle = "${title}"
-$notification.BalloonTipText = "${message}"
-$notification.Visible = $true
-$notification.ShowBalloonTip(5000)
-Start-Sleep -Seconds 5
-$notification.Dispose()
-`;
-
-  fs.writeFile(scriptPath, psScript, 'utf-8')
-    .then(() => {
-      exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, (error) => {
-        if (error) {
-          console.error('[Notification] Error:', error.message);
-        } else {
-          console.log('[Notification] Sent successfully');
-        }
-        // Cleanup script file
-        fs.unlink(scriptPath).catch(() => { });
-      });
-    })
-    .catch((err) => {
-      console.error('[Notification] Failed to write script:', err);
-    });
+  exec(`msg * /TIME:5 "${notificationText.replace(/"/g, '""')}"`, (error) => {
+    if (error) {
+      console.error('[Notification] Error:', error.message);
+    } else {
+      console.log('[Notification] Sent successfully');
+    }
+  });
 }
 
 // Browser watcher - periodically checks and redirects to blocked page
