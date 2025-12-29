@@ -1025,6 +1025,332 @@
         @keyframes tooltipFadeIn {
             to { opacity: 1; }
         }
+
+        /* File Explorer Styles */
+        .file-explorer-toolbar {
+            display: flex;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-lg);
+            padding: var(--space-lg);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toolbar-section {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .toolbar-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toolbar-select {
+            padding: 10px 14px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            min-width: 250px;
+        }
+
+        .toolbar-select:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .toolbar-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .file-explorer-navigation {
+            margin-bottom: var(--space-lg);
+            padding: var(--space-lg);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .breadcrumb-container {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .breadcrumb-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            user-select: none;
+        }
+
+        .breadcrumb-item:hover {
+            background: var(--accent-primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-tertiary);
+            user-select: none;
+        }
+
+        .path-input-container {
+            display: flex;
+            gap: var(--space-sm);
+            flex: 1;
+        }
+
+        .path-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            transition: all var(--transition-fast);
+        }
+
+        .path-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .path-go-btn {
+            padding: 10px 16px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .path-go-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .file-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: 10px 16px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            user-select: none;
+        }
+
+        .action-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .file-explorer-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            min-height: 400px;
+        }
+
+        .file-list {
+            padding: var(--space-md);
+        }
+
+        .file-list-empty {
+            text-align: center;
+            padding: var(--space-xl);
+            color: var(--text-tertiary);
+            font-size: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            user-select: none;
+            position: relative;
+        }
+
+        .file-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .file-item.selected {
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid var(--accent-primary);
+        }
+
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .file-size {
+            font-size: 13px;
+            color: var(--text-secondary);
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .file-explorer-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-xl);
+            gap: var(--space-md);
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-light);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: fixed;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-xs);
+            z-index: 10000;
+            min-width: 180px;
+            animation: slideInUp var(--transition-fast);
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .context-menu-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            user-select: none;
+        }
+
+        .context-menu-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .context-menu-item.danger {
+            color: var(--danger);
+        }
+
+        .context-menu-item.danger:hover {
+            background: var(--danger-light);
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background: var(--border-light);
+            margin: var(--space-xs) 0;
+        }
     </style>
 </head>
 <body>
@@ -1045,6 +1371,12 @@
                         <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
                     </svg>
                     Activity Log
+                </div>
+                <div class="nav-item" data-page="fileexplorer" onclick="switchPage('fileexplorer')">
+                    <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                    </svg>
+                    File Explorer
                 </div>
             </nav>
         </aside>
@@ -1208,6 +1540,76 @@
                     </table>
                 </div>
             </div>
+
+            <!-- File Explorer Page -->
+            <div class="page-view" id="fileexplorerPage">
+                <div class="page-header">
+                    <h1 class="page-title">File Explorer</h1>
+                    <p class="page-subtitle">Browse and manage files on connected stations</p>
+                </div>
+
+                <!-- Client Selector -->
+                <div class="file-explorer-toolbar">
+                    <div class="toolbar-section">
+                        <label class="toolbar-label">Select Station</label>
+                        <select class="toolbar-select" id="fileExplorerClientSelect" onchange="onFileExplorerClientChange()">
+                            <option value="">Choose a station...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Path Navigation -->
+                <div class="file-explorer-navigation" id="fileExplorerNavigation" style="display: none;">
+                    <div class="breadcrumb-container">
+                        <div class="breadcrumb" id="breadcrumb">
+                            <span class="breadcrumb-item" onclick="navigateToPath('/')">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="path-input-container">
+                            <input type="text" class="path-input" id="pathInput" placeholder="Enter path..." onkeypress="handlePathInputKeypress(event)">
+                            <button class="path-go-btn" onclick="navigateToInputPath()">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="file-actions">
+                        <button class="action-btn" onclick="createNewFolder()">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                            </svg>
+                            New Folder
+                        </button>
+                        <button class="action-btn" onclick="refreshCurrentPath()">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Listing -->
+                <div class="file-explorer-content" id="fileExplorerContent" style="display: none;">
+                    <div class="file-list" id="fileList">
+                        <div class="file-list-empty">
+                            Select a station to browse files
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="file-explorer-loading" id="fileExplorerLoading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Loading files...</p>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -1238,6 +1640,12 @@
         let currentView = 'cards';
         let currentRenamingClientId = null;
         let clientNames = JSON.parse(localStorage.getItem('clientNames') || '{}');
+
+        // File Explorer variables
+        let fileExplorerCurrentClient = null;
+        let fileExplorerCurrentPath = '/';
+        let fileExplorerCurrentFiles = [];
+        let fileExplorerPendingRequests = new Map();
 
         // Socket connection
         socket.on('connect', () => {
@@ -1322,6 +1730,7 @@
         function updateUI() {
             updateStats();
             updateClientFilters();
+            updateFileExplorerClientSelect();
 
             if (currentView === 'cards') {
                 renderCardsView();
@@ -1701,6 +2110,322 @@
         document.getElementById('newClientName').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 saveClientName();
+            }
+        });
+
+        // ========== FILE EXPLORER FUNCTIONS ==========
+
+        // Update File Explorer client select dropdown
+        function updateFileExplorerClientSelect() {
+            const select = document.getElementById('fileExplorerClientSelect');
+            const currentValue = select.value;
+
+            // Clear existing options except the first one
+            select.innerHTML = '<option value="">Choose a station...</option>';
+
+            // Add connected clients
+            clients.forEach((client, clientId) => {
+                const option = document.createElement('option');
+                option.value = clientId;
+                option.textContent = getClientDisplayName(client);
+                select.appendChild(option);
+            });
+
+            // Restore selection if client still exists
+            if (currentValue && clients.has(currentValue)) {
+                select.value = currentValue;
+            } else if (fileExplorerCurrentClient && !clients.has(fileExplorerCurrentClient)) {
+                // Current client disconnected
+                fileExplorerCurrentClient = null;
+                document.getElementById('fileExplorerNavigation').style.display = 'none';
+                document.getElementById('fileExplorerContent').style.display = 'none';
+            }
+        }
+
+        // Handle client selection change
+        function onFileExplorerClientChange() {
+            const select = document.getElementById('fileExplorerClientSelect');
+            const clientId = select.value;
+
+            if (clientId) {
+                fileExplorerCurrentClient = clientId;
+                fileExplorerCurrentPath = '/';
+                document.getElementById('fileExplorerNavigation').style.display = 'block';
+                document.getElementById('fileExplorerContent').style.display = 'block';
+                navigateToPath('/');
+            } else {
+                fileExplorerCurrentClient = null;
+                document.getElementById('fileExplorerNavigation').style.display = 'none';
+                document.getElementById('fileExplorerContent').style.display = 'none';
+            }
+        }
+
+        // Navigate to a specific path
+        function navigateToPath(path) {
+            if (!fileExplorerCurrentClient) return;
+
+            fileExplorerCurrentPath = path;
+            document.getElementById('pathInput').value = path;
+            updateBreadcrumbs(path);
+            loadFileList(fileExplorerCurrentClient, path);
+        }
+
+        // Navigate using path input
+        function navigateToInputPath() {
+            const path = document.getElementById('pathInput').value.trim();
+            if (path) {
+                navigateToPath(path);
+            }
+        }
+
+        // Handle Enter key in path input
+        function handlePathInputKeypress(event) {
+            if (event.key === 'Enter') {
+                navigateToInputPath();
+            }
+        }
+
+        // Refresh current path
+        function refreshCurrentPath() {
+            if (fileExplorerCurrentClient && fileExplorerCurrentPath) {
+                loadFileList(fileExplorerCurrentClient, fileExplorerCurrentPath);
+            }
+        }
+
+        // Load file list from server
+        function loadFileList(clientId, path) {
+            const requestId = Date.now().toString() + Math.random().toString(36);
+
+            // Show loading state
+            document.getElementById('fileExplorerLoading').style.display = 'flex';
+            document.getElementById('fileList').style.display = 'none';
+
+            // Store request
+            fileExplorerPendingRequests.set(requestId, { clientId, path, type: 'list' });
+
+            // Send request to server
+            socket.emit('admin:fs-list', { clientId, path, requestId });
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (fileExplorerPendingRequests.has(requestId)) {
+                    fileExplorerPendingRequests.delete(requestId);
+                    document.getElementById('fileExplorerLoading').style.display = 'none';
+                    document.getElementById('fileList').innerHTML = '<div class="file-list-empty">Request timed out</div>';
+                    document.getElementById('fileList').style.display = 'block';
+                }
+            }, 10000);
+        }
+
+        // Display file list
+        function displayFileList(files) {
+            const fileList = document.getElementById('fileList');
+
+            // Hide loading
+            document.getElementById('fileExplorerLoading').style.display = 'none';
+            fileList.style.display = 'block';
+
+            if (!files || files.length === 0) {
+                fileList.innerHTML = '<div class="file-list-empty">Empty directory</div>';
+                return;
+            }
+
+            // Sort: directories first, then files, alphabetically
+            files.sort((a, b) => {
+                if (a.isDirectory && !b.isDirectory) return -1;
+                if (!a.isDirectory && b.isDirectory) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            fileList.innerHTML = '';
+
+            files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.dataset.filename = file.name;
+                fileItem.dataset.isDirectory = file.isDirectory;
+                fileItem.dataset.fullPath = file.path;
+
+                // Double click to navigate or download
+                fileItem.addEventListener('dblclick', () => {
+                    if (file.isDirectory) {
+                        navigateToPath(file.path);
+                    }
+                });
+
+                // Context menu on right click (for later implementation)
+                fileItem.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showFileContextMenu(e, file);
+                });
+
+                fileItem.innerHTML = `
+                    <div class="file-icon">
+                        ${getFileIcon(file)}
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(file.name)}</div>
+                        <div class="file-meta">${file.isDirectory ? 'Folder' : 'File'}</div>
+                    </div>
+                    <div class="file-size">
+                        ${file.isDirectory ? '' : formatFileSize(file.size)}
+                    </div>
+                `;
+
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        // Update breadcrumbs
+        function updateBreadcrumbs(path) {
+            const breadcrumb = document.getElementById('breadcrumb');
+            const parts = path.split('/').filter(p => p);
+
+            // Clear except home icon
+            breadcrumb.innerHTML = `
+                <span class="breadcrumb-item" onclick="navigateToPath('/')">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                </span>
+            `;
+
+            // Add path parts
+            let currentPath = '';
+            parts.forEach((part, index) => {
+                currentPath += '/' + part;
+                const pathToNavigate = currentPath;
+
+                const separator = document.createElement('span');
+                separator.className = 'breadcrumb-separator';
+                separator.textContent = '/';
+                breadcrumb.appendChild(separator);
+
+                const item = document.createElement('span');
+                item.className = 'breadcrumb-item';
+                item.textContent = part;
+                item.onclick = () => navigateToPath(pathToNavigate);
+                breadcrumb.appendChild(item);
+            });
+        }
+
+        // Create new folder
+        function createNewFolder() {
+            if (!fileExplorerCurrentClient) {
+                alert('Please select a station first');
+                return;
+            }
+
+            const folderName = prompt('Enter folder name:');
+            if (!folderName) return;
+
+            const fullPath = fileExplorerCurrentPath === '/'
+                ? '/' + folderName
+                : fileExplorerCurrentPath + '/' + folderName;
+
+            const requestId = Date.now().toString() + Math.random().toString(36);
+            fileExplorerPendingRequests.set(requestId, {
+                clientId: fileExplorerCurrentClient,
+                path: fullPath,
+                type: 'mkdir'
+            });
+
+            socket.emit('admin:fs-mkdir', {
+                clientId: fileExplorerCurrentClient,
+                path: fullPath,
+                requestId
+            });
+        }
+
+        // Get file icon based on file type
+        function getFileIcon(file) {
+            if (file.isDirectory) {
+                return `<svg viewBox="0 0 20 20" fill="#0ea5e9">
+                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                </svg>`;
+            }
+
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            // Text files
+            if (['txt', 'md', 'log', 'json', 'xml', 'yml', 'yaml'].includes(ext)) {
+                return `<svg viewBox="0 0 20 20" fill="#10b981">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                </svg>`;
+            }
+
+            // Code files
+            if (['js', 'ts', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go'].includes(ext)) {
+                return `<svg viewBox="0 0 20 20" fill="#f59e0b">
+                    <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>`;
+            }
+
+            // Images
+            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext)) {
+                return `<svg viewBox="0 0 20 20" fill="#8b5cf6">
+                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                </svg>`;
+            }
+
+            // Default file icon
+            return `<svg viewBox="0 0 20 20" fill="#6c757d">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+            </svg>`;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show context menu (placeholder for now)
+        function showFileContextMenu(event, file) {
+            // Will be implemented with context menu feature
+            console.log('Context menu for:', file);
+        }
+
+        // Socket event handlers for File Explorer
+        socket.on('admin:fs-list-response', (data) => {
+            const request = fileExplorerPendingRequests.get(data.requestId);
+            if (!request) return;
+
+            fileExplorerPendingRequests.delete(data.requestId);
+
+            if (data.error) {
+                document.getElementById('fileExplorerLoading').style.display = 'none';
+                document.getElementById('fileList').innerHTML = `<div class="file-list-empty">Error: ${escapeHtml(data.error)}</div>`;
+                document.getElementById('fileList').style.display = 'block';
+                console.error('[File Explorer] List error:', data.error);
+            } else {
+                fileExplorerCurrentFiles = data.result;
+                displayFileList(data.result);
+            }
+        });
+
+        socket.on('admin:fs-mkdir-response', (data) => {
+            const request = fileExplorerPendingRequests.get(data.requestId);
+            if (!request) return;
+
+            fileExplorerPendingRequests.delete(data.requestId);
+
+            if (data.error) {
+                alert('Error creating folder: ' + data.error);
+                console.error('[File Explorer] Mkdir error:', data.error);
+            } else {
+                // Refresh current directory
+                refreshCurrentPath();
             }
         });
     </script>
