@@ -4,11 +4,15 @@
   "description": "Server amministrativo per gestione client kiosk",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "npm run build && node dist/server.js",
-    "dev": "tsc && node dist/server.js"
+    "dev": "npx tsc && node dist/server.js"
   },
-  "keywords": ["kiosk", "server", "admin"],
+  "keywords": [
+    "kiosk",
+    "server",
+    "admin"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
