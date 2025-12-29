@@ -452,6 +452,29 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Admin Block Internet
+  socket.on('admin:block-internet', (data: { clientId: string, block: boolean }) => {
+    console.log(`[Admin] Internet Block ${data.block} for ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      // Update generic state (we might want to add internetBlocked to typed interface later, but JS map allows it)
+      (client as any).internetBlocked = data.block;
+
+      io.to(data.clientId).emit('server:block-internet', { block: data.block });
+
+      // Notify admins
+      io.emit('admin:client-internet-status', { clientId: data.clientId, blocked: data.block });
+
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Internet access ${data.block ? 'BLOCKED' : 'UNBLOCKED'}`
+      });
+    }
+  });
+
   // ========== REMOTE DESKTOP (WebRTC) ==========
 
   // Admin avvia sessione remote desktop

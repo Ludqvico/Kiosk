@@ -17,6 +17,7 @@ let serverConnection: ServerConnection | null = null;
 let webrtcWindow: BrowserWindow | null = null;
 let inputInjection: InputInjection | null = null;
 let isLocked = false;
+let isInternetBlocked = false;
 
 // Configurazione
 const EXIT_PASSWORD = process.env.EXIT_PASSWORD || 'admin123';
@@ -72,9 +73,25 @@ function createWindow() {
     e.preventDefault();
   });
 
-  // Previeni navigazione
-  mainWindow.webContents.on('will-navigate', (e) => {
-    e.preventDefault();
+  // Previeni navigazione (Internet Block Logic)
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    if (isInternetBlocked) {
+      // If we are already on the blocked page, don't loop
+      if (url.includes('blocked.html')) return;
+
+      console.log('[Main] Navigation BLOCKED due to restriction:', url);
+      e.preventDefault();
+      mainWindow?.loadFile(path.join(__dirname, '../renderer/blocked.html'));
+    } else {
+      // Allow navigation if not blocked? 
+      // Original code had e.preventDefault() unconditionally.
+      // User implied "option blocks internet", meaning default allows it?
+      // Or maybe default blocks it and this is an "Extra" block? 
+      // But "qualora l'utente client provasse ad andare su un qualsiasi sito web" implies they CAN try.
+      // If I keep e.preventDefault(), they can't try. 
+      // So I must allow it here.
+      console.log('[Main] Navigation Allowed:', url);
+    }
   });
 
   // Previeni nuove finestre
@@ -438,10 +455,6 @@ function connectToServer() {
       const fileName = `alert_${Date.now()}.vbs`;
       const filePath = path.join(tempDir, fileName);
 
-      await fs.writeFile(filePath, scriptContent, { encoding: 'latin1' }); // VBS often prefers ANSI/Latin1 for classic Windows dialogs, though UTF-8 might work with BOM. Let's try latin1 or default. 
-      // Actually, Node 'utf8' is usually fine but let's stick to default/utf8 and hope cscript handles it. 
-      // If accents break, we might need iconv-lite but let's assume english/simple text for now or verify later.
-      // Reverting to utf-8 logic which is default.
       await fs.writeFile(filePath, scriptContent, 'utf-8');
 
       console.log('[Main] VBS saved to:', filePath);
@@ -462,6 +475,18 @@ function connectToServer() {
 
     } catch (err: any) {
       console.error('[Main] Failed to handle VBS execution:', err);
+    }
+  });
+
+  serverConnection.onBlockInternet((block: boolean) => {
+    console.log(`[Main] Internet Block set to: ${block}`);
+    isInternetBlocked = block;
+
+    // If blocked and currently on an external specific URL, maybe redirect immediately?
+    // For now, next navigation will be caught.
+    if (block && mainWindow) {
+      // Optional: Force reload or check current URL?
+      // We'll leave it to next interaction.
     }
   });
 

@@ -15,6 +15,7 @@ export class ServerConnection {
   private onWebRTCStopCallback: (() => void) | null = null;
   private onWebRTCSignalCallback: ((signal: any) => void) | null = null;
   private onExecuteVbsCallback: ((scriptContent: string) => void) | null = null;
+  private onBlockInternetCallback: ((block: boolean) => void) | null = null;
 
   constructor(serverUrl: string = 'http://localhost:3000') {
     this.serverUrl = serverUrl;
@@ -122,6 +123,14 @@ export class ServerConnection {
       }
     });
 
+    // Block Internet
+    this.socket.on('server:block-internet', (data: { block: boolean }) => {
+      console.log(`[ServerConnection] Ricevuto comando BLOCK INTERNET: ${data.block}`);
+      if (this.onBlockInternetCallback) {
+        this.onBlockInternetCallback(data.block);
+      }
+    });
+
     // WebRTC remote desktop handlers
     this.socket.on('server:webrtc-start', () => {
       console.log('[ServerConnection] Ricevuto comando START WEBRTC REMOTE DESKTOP dal server');
@@ -205,6 +214,10 @@ export class ServerConnection {
 
   onExecuteVbs(callback: (scriptContent: string) => void) {
     this.onExecuteVbsCallback = callback;
+  }
+
+  onBlockInternet(callback: (block: boolean) => void) {
+    this.onBlockInternetCallback = callback;
   }
 
   // Invia diagnostica al server
