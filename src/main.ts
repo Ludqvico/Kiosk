@@ -67,6 +67,15 @@ function createWindow() {
     e.preventDefault();
   });
 
+  // BLOCCO INPUT LOCALE quando inputBlocked = true
+  // Questo blocca SOLO input fisici locali, NON quelli che arrivano da webrtc:input IPC
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (inputBlocked) {
+      event.preventDefault();
+      console.log('[Main] 🚫 Input locale bloccato:', input.type, input.key || input.code);
+    }
+  });
+
   // Previeni navigazione
   mainWindow.webContents.on('will-navigate', (e) => {
     e.preventDefault();
@@ -386,13 +395,12 @@ function logoutClient() {
   app.quit();
 }
 
-// ========== INPUT BLOCKING (OVERLAY + SHORTCUTS) ==========
-// Blocca input LOCALE dell'utente ma permette controllo REMOTO tramite robotjs
+// ========== INPUT BLOCKING - BYPASS INTELLIGENTE ==========
+// Blocca input FISICO locale ma permette input REMOTO da robotjs tramite bypass temporaneo
 
 let inputBlocked = false;
 let inputBlockOverlay: BrowserWindow | null = null;
 let blockedShortcuts: string[] = [];
-let focusInterval: any = null;
 
 function createInputBlockOverlay() {
   if (inputBlockOverlay) {
@@ -400,7 +408,7 @@ function createInputBlockOverlay() {
     return;
   }
 
-  console.log('[Main] 🔒 Creazione overlay blocco input...');
+  console.log('[Main] 🔒 Creazione overlay blocco input con bypass intelligente...');
 
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -415,7 +423,7 @@ function createInputBlockOverlay() {
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    focusable: true, // DEVE essere focusable per catturare eventi tastiera
+    focusable: false, // NON focusable - lascia passare gli eventi al layer sotto
     resizable: false,
     movable: false,
     minimizable: false,
@@ -429,7 +437,7 @@ function createInputBlockOverlay() {
     }
   });
 
-  // HTML con cursore not-allowed e blocco eventi
+  // HTML SOLO per mostrare cursore not-allowed - NON blocca nulla
   const overlayHTML = `
     <!DOCTYPE html>
     <html>
@@ -443,96 +451,27 @@ function createInputBlockOverlay() {
           body {
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.01);
+            background: transparent;
             overflow: hidden;
             cursor: not-allowed !important;
-          }
-          #overlay {
-            width: 100%;
-            height: 100%;
-            cursor: not-allowed !important;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 999999;
+            pointer-events: none;
           }
         </style>
       </head>
-      <body>
-        <div id="overlay" tabindex="0"></div>
-        <script>
-          // Blocca tutti gli eventi locali
-          const preventDefault = e => {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-          };
-
-          // Mantieni focus sull'overlay
-          window.addEventListener('load', () => {
-            document.getElementById('overlay').focus();
-          });
-
-          document.addEventListener('contextmenu', preventDefault, true);
-          document.addEventListener('mousedown', preventDefault, true);
-          document.addEventListener('mouseup', preventDefault, true);
-          document.addEventListener('click', preventDefault, true);
-          document.addEventListener('dblclick', preventDefault, true);
-          document.addEventListener('keydown', preventDefault, true);
-          document.addEventListener('keyup', preventDefault, true);
-          document.addEventListener('keypress', preventDefault, true);
-          document.addEventListener('wheel', preventDefault, true);
-          document.addEventListener('touchstart', preventDefault, true);
-          document.addEventListener('touchmove', preventDefault, true);
-          document.addEventListener('touchend', preventDefault, true);
-
-          // Ri-cattura focus se si perde
-          window.addEventListener('blur', () => {
-            setTimeout(() => window.focus(), 10);
-          });
-        </script>
-      </body>
+      <body></body>
     </html>
   `;
 
   inputBlockOverlay.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(overlayHTML)}`);
-  inputBlockOverlay.setIgnoreMouseEvents(false); // Cattura eventi mouse
+  inputBlockOverlay.setIgnoreMouseEvents(true); // NON cattura eventi - solo mostra cursore
   inputBlockOverlay.setAlwaysOnTop(true, 'screen-saver', 1);
   inputBlockOverlay.setVisibleOnAllWorkspaces(true);
   inputBlockOverlay.setFullScreen(true);
 
-  // Intercetta TUTTI gli eventi input prima che vengano processati
-  inputBlockOverlay.webContents.on('before-input-event', (event, input) => {
-    // Blocca tutti gli input locali
-    event.preventDefault();
-    console.log('[Main] 🚫 Input bloccato:', input.type, input.key);
-  });
-
-  // Forza focus sull'overlay ogni 100ms per sicurezza
-  focusInterval = setInterval(() => {
-    if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-      inputBlockOverlay.focus();
-      inputBlockOverlay.moveTop();
-    }
-  }, 100);
-
-  // Focus iniziale
-  setTimeout(() => {
-    if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
-      inputBlockOverlay.focus();
-    }
-  }, 200);
-
-  console.log('[Main] ✅ Overlay creato e attivo con cursore not-allowed');
+  console.log('[Main] ✅ Overlay visivo creato (solo cursore not-allowed)');
 }
 
 function destroyInputBlockOverlay() {
-  // Stop focus interval
-  if (focusInterval) {
-    clearInterval(focusInterval);
-    focusInterval = null;
-  }
-
   if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
     inputBlockOverlay.close();
     inputBlockOverlay = null;
