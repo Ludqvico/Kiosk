@@ -386,10 +386,172 @@ function logoutClient() {
   app.quit();
 }
 
-// ========== INPUT BLOCKING (ALCATRAZ MODE - BRUTALE) ==========
+// ========== INPUT BLOCKING (OVERLAY + SHORTCUTS) ==========
+// Blocca input LOCALE dell'utente ma permette controllo REMOTO tramite robotjs
 
 let inputBlocked = false;
-let inputBlockProcess: any = null;
+let inputBlockOverlay: BrowserWindow | null = null;
+let blockedShortcuts: string[] = [];
+
+function createInputBlockOverlay() {
+  if (inputBlockOverlay) {
+    console.log('[Main] Overlay già esistente');
+    return;
+  }
+
+  console.log('[Main] 🔒 Creazione overlay blocco input...');
+
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.bounds;
+
+  inputBlockOverlay = new BrowserWindow({
+    width,
+    height,
+    x: 0,
+    y: 0,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    closable: false,
+    fullscreen: true,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  // HTML con cursore not-allowed e blocco eventi
+  const overlayHTML = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            cursor: not-allowed !important;
+          }
+          body {
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.01);
+            overflow: hidden;
+            cursor: not-allowed !important;
+          }
+          #overlay {
+            width: 100%;
+            height: 100%;
+            cursor: not-allowed !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999999;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="overlay"></div>
+        <script>
+          // Blocca tutti gli eventi locali
+          const preventDefault = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          };
+
+          document.addEventListener('contextmenu', preventDefault, true);
+          document.addEventListener('mousedown', preventDefault, true);
+          document.addEventListener('mouseup', preventDefault, true);
+          document.addEventListener('click', preventDefault, true);
+          document.addEventListener('dblclick', preventDefault, true);
+          document.addEventListener('keydown', preventDefault, true);
+          document.addEventListener('keyup', preventDefault, true);
+          document.addEventListener('keypress', preventDefault, true);
+          document.addEventListener('wheel', preventDefault, true);
+          document.addEventListener('touchstart', preventDefault, true);
+          document.addEventListener('touchmove', preventDefault, true);
+          document.addEventListener('touchend', preventDefault, true);
+        </script>
+      </body>
+    </html>
+  `;
+
+  inputBlockOverlay.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(overlayHTML)}`);
+  inputBlockOverlay.setIgnoreMouseEvents(false); // Cattura eventi mouse
+  inputBlockOverlay.setAlwaysOnTop(true, 'screen-saver', 1);
+  inputBlockOverlay.setVisibleOnAllWorkspaces(true);
+  inputBlockOverlay.setFullScreen(true);
+
+  console.log('[Main] ✅ Overlay creato e attivo con cursore not-allowed');
+}
+
+function destroyInputBlockOverlay() {
+  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
+    inputBlockOverlay.close();
+    inputBlockOverlay = null;
+    console.log('[Main] ✅ Overlay distrutto');
+  }
+}
+
+function blockSystemShortcuts() {
+  const { globalShortcut } = require('electron');
+
+  // Lista completa di shortcut da bloccare
+  const shortcuts = [
+    'CommandOrControl+Escape',
+    'Alt+Tab',
+    'Alt+F4',
+    'CommandOrControl+Alt+Delete',
+    'CommandOrControl+Shift+Escape',
+    'CommandOrControl+R',
+    'F5',
+    'CommandOrControl+W',
+    'CommandOrControl+Q',
+    'CommandOrControl+N',
+    'CommandOrControl+T',
+    'CommandOrControl+Shift+N',
+    'F11',
+    'CommandOrControl+L',
+    'CommandOrControl+D',
+    'Alt+Escape',
+    'CommandOrControl+Shift+Q'
+  ];
+
+  shortcuts.forEach(shortcut => {
+    try {
+      const registered = globalShortcut.register(shortcut, () => {
+        console.log(`[Main] 🚫 Shortcut bloccata: ${shortcut}`);
+        // Non fare nulla - blocca la shortcut
+      });
+      if (registered) {
+        blockedShortcuts.push(shortcut);
+      }
+    } catch (error) {
+      // Alcune shortcut potrebbero non essere registrabili
+    }
+  });
+
+  console.log(`[Main] ✅ ${blockedShortcuts.length} shortcuts bloccate`);
+}
+
+function unblockSystemShortcuts() {
+  const { globalShortcut } = require('electron');
+
+  blockedShortcuts.forEach(shortcut => {
+    globalShortcut.unregister(shortcut);
+  });
+
+  blockedShortcuts = [];
+  console.log('[Main] ✅ Shortcuts sbloccate');
+}
 
 function blockUserInput() {
   if (inputBlocked) {
@@ -397,80 +559,19 @@ function blockUserInput() {
     return;
   }
 
-  console.log('[Main] ⛓️  BLOCCO INPUT UTENTE - MODALITÀ ALCATRAZ ⛓️');
+  console.log('[Main] ⛓️  BLOCCO INPUT LOCALE UTENTE ⛓️');
+  console.log('[Main] 🔐 L\'admin può ANCORA controllare da remoto via WebRTC');
   inputBlocked = true;
 
-  const platform = process.platform;
+  // Crea overlay fullscreen che blocca interazioni locali
+  // L'overlay cattura gli eventi del mouse/tastiera locali
+  createInputBlockOverlay();
 
-  if (platform === 'win32') {
-    // Windows: USA LOW-LEVEL HOOKS per bloccare TUTTO a livello sistema
-    const { spawn } = require('child_process');
-    const path = require('path');
+  // Blocca shortcuts di sistema
+  blockSystemShortcuts();
 
-    const scriptPath = path.join(__dirname, '../src/native/win/InputBlocker.ps1');
-
-    console.log('[Main] 🔒 Avvio blocco Windows con Low-Level Hooks...');
-    console.log('[Main] Script path:', scriptPath);
-
-    // Spawn PowerShell process che installa gli hook e resta attivo
-    inputBlockProcess = spawn('powershell.exe', [
-      '-NoProfile',
-      '-ExecutionPolicy', 'Bypass',
-      '-File', scriptPath,
-      'block'
-    ], {
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    inputBlockProcess.stdout?.on('data', (data: Buffer) => {
-      const output = data.toString().trim();
-      console.log('[InputBlocker] stdout:', output);
-
-      if (output === 'HOOKS_INSTALLED') {
-        console.log('[Main] ✅ HOOKS INSTALLATI - Input sistema BLOCCATO');
-      } else if (output === 'BLOCKED') {
-        console.log('[Main] ✅✅✅ INPUT COMPLETAMENTE BLOCCATO (Keyboard + Mouse Low-Level Hooks)');
-        console.log('[Main] 🔐 Modalità ALCATRAZ attiva - ZERO interazioni possibili');
-      } else if (output.startsWith('ERROR')) {
-        console.error('[Main] ❌ Errore blocco:', output);
-      }
-    });
-
-    inputBlockProcess.stderr?.on('data', (data: Buffer) => {
-      console.error('[InputBlocker] stderr:', data.toString().trim());
-    });
-
-    inputBlockProcess.on('exit', (code: number) => {
-      console.log('[Main] 🔓 Processo InputBlocker terminato con codice:', code);
-      inputBlocked = false;
-      inputBlockProcess = null;
-    });
-
-  } else {
-    // Mac/Linux: usa overlay come fallback
-    console.warn('[Main] ⚠️  Blocco hook non supportato su questa piattaforma - uso overlay');
-    createInputBlockOverlay();
-  }
-}
-
-function createInputBlockOverlay() {
-  // Overlay di fallback per piattaforme non-Windows
-  const overlay = new BrowserWindow({
-    fullscreen: true,
-    alwaysOnTop: true,
-    frame: false,
-    transparent: true,
-    skipTaskbar: true,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  });
-
-  overlay.setIgnoreMouseEvents(false);
-  overlay.setOpacity(0.01);
-  overlay.loadURL('data:text/html,<body style="background:transparent;cursor:not-allowed;"></body>');
-  console.log('[Main] ✓ Overlay di fallback creato');
+  console.log('[Main] ✅✅✅ INPUT LOCALE BLOCCATO');
+  console.log('[Main] ℹ️  robotjs (controllo remoto) funziona normalmente perché inietta eventi sotto l\'overlay');
 }
 
 function unblockUserInput() {
@@ -482,37 +583,11 @@ function unblockUserInput() {
   console.log('[Main] 🔓 SBLOCCO INPUT UTENTE');
   inputBlocked = false;
 
-  const platform = process.platform;
+  // Rimuovi overlay
+  destroyInputBlockOverlay();
 
-  if (platform === 'win32' && inputBlockProcess) {
-    // Windows: crea file di stop per far uscire il process dal loop
-    const fs = require('fs');
-    const os = require('os');
-    const path = require('path');
-
-    const stopFile = path.join(os.tmpdir(), 'input_blocker_stop.flag');
-
-    try {
-      fs.writeFileSync(stopFile, 'STOP');
-      console.log('[Main] ✓ File di stop creato:', stopFile);
-
-      // Aspetta un po' e poi killa il processo se ancora attivo
-      setTimeout(() => {
-        if (inputBlockProcess && !inputBlockProcess.killed) {
-          inputBlockProcess.kill();
-          inputBlockProcess = null;
-          console.log('[Main] ✓ Processo InputBlocker terminato forzatamente');
-        }
-      }, 2000);
-    } catch (error) {
-      console.error('[Main] Errore durante sblocco:', error);
-      // Killa comunque il processo
-      if (inputBlockProcess) {
-        inputBlockProcess.kill();
-        inputBlockProcess = null;
-      }
-    }
-  }
+  // Sblocca shortcuts
+  unblockSystemShortcuts();
 
   console.log('[Main] ✅✅✅ INPUT SBLOCCATO');
 }
@@ -775,8 +850,8 @@ app.on('will-quit', () => {
   if (inputInjection) {
     inputInjection.cleanup();
   }
-  if (inputBlockProcess) {
-    inputBlockProcess.kill();
+  if (inputBlockOverlay && !inputBlockOverlay.isDestroyed()) {
+    inputBlockOverlay.destroy();
   }
 });
 

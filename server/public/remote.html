@@ -642,17 +642,12 @@
         function toggleBlockClientInput() {
             blockClientInput = !blockClientInput;
             const toggle = document.getElementById('toggleBlockInput');
-            const videoElement = document.querySelector('video');
 
             if (blockClientInput) {
                 toggle.classList.add('disabled');
-                // Cambia cursore a divieto rosso
-                videoElement.style.cursor = 'not-allowed';
                 console.log('[Remote] Blocking client input...');
             } else {
                 toggle.classList.remove('disabled');
-                // Ripristina cursore normale
-                videoElement.style.cursor = 'crosshair';
                 console.log('[Remote] Unblocking client input...');
             }
 
