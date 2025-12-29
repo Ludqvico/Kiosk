@@ -95,14 +95,24 @@ function enableFirewallBlock() {
         'stackoverflow.com', 'www.stackoverflow.com'
       ];
 
-      // Build PowerShell command to append entries
-      const psCommand = `Add-Content -Path '${hostsPath}' -Value '# Kiosk Internet Block - START'; ` +
-        domains.map(domain => `Add-Content -Path '${hostsPath}' -Value '127.0.0.1 ${domain}';`).join(' ') +
-        ` Add-Content -Path '${hostsPath}' -Value '# Kiosk Internet Block - END'`;
+      // Build all entries as a single string
+      const hostsEntries = '# Kiosk Internet Block - START\n' +
+        domains.map(domain => `127.0.0.1 ${domain}`).join('\n') +
+        '\n# Kiosk Internet Block - END\n';
 
-      exec(`powershell -Command "${psCommand}"`, (err) => {
-        if (err) console.error('[Hosts] Error modifying hosts file:', err.message);
-        else console.log(`[Hosts] Hosts file modified - ${domains.length} domains redirected to localhost`);
+      // Write to temp file first, then append to hosts file in one operation
+      const tempFile = path.join(os.tmpdir(), 'kiosk_hosts_temp.txt');
+      fsSync.writeFileSync(tempFile, hostsEntries, 'utf-8');
+
+      // Use PowerShell to append the temp file content to hosts file
+      exec(`powershell -Command "Get-Content '${tempFile}' | Add-Content -Path '${hostsPath}'"`, (err) => {
+        if (err) {
+          console.error('[Hosts] Error modifying hosts file:', err.message);
+        } else {
+          console.log(`[Hosts] Hosts file modified - ${domains.length} domains redirected to localhost`);
+        }
+        // Clean up temp file
+        try { fsSync.unlinkSync(tempFile); } catch (e) { }
       });
 
       // After firewall is enabled, show blocked page
