@@ -9,6 +9,7 @@ import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
 import { FileManager } from './fileManager';
 import { sendWindowsNotification } from './notification';
+import { startProxyServer, stopProxyServer } from './proxyServer';
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
@@ -60,6 +61,19 @@ function enableFirewallBlock() {
   const execCommand = (index: number) => {
     if (index >= commands.length) {
       console.log('[Firewall] All commands executed - Block ENABLED');
+
+      // Start local proxy server
+      startProxyServer();
+
+      // Configure Windows to use the proxy
+      exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f', (err) => {
+        if (err) console.error('[Proxy] Error enabling proxy:', err.message);
+      });
+      exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "localhost:8888" /f', (err) => {
+        if (err) console.error('[Proxy] Error setting proxy server:', err.message);
+        else console.log('[Proxy] Windows proxy configured to localhost:8888');
+      });
+
       // After firewall is enabled, show blocked page
       showBlockedPageInBrowser();
       return;
@@ -115,9 +129,6 @@ function showBlockedPageInBrowser() {
 
       // Send Windows notification
       sendWindowsNotification('Rete Bloccata', 'Accesso a Internet disabilitato.');
-
-      // Start browser watcher to redirect any new browser instances
-      startBrowserWatcher();
     }, 500);
   });
 }
@@ -125,8 +136,14 @@ function showBlockedPageInBrowser() {
 function disableFirewallBlock() {
   console.log('[Firewall] Disabling internet block...');
 
-  // Stop browser watcher
-  stopBrowserWatcher();
+  // Stop proxy server
+  stopProxyServer();
+
+  // Disable Windows proxy
+  exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f', (err) => {
+    if (err) console.error('[Proxy] Error disabling proxy:', err.message);
+    else console.log('[Proxy] Windows proxy disabled');
+  });
 
   const commands = [
     // Restore default policy (allow outbound)
@@ -170,49 +187,25 @@ function showUnblockedPageInBrowser() {
   });
 }
 
-// Browser watcher - periodically checks and redirects to blocked page
-let browserWatcherInterval: NodeJS.Timeout | null = null;
 
-function startBrowserWatcher() {
-  console.log('[BrowserWatcher] Starting...');
-
-  const blockedPagePath = path.join(__dirname, '../renderer/blocked.html').replace(/\\/g, '/');
-  const fileUrl = `file:///${blockedPagePath}`;
-
-  // Check every 5 seconds if any browser is open with non-blocked page
-  browserWatcherInterval = setInterval(() => {
-    // Check if any browser process is running
-    exec('tasklist /FI "IMAGENAME eq chrome.exe" /FI "IMAGENAME eq msedge.exe" /FI "IMAGENAME eq firefox.exe" 2>nul | findstr /I "chrome msedge firefox"', (error, stdout) => {
-      if (!error && stdout.trim()) {
-        // Browser is running - kill it and show blocked page
-        console.log('[BrowserWatcher] Browser detected, redirecting to blocked page...');
-
-        const killCmd = 'taskkill /F /IM chrome.exe 2>nul & taskkill /F /IM msedge.exe 2>nul & taskkill /F /IM firefox.exe 2>nul';
-        exec(killCmd, () => {
-          setTimeout(() => {
-            exec(`start "" "${fileUrl}"`);
-          }, 300);
-        });
-      }
-    });
-  }, 5000);
-}
-
-function stopBrowserWatcher() {
-  if (browserWatcherInterval) {
-    console.log('[BrowserWatcher] Stopping...');
-    clearInterval(browserWatcherInterval);
-    browserWatcherInterval = null;
-  }
-}
-
-// Cleanup on exit - always restore normal policy
+// Cleanup on exit - always restore normal policy and stop proxy
 app.on('will-quit', () => {
   if (process.platform === 'win32' && isInternetBlocked) {
-    console.log('[Firewall] Cleanup on exit...');
+    console.log('[Cleanup] Restoring firewall and proxy settings...');
+
+    // Stop proxy server
+    stopProxyServer();
+
     try {
+      // Restore firewall policy
       require('child_process').execSync(
         `netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound`,
+        { stdio: 'ignore' }
+      );
+
+      // Disable Windows proxy
+      require('child_process').execSync(
+        `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f`,
         { stdio: 'ignore' }
       );
     } catch (e) {

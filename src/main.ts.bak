@@ -9,6 +9,7 @@ import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
 import { FileManager } from './fileManager';
 import { sendWindowsNotification } from './notification';
+import { startProxyServer, stopProxyServer } from './proxyServer';
 
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
@@ -60,6 +61,19 @@ function enableFirewallBlock() {
   const execCommand = (index: number) => {
     if (index >= commands.length) {
       console.log('[Firewall] All commands executed - Block ENABLED');
+
+      // Start local proxy server
+      startProxyServer();
+
+      // Configure Windows to use the proxy
+      exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f', (err) => {
+        if (err) console.error('[Proxy] Error enabling proxy:', err.message);
+      });
+      exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyServer /t REG_SZ /d "localhost:8888" /f', (err) => {
+        if (err) console.error('[Proxy] Error setting proxy server:', err.message);
+        else console.log('[Proxy] Windows proxy configured to localhost:8888');
+      });
+
       // After firewall is enabled, show blocked page
       showBlockedPageInBrowser();
       return;
@@ -114,10 +128,7 @@ function showBlockedPageInBrowser() {
       });
 
       // Send Windows notification
-      // sendWindowsNotification('Rete Bloccata', 'Accesso a Internet disabilitato.');
-
-      // Start browser watcher to redirect any new browser instances
-      startBrowserWatcher();
+      sendWindowsNotification('Rete Bloccata', 'Accesso a Internet disabilitato.');
     }, 500);
   });
 }
@@ -125,8 +136,14 @@ function showBlockedPageInBrowser() {
 function disableFirewallBlock() {
   console.log('[Firewall] Disabling internet block...');
 
-  // Stop browser watcher
-  stopBrowserWatcher();
+  // Stop proxy server
+  stopProxyServer();
+
+  // Disable Windows proxy
+  exec('reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f', (err) => {
+    if (err) console.error('[Proxy] Error disabling proxy:', err.message);
+    else console.log('[Proxy] Windows proxy disabled');
+  });
 
   const commands = [
     // Restore default policy (allow outbound)
@@ -151,7 +168,7 @@ function disableFirewallBlock() {
   showUnblockedPageInBrowser();
 
   // Send Windows notification
-  // sendWindowsNotification('Connessione Ripristinata', 'Accesso a Internet riabilitato.');
+  sendWindowsNotification('Connessione Ripristinata', 'Accesso a Internet riabilitato.');
 }
 
 // Show unblocked page when internet is restored
@@ -166,23 +183,6 @@ function showUnblockedPageInBrowser() {
       console.error('[Browser] Error opening unblocked page:', err.message);
     } else {
       console.log('[Browser] Unblocked page opened successfully');
-    }
-  });
-}
-
-// Windows Notification using msg.exe
-function sendWindowsNotification(title: string, message: string) {
-  console.log(`[Notification] Sending: ${title}`);
-
-  // Use Windows msg.exe for simple notification popup
-  // Format: msg * /TIME:5 "Title: Message"
-  const notificationText = `Kiosk Manager\n\n${title}\n${message}`;
-
-  exec(`msg * /TIME:5 "${notificationText.replace(/"/g, '""')}"`, (error) => {
-    if (error) {
-      console.error('[Notification] Error:', error.message);
-    } else {
-      console.log('[Notification] Sent successfully');
     }
   });
 }
