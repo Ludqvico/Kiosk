@@ -2035,9 +2035,25 @@
         socket.on('admin:diagnostics-response', (data) => {
             console.log('Diagnostics received:', data);
 
-            // Map data.diagnostics to stats for compatibility with existing code
+            // Create normalized stats object fitting our template
             const clientId = data.clientId;
-            const stats = data.diagnostics;
+            const source = data.diagnostics;
+            let stats = null;
+
+            if (source) {
+                stats = {
+                    hostname: source.hostname,
+                    platform: source.platform,
+                    arch: source.arch,
+                    nodeVersion: source.nodeVersion,
+                    uptime: source.uptime,
+                    cpuModel: source.cpuModel,
+                    // Map or fallback fields
+                    cpuLoad: source.cpuLoad !== undefined ? source.cpuLoad : (source.cpuUsage !== undefined ? parseFloat(source.cpuUsage) : 0),
+                    memTotal: source.memTotal !== undefined ? source.memTotal : (source.totalMemoryMB ? source.totalMemoryMB * 1024 * 1024 : 0),
+                    memUsed: source.memUsed !== undefined ? source.memUsed : (source.totalMemoryMB && source.freeMemoryMB ? (source.totalMemoryMB - source.freeMemoryMB) * 1024 * 1024 : 0)
+                };
+            }
 
             console.log('Processed stats:', stats);
 
