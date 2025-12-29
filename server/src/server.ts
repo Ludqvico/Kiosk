@@ -2,6 +2,8 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 
@@ -506,6 +508,157 @@ io.on('connection', (socket) => {
         signal: signal
       });
       console.log(`[WebRTC] Segnale client->admin: ${signal.type}`);
+    }
+  });
+
+  // ========== FILE EXPLORER ==========
+
+  // List directory contents
+  socket.on('admin:fs-list', async (data: { clientId: string; dirPath: string }, callback) => {
+    const { clientId, dirPath } = data;
+    console.log(`[Admin] File Explorer: List ${dirPath} on client ${clientId}`);
+
+    try {
+      // Forward request to client
+      io.to(clientId).emit('server:fs-list', { dirPath, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error listing directory:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  // Client responds with directory listing
+  socket.on('client:fs-list-response', (data: { requestId: string; result?: any; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-list-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-list-response', { result: data.result });
+    }
+  });
+
+  // Read file contents
+  socket.on('admin:fs-read', async (data: { clientId: string; filePath: string }, callback) => {
+    const { clientId, filePath } = data;
+    console.log(`[Admin] File Explorer: Read ${filePath} on client ${clientId}`);
+
+    try {
+      io.to(clientId).emit('server:fs-read', { filePath, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error reading file:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  socket.on('client:fs-read-response', (data: { requestId: string; result?: any; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-read-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-read-response', { result: data.result });
+    }
+  });
+
+  // Write file
+  socket.on('admin:fs-write', async (data: { clientId: string; filePath: string; content: string }, callback) => {
+    const { clientId, filePath, content } = data;
+    console.log(`[Admin] File Explorer: Write ${filePath} on client ${clientId}`);
+
+    try {
+      io.to(clientId).emit('server:fs-write', { filePath, content, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error writing file:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  socket.on('client:fs-write-response', (data: { requestId: string; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-write-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-write-response', { success: true });
+    }
+  });
+
+  // Delete file/folder
+  socket.on('admin:fs-delete', async (data: { clientId: string; targetPath: string }, callback) => {
+    const { clientId, targetPath } = data;
+    console.log(`[Admin] File Explorer: Delete ${targetPath} on client ${clientId}`);
+
+    try {
+      io.to(clientId).emit('server:fs-delete', { targetPath, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error deleting:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  socket.on('client:fs-delete-response', (data: { requestId: string; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-delete-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-delete-response', { success: true });
+    }
+  });
+
+  // Move/Rename file/folder
+  socket.on('admin:fs-move', async (data: { clientId: string; sourcePath: string; destPath: string }, callback) => {
+    const { clientId, sourcePath, destPath } = data;
+    console.log(`[Admin] File Explorer: Move ${sourcePath} to ${destPath} on client ${clientId}`);
+
+    try {
+      io.to(clientId).emit('server:fs-move', { sourcePath, destPath, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error moving:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  socket.on('client:fs-move-response', (data: { requestId: string; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-move-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-move-response', { success: true });
+    }
+  });
+
+  // Copy file/folder
+  socket.on('admin:fs-copy', async (data: { clientId: string; sourcePath: string; destPath: string }, callback) => {
+    const { clientId, sourcePath, destPath } = data;
+    console.log(`[Admin] File Explorer: Copy ${sourcePath} to ${destPath} on client ${clientId}`);
+
+    try {
+      io.to(clientId).emit('server:fs-copy', { sourcePath, destPath, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error copying:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  socket.on('client:fs-copy-response', (data: { requestId: string; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-copy-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-copy-response', { success: true });
+    }
+  });
+
+  // Create directory
+  socket.on('admin:fs-mkdir', async (data: { clientId: string; dirPath: string }, callback) => {
+    const { clientId, dirPath } = data;
+    console.log(`[Admin] File Explorer: Create directory ${dirPath} on client ${clientId}`);
+
+    try {
+      io.to(clientId).emit('server:fs-mkdir', { dirPath, requestId: socket.id });
+    } catch (error: any) {
+      console.error(`[File Explorer] Error creating directory:`, error.message);
+      callback?.({ error: error.message });
+    }
+  });
+
+  socket.on('client:fs-mkdir-response', (data: { requestId: string; error?: string }) => {
+    if (data.error) {
+      io.to(data.requestId).emit('admin:fs-mkdir-response', { error: data.error });
+    } else {
+      io.to(data.requestId).emit('admin:fs-mkdir-response', { success: true });
     }
   });
 

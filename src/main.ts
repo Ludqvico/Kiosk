@@ -1,5 +1,7 @@
 import { app, BrowserWindow, globalShortcut, screen, desktopCapturer, ipcMain } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as dotenv from 'dotenv';
 import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
@@ -315,6 +317,119 @@ function connectToServer() {
     }
   });
 
+  // File system operation handlers
+  serverConnection.on('server:fs-list', async (data: { dirPath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: List directory', data.dirPath);
+    try {
+      const entries = await fs.readdir(data.dirPath, { withFileTypes: true });
+      const result = await Promise.all(
+        entries.map(async (entry) => {
+          const fullPath = path.join(data.dirPath, entry.name);
+          try {
+            const stats = await fs.stat(fullPath);
+            return {
+              name: entry.name,
+              isDirectory: entry.isDirectory(),
+              isFile: entry.isFile(),
+              size: stats.size,
+              modified: stats.mtime,
+              path: fullPath
+            };
+          } catch (error) {
+            return {
+              name: entry.name,
+              isDirectory: entry.isDirectory(),
+              isFile: entry.isFile(),
+              size: 0,
+              modified: new Date(),
+              path: fullPath,
+              error: 'Cannot access'
+            };
+          }
+        })
+      );
+      serverConnection.sendFsListResponse(data.requestId, result);
+    } catch (error: any) {
+      console.error('[Main] Error listing directory:', error.message);
+      serverConnection.sendFsListResponse(data.requestId, undefined, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-read', async (data: { filePath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Read file', data.filePath);
+    try {
+      const content = await fs.readFile(data.filePath, 'utf-8');
+      serverConnection.sendFsReadResponse(data.requestId, { content });
+    } catch (error: any) {
+      console.error('[Main] Error reading file:', error.message);
+      serverConnection.sendFsReadResponse(data.requestId, undefined, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-write', async (data: { filePath: string; content: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Write file', data.filePath);
+    try {
+      await fs.writeFile(data.filePath, data.content, 'utf-8');
+      serverConnection.sendFsWriteResponse(data.requestId);
+    } catch (error: any) {
+      console.error('[Main] Error writing file:', error.message);
+      serverConnection.sendFsWriteResponse(data.requestId, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-delete', async (data: { targetPath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Delete', data.targetPath);
+    try {
+      const stats = await fs.stat(data.targetPath);
+      if (stats.isDirectory()) {
+        await fs.rm(data.targetPath, { recursive: true, force: true });
+      } else {
+        await fs.unlink(data.targetPath);
+      }
+      serverConnection.sendFsDeleteResponse(data.requestId);
+    } catch (error: any) {
+      console.error('[Main] Error deleting:', error.message);
+      serverConnection.sendFsDeleteResponse(data.requestId, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-move', async (data: { sourcePath: string; destPath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Move', data.sourcePath, 'to', data.destPath);
+    try {
+      await fs.rename(data.sourcePath, data.destPath);
+      serverConnection.sendFsMoveResponse(data.requestId);
+    } catch (error: any) {
+      console.error('[Main] Error moving:', error.message);
+      serverConnection.sendFsMoveResponse(data.requestId, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-copy', async (data: { sourcePath: string; destPath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Copy', data.sourcePath, 'to', data.destPath);
+    try {
+      const stats = await fs.stat(data.sourcePath);
+      if (stats.isDirectory()) {
+        await fs.cp(data.sourcePath, data.destPath, { recursive: true });
+      } else {
+        await fs.copyFile(data.sourcePath, data.destPath);
+      }
+      serverConnection.sendFsCopyResponse(data.requestId);
+    } catch (error: any) {
+      console.error('[Main] Error copying:', error.message);
+      serverConnection.sendFsCopyResponse(data.requestId, error.message);
+    }
+  });
+
+  serverConnection.on('server:fs-mkdir', async (data: { dirPath: string; requestId: string }) => {
+    console.log('[Main] File Explorer: Create directory', data.dirPath);
+    try {
+      await fs.mkdir(data.dirPath, { recursive: true });
+      serverConnection.sendFsMkdirResponse(data.requestId);
+    } catch (error: any) {
+      console.error('[Main] Error creating directory:', error.message);
+      serverConnection.sendFsMkdirResponse(data.requestId, error.message);
+    }
+  });
 
   // Connetti
   serverConnection.connect();

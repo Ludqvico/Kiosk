@@ -133,6 +133,9 @@ export class ServerConnection {
         this.onWebRTCSignalCallback(signal);
       }
     });
+
+    // File system operation handlers (forwarded from main.ts handlers)
+    // These are just pass-through, actual logic is in main.ts
   }
 
   private registerClient() {
@@ -265,6 +268,58 @@ export class ServerConnection {
   sendWebRTCSignal(signal: any) {
     if (this.socket && this.socket.connected) {
       this.socket.emit('client:webrtc-signal', signal);
+    }
+  }
+
+  // ========== FILE SYSTEM OPERATIONS ==========
+
+  // File system response handlers
+  sendFsListResponse(requestId: string, result?: any, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-list-response', { requestId, result, error });
+    }
+  }
+
+  sendFsReadResponse(requestId: string, result?: any, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-read-response', { requestId, result, error });
+    }
+  }
+
+  sendFsWriteResponse(requestId: string, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-write-response', { requestId, error });
+    }
+  }
+
+  sendFsDeleteResponse(requestId: string, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-delete-response', { requestId, error });
+    }
+  }
+
+  sendFsMoveResponse(requestId: string, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-move-response', { requestId, error });
+    }
+  }
+
+  sendFsCopyResponse(requestId: string, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-copy-response', { requestId, error });
+    }
+  }
+
+  sendFsMkdirResponse(requestId: string, error?: string) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:fs-mkdir-response', { requestId, error });
+    }
+  }
+
+  // Allow main.ts to register custom socket event listeners
+  on(event: string, callback: (...args: any[]) => void) {
+    if (this.socket) {
+      this.socket.on(event, callback);
     }
   }
 }
