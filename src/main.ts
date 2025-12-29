@@ -53,6 +53,8 @@ function enableFirewallBlock() {
     `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowServer" dir=out action=allow remoteip=${serverHost}`,
     `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowLocalhost" dir=out action=allow remoteip=127.0.0.1`,
     `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowDNS" dir=out action=allow protocol=udp remoteport=53`,
+    // Allow inbound connections on port 80 (for local web server)
+    `netsh advfirewall firewall add rule name="${FIREWALL_RULE_NAME}_AllowPort80" dir=in action=allow protocol=tcp localport=80`,
     // Then set default policy to block all outbound
     `netsh advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound`,
   ];
@@ -172,6 +174,7 @@ function disableFirewallBlock() {
     `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowServer"`,
     `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowLocalhost"`,
     `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowDNS"`,
+    `netsh advfirewall firewall delete rule name="${FIREWALL_RULE_NAME}_AllowPort80"`,
   ];
 
   commands.forEach((cmd, i) => {
