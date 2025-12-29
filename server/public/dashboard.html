@@ -844,6 +844,7 @@
             background: var(--border-medium);
             outline: none;
             -webkit-appearance: none;
+            appearance: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
@@ -1289,13 +1290,8 @@
             }
         }
 
-        // ===== Navigation =====
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const page = item.getAttribute('data-page');
-                switchPage(page);
-            });
-        });
+        // ===== Navigation ===== 
+        // Note: Navigation is handled via onclick attributes in HTML
 
         function switchPage(page) {
             // Update nav
@@ -1421,7 +1417,10 @@
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Platform</span>
-                            <span class="detail-value" style="text-transform: capitalize;">${client.platform}</span>
+                            <span class="detail-value" style="display: flex; align-items: center; gap: 6px;">
+                                ${getPlatformIcon(client.platform)}
+                                <span style="text-transform: capitalize;">${client.platform}</span>
+                            </span>
                         </div>
                          <div class="detail-row">
                             <span class="detail-label">Connected</span>
@@ -1742,11 +1741,13 @@
             }
         }
 
-        // Apply custom names to clients
+        // Apply custom names to clients - use hostname as key (stable identifier)
         function applyCustomNames() {
             clients.forEach((client, id) => {
-                if (clientCustomNames.has(id)) {
-                    client.customName = clientCustomNames.get(id);
+                // Use hostname as key since UUID changes on reconnect
+                const key = client.hostname;
+                if (clientCustomNames.has(key)) {
+                    client.customName = clientCustomNames.get(key);
                 }
             });
         }
@@ -1807,18 +1808,18 @@
             }
 
             if (currentRenameClientId) {
-                // Save to map and localStorage
-                clientCustomNames.set(currentRenameClientId, newName);
-                saveCustomNames();
-
-                // Update client object
+                // Get the client to use hostname as key
                 const client = clients.get(currentRenameClientId);
                 if (client) {
+                    // Use hostname as key since UUID changes on reconnect
+                    const key = client.hostname;
+                    clientCustomNames.set(key, newName);
+                    saveCustomNames();
+
                     client.customName = newName;
                     renderClients();
+                    console.log(`Renamed client ${key} to "${newName}"`);
                 }
-
-                console.log(`Renamed client ${currentRenameClientId} to "${newName}"`);
             }
 
             closeRenameModal();
@@ -1886,7 +1887,7 @@
                 <tr>
                     <td class="client-name-cell">${client.customName || client.hostname}</td>
                     <td class="client-id-cell">${client.id.substring(0, 12)}...</td>
-                    <td><span class="platform-badge ${client.platform}">${client.platform}</span></td>
+                    <td><span style="display: flex; align-items: center; gap: 6px;">${getPlatformIcon(client.platform)}<span style="text-transform: capitalize;">${client.platform}</span></span></td>
                     <td><span class="status-badge ${client.locked ? 'locked' : 'unlocked'}"><span class="badge-dot"></span>${client.locked ? 'Locked' : 'Unlocked'}</span></td>
                     <td>${formatTime(client.connectedAt)}</td>
                     <td>
@@ -1972,13 +1973,18 @@
             }
         });
 
-        function showDiagnosticsModal(clientId, hostname) {
-            // Implementation of simple modal show if not already present or if simple version
-            // Note: In previous version this was called requestDiagnostics directly
-            // But we need the modal HTML structure first.
-            // Assuming modal exists in HTML (it should be there or added)
-            const modal = document.getElementById('diagnosticsModal');
-            if (modal) modal.classList.add('active');
+        // Helper function to get platform icon
+        function getPlatformIcon(platform) {
+            const p = (platform || '').toLowerCase();
+            if (p.includes('win')) {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>`;
+            } else if (p.includes('darwin') || p.includes('mac')) {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>`;
+            } else if (p.includes('linux')) {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587.26 1.252.33 1.908.271.527-.05 1.026-.24 1.438-.53.418.205.9.311 1.392.311.156 0 .313-.012.465-.04.668-.126 1.12-.49 1.416-.878.296-.385.485-.82.578-1.254.09-.42.12-.84.09-1.254-.05-.654-.272-1.276-.53-1.843-.26-.574-.618-1.056-1.068-1.498-.23-.214-.47-.404-.71-.591v-.079c.47-.36.82-.77 1.05-1.22.26-.54.38-1.12.32-1.68-.06-.64-.3-1.25-.59-1.84-.29-.59-.66-1.14-1.06-1.68-.813-.895-1.92-1.615-2.963-2.208-.14-.08-.27-.16-.41-.243-.14-.074-.29-.15-.44-.229-.09-.05-.19-.101-.28-.155v-.27c-.21-.96-.56-1.68-1.11-2.41-.35-.45-.82-.94-1.35-1-.186-.018-.377-.008-.628.024-.194-.017-.379-.053-.543-.109-.149-.052-.3-.128-.416-.252-.183-.196-.353-.492-.517-.836-.164-.343-.31-.73-.427-1.157-.03-.107-.06-.213-.08-.323-.014-.105-.023-.244-.05-.318-.202-.552-.653-.742-1.15-.742z"/></svg>`;
+            } else {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+            }
         }
 
         function closeDiagnosticsModal() {
