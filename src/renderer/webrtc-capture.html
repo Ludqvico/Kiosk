@@ -27,7 +27,12 @@
             try {
                 // Get screen stream using desktopCapturer sourceId
                 const constraints = {
-                    audio: false,
+                    audio: {
+                        mandatory: {
+                            chromeMediaSource: 'desktop',
+                            chromeMediaSourceId: sourceId
+                        }
+                    },
                     video: {
                         mandatory: {
                             chromeMediaSource: 'desktop',
@@ -43,7 +48,18 @@
                 };
 
                 mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log('[WebRTC Renderer] Screen captured');
+                console.log('[WebRTC Renderer] Screen captured (with possible system audio)');
+
+                // Try to capture microphone as well
+                try {
+                    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    micStream.getAudioTracks().forEach(track => {
+                        mediaStream.addTrack(track);
+                        console.log('[WebRTC Renderer] Microphone track added');
+                    });
+                } catch (micErr) {
+                    console.warn('[WebRTC Renderer] Could not capture microphone:', micErr);
+                }
 
                 // Create PeerConnection
                 peerConnection = new RTCPeerConnection(config);
@@ -51,7 +67,6 @@
                 // ICE candidate event
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
-                        // Serialize candidate to plain object
                         ipcRenderer.send('webrtc:icecandidate', {
                             candidate: event.candidate.candidate,
                             sdpMLineIndex: event.candidate.sdpMLineIndex,
@@ -66,36 +81,23 @@
                     ipcRenderer.send('webrtc:connectionstate', peerConnection.connectionState);
                 };
 
-                // Create data channel for input (client side creates it because we make the offer)
-                console.log('[WebRTC Renderer] Creating data channel...');
+                // Create data channel for input
                 dataChannel = peerConnection.createDataChannel('input');
 
                 dataChannel.onopen = () => {
-                    console.log('[WebRTC Renderer] ✓✓✓ Data channel OPENED - ready to receive input');
-                };
-
-                dataChannel.onclose = () => {
-                    console.log('[WebRTC Renderer] Data channel CLOSED');
-                };
-
-                dataChannel.onerror = (error) => {
-                    console.error('[WebRTC Renderer] Data channel ERROR:', error);
+                    console.log('[WebRTC Renderer] ✓✓✓ Data channel OPENED');
                 };
 
                 dataChannel.onmessage = (event) => {
                     try {
                         const message = JSON.parse(event.data);
-                        // Log only non-mousemove to reduce spam
-                        if (message.type !== 'mousemove') {
-                            console.log('[WebRTC Renderer] >>>> Received:', message.type, message);
-                        }
                         ipcRenderer.send('webrtc:input', message);
                     } catch (error) {
                         console.error('[WebRTC Renderer] Error parsing input:', error);
                     }
                 };
 
-                // Add video track
+                // Add all tracks to peer connection
                 mediaStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, mediaStream);
                 });
@@ -108,13 +110,11 @@
 
                 await peerConnection.setLocalDescription(offer);
 
-                // Send offer to main process (serialize to plain object)
                 ipcRenderer.send('webrtc:offer', {
                     type: offer.type,
                     sdp: offer.sdp
                 });
 
-                console.log('[WebRTC Renderer] Offer created and sent');
             } catch (error) {
                 console.error('[WebRTC Renderer] Error:', error);
                 ipcRenderer.send('webrtc:error', error.message);
@@ -123,54 +123,40 @@
 
         // Handle answer from remote peer
         ipcRenderer.on('webrtc:answer', async (event, answer) => {
-            console.log('[WebRTC Renderer] Received answer');
-
             if (peerConnection) {
                 try {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-                    console.log('[WebRTC Renderer] Remote description set');
                 } catch (error) {
                     console.error('[WebRTC Renderer] Error setting remote description:', error);
-                    ipcRenderer.send('webrtc:error', error.message);
                 }
             }
         });
 
-        // Handle ICE candidate from remote peer
+        // Handle ICE candidate
         ipcRenderer.on('webrtc:candidate', async (event, candidate) => {
-            console.log('[WebRTC Renderer] Received ICE candidate');
-
             if (peerConnection) {
                 try {
                     await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                    console.log('[WebRTC Renderer] ICE candidate added');
                 } catch (error) {
                     console.error('[WebRTC Renderer] Error adding ICE candidate:', error);
-                    ipcRenderer.send('webrtc:error', error.message);
                 }
             }
         });
 
         // Stop WebRTC
         ipcRenderer.on('webrtc:stop', () => {
-            console.log('[WebRTC Renderer] Stopping...');
-
             if (dataChannel) {
                 dataChannel.close();
                 dataChannel = null;
             }
-
             if (peerConnection) {
                 peerConnection.close();
                 peerConnection = null;
             }
-
             if (mediaStream) {
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
             }
-
-            console.log('[WebRTC Renderer] Stopped');
         });
 
         console.log('[WebRTC Renderer] Ready');
