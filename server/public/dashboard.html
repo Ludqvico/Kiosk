@@ -4205,6 +4205,44 @@
             }
         });
 
+        // Global click to close context menus
+        window.addEventListener('click', () => {
+            const m1 = document.getElementById('fm-context-menu');
+            const m2 = document.getElementById('fm-general-menu');
+            if (m1) m1.style.display = 'none';
+            if (m2) m2.style.display = 'none';
+        });
+
+        function fmShowGeneralMenu(e) {
+            if (e.target.closest('.fm-item')) return; // handled by item context menu
+            e.preventDefault();
+            const menu = document.getElementById('fm-general-menu');
+            const itemMenu = document.getElementById('fm-context-menu');
+            if (itemMenu) itemMenu.style.display = 'none';
+
+            if (menu) {
+                menu.style.display = 'block';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
+            }
+        }
+
+        function fmGeneralAction(action) {
+            const menu = document.getElementById('fm-general-menu');
+            if (menu) menu.style.display = 'none';
+
+            if (action === 'select-all') {
+                // Check checkbox
+                const cb = document.getElementById('fm-select-all');
+                if (cb) { cb.checked = true; fmSelectAll(cb); }
+            } else if (action === 'copy-path') {
+                const path = fmState.currentPath;
+                // Use clipboard API
+                navigator.clipboard.writeText(path).catch(err => console.error('Clipboard error', err));
+            }
+        }
+
+
     </script>
     <!-- File Manager Modal -->
     <div id="fileManagerModal" class="modal-overlay">
@@ -4294,7 +4332,7 @@
                         <div>Size</div>
                         <div>Modified</div>
                     </div>
-                    <div class="fm-content fm-grid" id="fm-file-list">
+                    <div class="fm-content fm-grid" id="fm-file-list" oncontextmenu="fmShowGeneralMenu(event)">
                         <!-- Files injected here -->
                     </div>
 
@@ -4369,6 +4407,30 @@
                             <line x1="10" y1="11" x2="10" y2="17" />
                             <line x1="14" y1="11" x2="14" y2="17" />
                         </svg></span> Delete <span class="fm-context-shortcut">Del</span></div>
+            </div>
+
+            <!-- General Context Menu (Empty Space) -->
+            <div class="fm-context-menu" id="fm-general-menu">
+                <div class="fm-context-item" onclick="fmGeneralAction('select-all')">
+                    <span class="fm-context-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <path d="M9 12l2 2 4-4"></path>
+                        </svg>
+                    </span>
+                    Select All <span class="fm-context-shortcut">Ctrl+A</span>
+                </div>
+                <div class="fm-context-item" onclick="fmGeneralAction('copy-path')">
+                    <span class="fm-context-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                    </span>
+                    Copy Path
+                </div>
             </div>
         </div>
     </div>
