@@ -111,12 +111,21 @@ function showBlockedPageInBrowser() {
           console.log('[Browser] Blocked page opened successfully');
         }
       });
+
+      // Send Windows notification
+      sendWindowsNotification('Rete Bloccata', 'Accesso a Internet disabilitato.');
+
+      // Start browser watcher to redirect any new browser instances
+      startBrowserWatcher();
     }, 500);
   });
 }
 
 function disableFirewallBlock() {
   console.log('[Firewall] Disabling internet block...');
+
+  // Stop browser watcher
+  stopBrowserWatcher();
 
   const commands = [
     // Restore default policy (allow outbound)
@@ -136,6 +145,88 @@ function disableFirewallBlock() {
   });
 
   console.log('[Firewall] Block DISABLED');
+
+  // Show unblocked page
+  showUnblockedPageInBrowser();
+
+  // Send Windows notification
+  sendWindowsNotification('Connessione Ripristinata', 'Accesso a Internet riabilitato.');
+}
+
+// Show unblocked page when internet is restored
+function showUnblockedPageInBrowser() {
+  console.log('[Browser] Opening unblocked page...');
+
+  const unblockedPagePath = path.join(__dirname, '../renderer/unblocked.html').replace(/\\/g, '/');
+  const fileUrl = `file:///${unblockedPagePath}`;
+
+  exec(`start "" "${fileUrl}"`, (err) => {
+    if (err) {
+      console.error('[Browser] Error opening unblocked page:', err.message);
+    } else {
+      console.log('[Browser] Unblocked page opened successfully');
+    }
+  });
+}
+
+// Windows Toast Notification
+function sendWindowsNotification(title: string, message: string) {
+  console.log(`[Notification] Sending: ${title}`);
+
+  // Use PowerShell to send Windows toast notification
+  const psScript = `
+    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
+    $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+    $textNodes = $template.GetElementsByTagName("text")
+    $textNodes.Item(0).AppendChild($template.CreateTextNode("${title.replace(/'/g, "''")}")) > $null
+    $textNodes.Item(1).AppendChild($template.CreateTextNode("${message.replace(/'/g, "''")}")) > $null
+    $toast = [Windows.UI.Notifications.ToastNotification]::new($template)
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Kiosk Management").Show($toast)
+  `;
+
+  exec(`powershell -ExecutionPolicy Bypass -Command "${psScript.replace(/\n/g, ' ')}"`, (error) => {
+    if (error) {
+      console.error('[Notification] Error:', error.message);
+    } else {
+      console.log('[Notification] Sent successfully');
+    }
+  });
+}
+
+// Browser watcher - periodically checks and redirects to blocked page
+let browserWatcherInterval: NodeJS.Timeout | null = null;
+
+function startBrowserWatcher() {
+  console.log('[BrowserWatcher] Starting...');
+
+  const blockedPagePath = path.join(__dirname, '../renderer/blocked.html').replace(/\\/g, '/');
+  const fileUrl = `file:///${blockedPagePath}`;
+
+  // Check every 5 seconds if any browser is open with non-blocked page
+  browserWatcherInterval = setInterval(() => {
+    // Check if any browser process is running
+    exec('tasklist /FI "IMAGENAME eq chrome.exe" /FI "IMAGENAME eq msedge.exe" /FI "IMAGENAME eq firefox.exe" 2>nul | findstr /I "chrome msedge firefox"', (error, stdout) => {
+      if (!error && stdout.trim()) {
+        // Browser is running - kill it and show blocked page
+        console.log('[BrowserWatcher] Browser detected, redirecting to blocked page...');
+
+        const killCmd = 'taskkill /F /IM chrome.exe 2>nul & taskkill /F /IM msedge.exe 2>nul & taskkill /F /IM firefox.exe 2>nul';
+        exec(killCmd, () => {
+          setTimeout(() => {
+            exec(`start "" "${fileUrl}"`);
+          }, 300);
+        });
+      }
+    });
+  }, 5000);
+}
+
+function stopBrowserWatcher() {
+  if (browserWatcherInterval) {
+    console.log('[BrowserWatcher] Stopping...');
+    clearInterval(browserWatcherInterval);
+    browserWatcherInterval = null;
+  }
 }
 
 // Cleanup on exit - always restore normal policy
