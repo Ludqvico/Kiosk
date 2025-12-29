@@ -1726,10 +1726,19 @@
             console.log(`Requesting diagnostics from ${client?.hostname || clientId}`);
 
             currentDiagnosticsClientId = clientId;
-            socket.emit('admin:request-diagnostics', clientId);
 
-            // Mostra modal con loading
-            showDiagnosticsModal(client?.hostname || clientId, null);
+            // Open modal immediately with loading state
+            const modal = document.getElementById('diagnosticsModal');
+            const title = document.getElementById('diagnosticsTitle');
+            const content = document.getElementById('diagnosticsContent');
+
+            const displayName = client?.customName || client?.hostname || 'Unknown';
+            title.textContent = `Diagnostics - ${displayName}`;
+            content.innerHTML = '<div class="diagnostic-item full-width"><div class="diagnostic-label">Loading diagnostics...</div></div>';
+            modal.classList.add('active');
+
+            // Request diagnostics from server
+            socket.emit('admin:request-diagnostics', clientId);
 
             // Auto-refresh ogni 3 secondi
             if (diagnosticsInterval) {
@@ -2025,6 +2034,9 @@
         // Unified Diagnostics listener
         socket.on('admin:diagnostics-response', (data) => {
             console.log('Diagnostics received:', data);
+            console.log('Data keys:', Object.keys(data));
+            console.log('ClientId:', data.clientId);
+            console.log('Stats:', data.stats);
             const { clientId, stats } = data;
 
             // Only update if it's for the current diagnostics client
