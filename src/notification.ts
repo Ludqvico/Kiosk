@@ -1,4 +1,5 @@
 import { Notification } from 'electron';
+import * as path from 'path';
 
 export function sendWindowsNotification(title: string, message: string): void {
     console.log(`[Notification] Sending: ${title}`);
@@ -7,6 +8,7 @@ export function sendWindowsNotification(title: string, message: string): void {
         const notification = new Notification({
             title: title,
             body: message,
+            icon: path.join(__dirname, '../renderer/kiosk-icon.png'),
             timeoutType: 'default'
         });
 
