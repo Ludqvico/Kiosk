@@ -471,6 +471,9 @@ function lockKiosk(customMedia?: any) {
     mainWindow.webContents.insertCSS(css);
 
     // Inject Lock Overlay JS and Input Blocking
+    // Serialize media data for interpolation (or null)
+    const mediaJson = customMedia ? JSON.stringify(customMedia) : 'null';
+
     const js = `
       (function() {
         const existing = document.getElementById('kiosk-lock-overlay');
@@ -497,42 +500,33 @@ function lockKiosk(customMedia?: any) {
 
         document.body.appendChild(overlay);
 
-        const { ipcRenderer } = require('electron');
+        // Media data embedded directly
+        const media = ${mediaJson};
         
-        // One-time listener for payload
-        ipcRenderer.once('lock-payload', (event, media) => {
-           const container = document.getElementById('kiosk-lock-overlay');
-           if (!container) return;
-
-           if (media && media.data) {
-             if (media.type.startsWith('image/')) {
-               const img = document.createElement('img');
-               img.src = media.data;
-               container.appendChild(img);
-             } else if (media.type.startsWith('video/')) {
-               const video = document.createElement('video');
-               video.src = media.data;
-               video.autoplay = true;
-               video.loop = true;
-               video.muted = true;
-               video.controls = false;
-               container.appendChild(video);
-             }
-           } else {
-             const msg = document.createElement('div');
-             msg.id = 'kiosk-lock-msg';
-             msg.innerText = '🔒 System Locked';
-             container.appendChild(msg);
-           }
-        });
+        if (media && media.data) {
+          if (media.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = media.data;
+            overlay.appendChild(img);
+          } else if (media.type.startsWith('video/')) {
+            const video = document.createElement('video');
+            video.src = media.data;
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = true;
+            video.controls = false;
+            overlay.appendChild(video);
+          }
+        } else {
+          const msg = document.createElement('div');
+          msg.id = 'kiosk-lock-msg';
+          msg.innerText = '🔒 System Locked';
+          overlay.appendChild(msg);
+        }
       })();
     `;
 
-    mainWindow.webContents.executeJavaScript(js).then(() => {
-      setTimeout(() => {
-        mainWindow.webContents.send('lock-payload', customMedia || null);
-      }, 100);
-    });
+    mainWindow.webContents.executeJavaScript(js);
   }
 
   isLocked = true;
