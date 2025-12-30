@@ -3967,6 +3967,20 @@
             return '📦';
         }
 
+        function getAppName(p) {
+            const n = p.name.toLowerCase();
+            if (p.title && p.title.length > 0 && p.title !== p.name) return p.title;
+
+            // Fallback for common apps without titles or with generic process names
+            if (n === 'msedge') return 'Microsoft Edge';
+            if (n === 'chrome') return 'Google Chrome';
+            if (n === 'winword') return 'Microsoft Word';
+            if (n === 'excel') return 'Microsoft Excel';
+            if (n === 'powerpnt') return 'Microsoft PowerPoint';
+            if (n === 'notepad') return 'Notepad';
+            return p.name;
+        }
+
         function renderProcessList(processes) {
             const container = document.getElementById('processListContent');
             const countLabel = document.getElementById('processCountLabel');
@@ -3979,15 +3993,25 @@
                 return;
             }
 
-            container.innerHTML = processes.map(p => {
-                const cpuValue = Math.round(p.cpu / 100); // 
+            // Sort: Apps at the top (if in All mode), then by CPU usage DESC, then by Memory usage DESC
+            const sortedProcesses = [...processes].sort((a, b) => {
+                if (processViewMode === 'all') {
+                    if (a.isApp && !b.isApp) return -1;
+                    if (!a.isApp && b.isApp) return 1;
+                }
+                return (b.cpu - a.cpu) || (b.memory - a.memory);
+            });
+
+            container.innerHTML = sortedProcesses.map(p => {
+                const cpuValue = Math.round(p.cpu / 100);
                 const isCpuHigh = cpuValue > 20;
+                const displayName = getAppName(p);
 
                 return `
                 <div class="process-item">
                     <div class="process-icon">${getProcessIcon(p.name)}</div>
                     <div class="process-name-container">
-                        <div class="process-main-name" title="${p.title || p.name}">${p.title || p.name}</div>
+                        <div class="process-main-name" title="${displayName}">${displayName}</div>
                         <div class="process-pid-label">${p.name} • PID: ${p.pid}</div>
                     </div>
                     <div class="process-stat ${isCpuHigh ? 'cpu-high' : ''}">${cpuValue}%</div>

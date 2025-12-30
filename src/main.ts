@@ -1156,8 +1156,8 @@ function connectToServer() {
     console.log('[Main] Getting process list...');
 
     if (process.platform === 'win32') {
-      // Use PowerShell to get more details: Name, PID, Memory (WS), CPU, and MainWindowTitle (to identify Apps)
-      exec('powershell -Command "Get-Process | Select-Object Name, Id, @{Name=\'Memory\';Expression={$_.WorkingSet64}}, CPU, MainWindowTitle | ConvertTo-Json"',
+      // Use PowerShell to get more details: Name, PID, Memory (WS), CPU, MainWindowTitle, and MainWindowHandle
+      exec('powershell -Command "Get-Process | Select-Object Name, Id, @{Name=\'Memory\';Expression={$_.WorkingSet64}}, CPU, MainWindowTitle, MainWindowHandle | ConvertTo-Json"',
         { maxBuffer: 1024 * 1024 * 15 }, // 15MB buffer
         (error, stdout, stderr) => {
           if (error) {
@@ -1173,16 +1173,28 @@ function connectToServer() {
             // Filter and format processes
             const formattedProcesses = processArray
               .filter(p => p.Name && p.Id)
-              .map(p => ({
-                name: p.Name,
-                pid: p.Id,
-                memory: p.Memory || 0,
-                cpu: p.CPU || 0,
-                isApp: !!p.MainWindowTitle && p.MainWindowTitle.length > 0,
-                title: p.MainWindowTitle || ''
-              }))
+              .map(p => {
+                const nameLower = (p.Name || '').toLowerCase();
+                const title = p.MainWindowTitle || '';
+                const hasHandle = p.MainWindowHandle && p.MainWindowHandle !== 0;
+                const hasTitle = title.length > 0;
+
+                // An application typically has a window handle and a title, 
+                // but some modern apps (like Edge/Chrome) might have weird handles.
+                // We also whitelist common browser/app names that the user expects to see.
+                const isCommonApp = ['msedge', 'chrome', 'notepad', 'winword', 'excel', 'powerpnt', 'vlc', 'spotify', 'discord', 'teams', 'calc'].includes(nameLower);
+
+                return {
+                  name: p.Name,
+                  pid: p.Id,
+                  memory: p.Memory || 0,
+                  cpu: p.CPU || 0,
+                  isApp: (hasHandle && hasTitle) || (isCommonApp && (hasHandle || hasTitle)),
+                  title: title || p.Name
+                };
+              })
               .sort((a, b) => b.memory - a.memory) // Initial sort by memory
-              .slice(0, 200); // Limit to top 200 processes
+              .slice(0, 200);
 
             serverConnection.sendProcessList(data.requestId, formattedProcesses);
           } catch (parseError) {
