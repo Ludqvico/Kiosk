@@ -416,7 +416,7 @@
             box-shadow: var(--shadow-sm);
             transition: all var(--transition-base);
             position: relative;
-            overflow: hidden;
+            /* Removed overflow: hidden to allow dropdowns to flouat */
         }
 
         .client-card:hover {
@@ -743,26 +743,45 @@
         .client-dropdown {
             display: none;
             position: absolute;
-            top: 100%;
+            top: 40px;
             right: 0;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-medium);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
-            min-width: 200px;
-            z-index: 100;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-lg);
+            box-shadow:
+                0 10px 25px -5px rgba(0, 0, 0, 0.1),
+                0 8px 10px -6px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            min-width: 220px;
+            z-index: 1000;
             margin-top: 4px;
             overflow: hidden;
+            transform-origin: top right;
         }
 
         .client-dropdown.active {
             display: block;
-            animation: fadeIn 0.1s ease-out;
+            animation: menuAppear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes menuAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .client-dropdown-item {
-            padding: 10px 16px;
-            font-size: 14px;
+            padding: 12px 16px;
+            font-size: 13.5px;
+            font-weight: 500;
             color: var(--text-primary);
             cursor: pointer;
             transition: all 0.15s;
@@ -773,16 +792,21 @@
             font-family: inherit;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .client-dropdown-item:hover {
-            background: var(--bg-tertiary);
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .client-dropdown-item svg {
+            color: var(--text-secondary);
+            opacity: 0.8;
         }
 
         .client-dropdown-divider {
             height: 1px;
-            background: var(--border-light);
+            background: rgba(0, 0, 0, 0.05);
             margin: 4px 0;
         }
 
@@ -4053,7 +4077,8 @@
         let pendingKillData = null;
 
         function killProcess(event, pid, name) {
-            pendingKillData = { pid, name, event };
+            const rowElement = (event.currentTarget || event.target).closest('.process-item') || (event.currentTarget || event.target).closest('tr');
+            pendingKillData = { pid, name, rowElement };
 
             document.getElementById('confirmTitle').textContent = 'Force Kill Process?';
             document.getElementById('confirmMessage').innerHTML = `Are you sure you want to terminate <strong>${name}</strong> (PID: ${pid})?<br><br><small style="color: var(--text-tertiary)">This will immediately close the application on the station.</small>`;
@@ -4074,7 +4099,7 @@
         function executeKill() {
             if (!pendingKillData) return;
 
-            const { pid, name, event } = pendingKillData;
+            const { pid, name, rowElement } = pendingKillData;
 
             socket.emit('admin:kill-process', {
                 clientId: activeForceKillClientId,
@@ -4082,10 +4107,9 @@
             });
 
             // UI Feedback in the list
-            const item = event.currentTarget.closest('.process-item') || event.target.closest('tr');
-            if (item) {
-                item.style.opacity = '0.4';
-                item.style.pointerEvents = 'none';
+            if (rowElement) {
+                rowElement.style.opacity = '0.4';
+                rowElement.style.pointerEvents = 'none';
             }
 
             closeCustomConfirm();
@@ -4124,6 +4148,71 @@
         });
 
         function renderClients() {
+            function getClientMenuHtml(client) {
+                return `
+                <button class="client-dropdown-item" onclick="openRenameModal('${client.id}', '${client.customName || client.hostname}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Rename Station
+                </button>
+                <button class="client-dropdown-item" onclick="openFileManager('${client.id}'); toggleClientMenu('${client.id}', event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    File Manager
+                </button>
+                <div class="client-dropdown-divider"></div>
+                <button class="client-dropdown-item" onclick="toggleStartup('${client.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5l7 7-7 7"></path>
+                    </svg>
+                    Auto-start Settings
+                </button>
+                <button class="client-dropdown-item" onclick="openAlertModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Send Alert
+                </button>
+                <button class="client-dropdown-item" onclick="openNotificationModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    Send Notification
+                </button>
+                <button class="client-dropdown-item" onclick="openEagleEyeModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    EagleEye
+                </button>
+                <button class="client-dropdown-item" onclick="toggleInternet('${client.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="1" y1="12" x2="23" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    ${client.internetBlocked ? 'Unblock Internet' : 'Block Internet'}
+                </button>
+                <div class="client-dropdown-divider"></div>
+                <button class="client-dropdown-item" style="color: var(--danger)" onclick="openForceKillModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger)">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Force Kill
+                </button>
+            `;
+            }
+
             // Apply custom names to all clients
             applyCustomNames();
 
@@ -4175,60 +4264,7 @@
                                     </svg>
                                 </button>
                                 <div class="client-dropdown" id="menu-${client.id}">
-                                    <button class="client-dropdown-item" onclick="openRenameModal('${client.id}', '${client.customName || client.hostname}')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                        Rename Station
-                                    </button>
-                                    <button class="client-dropdown-item" onclick="openFileManager('${client.id}'); toggleClientMenu('${client.id}', event)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                        </svg>
-                                        File Manager
-                                    </button>
-                                    <div class="client-dropdown-divider"></div>
-                                    <button class="client-dropdown-item" onclick="toggleStartup('${client.id}')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M5 12h14"></path>
-                                            <path d="M12 5l7 7-7 7"></path>
-                                        </svg>
-                                        Auto-start Settings
-                                    </button>
-                                    <button class="client-dropdown-item" onclick="openAlertModal('${client.id}'); toggleClientMenu('${client.id}', event)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                        </svg>
-                                        Send Alert
-                                    </button>
-                                    <button class="client-dropdown-item" onclick="openNotificationModal('${client.id}'); toggleClientMenu('${client.id}', event)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                        </svg>
-                                        Send Notification
-                                    </button>
-                                    <button class="client-dropdown-item" onclick="openEagleEyeModal('${client.id}'); toggleClientMenu('${client.id}', event)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                            <circle cx="12" cy="13" r="4"></circle>
-                                        </svg>
-                                        EagleEye
-                                    </button>
-                                        ${client.internetBlocked ? 'Unblock Internet' : 'Block Internet'}
-                                    </button>
-                                    <div class="client-dropdown-divider"></div>
-                                    <button class="client-dropdown-item" style="color: var(--danger)" onclick="openForceKillModal('${client.id}'); toggleClientMenu('${client.id}', event)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="15" y1="9" x2="9" y2="15"></line>
-                                            <line x1="9" y1="9" x2="15" y2="15"></line>
-                                        </svg>
-                                        Force Kill
-                                    </button>
+                                    ${getClientMenuHtml(client)}
                                 </div>
                             </div>
                         </div>
@@ -5098,39 +5134,38 @@
                 return;
             }
 
-            const clientsArray = Array.from(clients.values());
-            tbody.innerHTML = clientsArray.map(client => `
+            tbody.innerHTML = filteredClients.map(client => `
                 <tr>
-                    <td class="client-name-cell">${client.customName || client.hostname}</td>
-                    <td class="client-id-cell">${client.id.substring(0, 12)}...</td>
+                    <td class="client-name-cell">
+                        <div style="font-weight: 600;">${client.customName || client.hostname}</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary); font-family: monospace;">${client.id.substring(0, 12)}</div>
+                    </td>
                     <td><span style="display: flex; align-items: center; gap: 6px;">${getPlatformIcon(client.platform)}<span style="text-transform: capitalize;">${client.platform}</span></span></td>
                     <td><span class="status-badge ${client.locked ? 'locked' : 'unlocked'}"><span class="badge-dot"></span>${client.locked ? 'Locked' : 'Unlocked'}</span></td>
-                    <td>${formatTime(client.connectedAt)}</td>
                     <td>
-                        <div class="actions-cell">
+                        <span class="status-badge ${client.internetBlocked ? 'locked' : 'unlocked'}" style="background: ${client.internetBlocked ? 'var(--danger-light)' : 'var(--success-light)'}; color: ${client.internetBlocked ? 'var(--danger)' : 'var(--success)'}">
+                            ${client.internetBlocked ? 'Blocked' : 'Access'}
+                        </span>
+                    </td>
+                    <td>${formatTime(client.connectedAt)}</td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
                             ${client.locked
-                    ? `<button class="secondary" onclick="unlockClient('${client.id}')" title="Unlock">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                                   </button>`
-                    : `<button class="secondary" onclick="lockClient('${client.id}')" title="Lock">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                   </button>`
+                    ? `<button class="primary" style="padding: 6px 12px; font-size: 11px;" onclick="unlockClient('${client.id}')">Unlock</button>`
+                    : `<button class="primary" style="padding: 6px 12px; font-size: 11px;" onclick="lockClient('${client.id}')">Lock</button>`
                 }
-                            <button class="secondary" onclick="requestDiagnostics('${client.id}')" title="Diagnostics">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                            </button>
-                            <button class="secondary" onclick="rebootClient('${client.id}')" title="Reboot">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                            </button>
-                            <button class="secondary" onclick="showShutdownModal('${client.id}', '${client.customName || client.hostname}')" title="Shutdown">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
-                            </button>
-                            <button class="secondary" onclick="logoutClient('${client.id}')" title="Logout">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            </button>
-                            <button class="secondary" onclick="startRemoteControl('${client.id}', '${client.customName || client.hostname}')" title="View Remote">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                            </button>
+                            <div class="client-menu-container">
+                                <button class="client-menu-button" onclick="toggleClientMenu('${client.id}', event)">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="1"></circle>
+                                        <circle cx="12" cy="5" r="1"></circle>
+                                        <circle cx="12" cy="19" r="1"></circle>
+                                    </svg>
+                                </button>
+                                <div class="client-dropdown" id="menu-${client.id}">
+                                    ${getClientMenuHtml(client)}
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>
