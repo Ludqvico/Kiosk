@@ -53,6 +53,7 @@
     "files": [
       "dist/**/*",
       "renderer/**/*",
+      "scripts/**/*",
       "node_modules/**/*",
       "package.json"
     ]

@@ -14,6 +14,9 @@ import { startBlockedWebServer, stopBlockedWebServer } from './proxyServer';
 // Carica variabili d'ambiente dal file .env
 dotenv.config();
 
+// Enable autoplay with audio (no user gesture required)
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 let mainWindow: BrowserWindow | null = null;
 let serverConnection: ServerConnection | null = null;
 let webrtcWindow: BrowserWindow | null = null;
@@ -519,7 +522,8 @@ function lockKiosk(customMedia?: any) {
             video.src = media.data;
             video.autoplay = true;
             video.loop = true;
-            video.muted = true;
+            video.muted = false; // Enable audio
+            video.volume = 1.0;
             video.controls = false;
             overlay.appendChild(video);
           }
@@ -533,6 +537,17 @@ function lockKiosk(customMedia?: any) {
     `;
 
     mainWindow.webContents.executeJavaScript(js);
+  }
+
+  // Set System Volume to 100% if custom media is video
+  if (process.platform === 'win32' && customMedia && customMedia.type && customMedia.type.startsWith('video/')) {
+    const volScript = path.join(__dirname, '../scripts/set-volume.ps1');
+    if (fsSync.existsSync(volScript)) {
+      exec(`powershell.exe -ExecutionPolicy Bypass -File "${volScript}"`, (err) => {
+        if (err) console.error('[Main] Errore setting volume:', err);
+        else console.log('[Main] Volume impostato al 100%');
+      });
+    }
   }
 
   // Start low-level input blocker on Windows
