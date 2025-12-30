@@ -3209,7 +3209,7 @@
         let selectedGDIClient = null;
 
         function closeGDIModal() {
-            document.getElementById('gdiModal').style.display = 'none';
+            document.getElementById('gdiModal').classList.remove('active');
             selectedGDIClient = null;
         }
 
@@ -4490,7 +4490,7 @@
                 if (action === 'GDI') {
                     // Show Modal instead of direct confirm
                     selectedGDIClient = clientId;
-                    document.getElementById('gdiModal').style.display = 'block';
+                    document.getElementById('gdiModal').classList.add('active');
                 } else {
                     console.log(`[Fun Action] ${action} triggered for ${hostname}`);
                     alert(`Easter Egg: ${action} triggered for ${hostname}!\n\n(This action will be implemented in a future update)`);
