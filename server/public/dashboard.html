@@ -4479,9 +4479,15 @@
         }, 100);
 
         function confirmLock() {
-            const lockType = document.querySelector('input[name="lockType"]:checked').value;
+            let lockType = document.querySelector('input[name="lockType"]:checked').value;
 
-            console.log('[Lock Modal] Confirm lock - Type:', lockType, 'Media data:', currentLockMediaData ? 'present' : 'null');
+            // Fallback: if we have media, user surely wants custom
+            if (currentLockMediaData && lockType !== 'custom') {
+                console.warn('[Lock Modal] Media data present but lockType is', lockType, '- Forcing custom');
+                lockType = 'custom';
+            }
+
+            console.log('[Lock Modal] Confirm lock - Final Type:', lockType, 'Media data:', currentLockMediaData ? 'present (' + currentLockMediaData.data.length + ' bytes)' : 'null');
 
             if (lockType === 'custom' && !currentLockMediaData) {
                 alert('Please select a media file');
