@@ -5151,6 +5151,14 @@
                 `;
                 return;
             }
+            const clientsArray = Array.from(clients.values());
+            const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
+
+            const filteredClients = clientsArray.filter(client => {
+                const name = (client.customName || client.hostname).toLowerCase();
+                const id = client.id.toLowerCase();
+                return name.includes(searchTerm) || id.includes(searchTerm);
+            });
 
             tbody.innerHTML = filteredClients.map(client => `
                 <tr>
