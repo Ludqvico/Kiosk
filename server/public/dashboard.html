@@ -3416,7 +3416,7 @@
                         <input type="file" id="lockMediaFile" accept="image/*,video/*"
                             style="width: 100%; padding: 10px; border: 1px solid var(--border-medium); border-radius: var(--radius-md);">
                         <div style="font-size: 11px; color: var(--text-secondary); margin-top: 5px;">
-                            Supported: JPG, PNG, GIF, MP4, WEBM (max 10MB)
+                            Supported: JPG, PNG, GIF, MP4, WEBM (max 100MB)
                         </div>
                     </div>
                     <div id="mediaPreview"
@@ -4437,9 +4437,9 @@
 
                     console.log('[Lock Modal] File selected:', file.name, file.type, file.size);
 
-                    // Check file size (10MB limit)
-                    if (file.size > 10 * 1024 * 1024) {
-                        alert('File size exceeds 10MB limit');
+                    // Check file size (100MB limit)
+                    if (file.size > 100 * 1024 * 1024) {
+                        alert('File size exceeds 100MB limit');
                         e.target.value = '';
                         currentLockMediaData = null;
                         return;

@@ -458,10 +458,15 @@ function lockKiosk(customMedia?: any) {
         user-select: none;
         pointer-events: all;
       }
-      #kiosk-lock-overlay img, #kiosk-lock-overlay video {
+      #kiosk-lock-overlay img {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
+      }
+      #kiosk-lock-overlay video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       #kiosk-lock-msg {
         font-family: system-ui, sans-serif;
