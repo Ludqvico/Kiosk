@@ -106,11 +106,11 @@ function enableFirewallBlock() {
       fsSync.writeFileSync(tempFile, hostsEntries, 'utf-8');
 
       // Use PowerShell to append the temp file content to hosts file
-      exec(`powershell -Command "Get-Content '${tempFile}' | Add-Content -Path '${hostsPath}'"`, (err) => {
+      exec(`powershell -Command "Get-Content '${tempFile}' | Add-Content -Path '${hostsPath}'; ipconfig /flushdns"`, (err) => {
         if (err) {
           console.error('[Hosts] Error modifying hosts file:', err.message);
         } else {
-          console.log(`[Hosts] Hosts file modified - ${domains.length} domains redirected to localhost`);
+          console.log(`[Hosts] Hosts file modified and DNS flushed - ${domains.length} domains redirected to localhost`);
         }
         // Clean up temp file
         try { fsSync.unlinkSync(tempFile); } catch (e) { }
@@ -183,9 +183,9 @@ function disableFirewallBlock() {
 
   // Clean up hosts file - remove Kiosk entries
   const hostsPath = 'C:\\\\Windows\\\\System32\\\\drivers\\\\etc\\\\hosts';
-  exec(`powershell -Command "(Get-Content '${hostsPath}') | Where-Object { $_ -notmatch 'Kiosk Internet Block' -and $_ -notmatch '127.0.0.1 google' -and $_ -notmatch '127.0.0.1 www.google' -and $_ -notmatch '127.0.0.1 bing' -and $_ -notmatch '127.0.0.1 www.bing' -and $_ -notmatch '127.0.0.1 facebook' -and $_ -notmatch '127.0.0.1 www.facebook' -and $_ -notmatch '127.0.0.1 youtube' -and $_ -notmatch '127.0.0.1 www.youtube' -and $_ -notmatch '127.0.0.1 twitter' -and $_ -notmatch '127.0.0.1 www.twitter' -and $_ -notmatch '127.0.0.1 instagram' -and $_ -notmatch '127.0.0.1 www.instagram' -and $_ -notmatch '127.0.0.1 office' -and $_ -notmatch '127.0.0.1 www.office' -and $_ -notmatch '127.0.0.1 microsoft' -and $_ -notmatch '127.0.0.1 www.microsoft' } | Set-Content '${hostsPath}'"`, (err) => {
+  exec(`powershell -Command "(Get-Content '${hostsPath}') | Where-Object { $_ -notmatch 'Kiosk Internet Block' -and $_ -notmatch '127.0.0.1 google' -and $_ -notmatch '127.0.0.1 www.google' -and $_ -notmatch '127.0.0.1 bing' -and $_ -notmatch '127.0.0.1 www.bing' -and $_ -notmatch '127.0.0.1 facebook' -and $_ -notmatch '127.0.0.1 www.facebook' -and $_ -notmatch '127.0.0.1 youtube' -and $_ -notmatch '127.0.0.1 www.youtube' -and $_ -notmatch '127.0.0.1 twitter' -and $_ -notmatch '127.0.0.1 www.twitter' -and $_ -notmatch '127.0.0.1 instagram' -and $_ -notmatch '127.0.0.1 www.instagram' -and $_ -notmatch '127.0.0.1 office' -and $_ -notmatch '127.0.0.1 www.office' -and $_ -notmatch '127.0.0.1 microsoft' -and $_ -notmatch '127.0.0.1 www.microsoft' } | Set-Content '${hostsPath}'; ipconfig /flushdns"`, (err) => {
     if (err) console.error('[Hosts] Error cleaning hosts file:', err.message);
-    else console.log('[Hosts] Hosts file cleaned');
+    else console.log('[Hosts] Hosts file cleaned and DNS flushed');
   });
 
   const commands = [
@@ -819,6 +819,232 @@ function connectToServer() {
       }, delay * 1000);
     } else {
       showCustomNotification(notification);
+    }
+  });
+
+  // ========== FUN MENU HANDLERS ==========
+
+  // Rickroll
+  serverConnection.on('server:fun-rickroll', () => {
+    console.log('[Main] Fun: Rickroll activated!');
+    exec('start https://www.youtube.com/watch?v=dQw4w9WgXcQ', (error) => {
+      if (error) console.error('[Main] Rickroll error:', error);
+    });
+  });
+
+  // Flip Screen
+  let screenFlipped = false;
+  serverConnection.on('server:fun-flip-screen', (data: { enabled: boolean }) => {
+    console.log(`[Main] Fun: Flip Screen ${data.enabled ? 'ON' : 'OFF'}`);
+    screenFlipped = data.enabled;
+
+    if (process.platform === 'win32') {
+      // Use Windows Display settings to rotate screen 180 degrees
+      const rotation = data.enabled ? '180' : '0';
+      exec(`DisplaySwitch.exe /clone`, (error) => {
+        if (error) console.error('[Main] Screen flip error:', error);
+
+        // Alternative method using graphics driver
+        exec(`powershell -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SystemInformation]::PrimaryMonitorSize"`, (err) => {
+          if (!err && mainWindow) {
+            // Rotate the Electron window content
+            if (data.enabled) {
+              mainWindow.webContents.insertCSS('body { transform: rotate(180deg); transform-origin: center; }');
+            } else {
+              mainWindow.webContents.insertCSS('body { transform: none; }');
+            }
+          }
+        });
+      });
+    }
+  });
+
+  // Fake BSOD
+  serverConnection.on('server:fun-fake-bsod', () => {
+    console.log('[Main] Fun: Fake BSOD triggered!');
+
+    if (mainWindow) {
+      // Create BSOD overlay
+      const bsodHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: #0078d7;
+              color: white;
+              font-family: 'Segoe UI', sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              overflow: hidden;
+            }
+            .bsod-container {
+              text-align: left;
+              max-width: 600px;
+              padding: 40px;
+            }
+            .sad-face {
+              font-size: 120px;
+              margin-bottom: 30px;
+            }
+            h1 {
+              font-size: 32px;
+              font-weight: 300;
+              margin-bottom: 20px;
+            }
+            p {
+              font-size: 18px;
+              line-height: 1.6;
+              margin-bottom: 15px;
+            }
+            .progress {
+              font-size: 24px;
+              margin-top: 30px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="bsod-container">
+            <div class="sad-face">:(</div>
+            <h1>Your PC ran into a problem and needs to restart.</h1>
+            <p>We're just collecting some error info, and then we'll restart for you.</p>
+            <p class="progress"><span id="percent">0</span>% complete</p>
+            <p style="margin-top: 40px; font-size: 14px; opacity: 0.8;">
+              For more information about this issue and possible fixes, visit https://www.windows.com/stopcode<br>
+              If you call a support person, give them this info:<br>
+              Stop code: CRITICAL_PROCESS_DIED
+            </p>
+          </div>
+          <audio id="beep" loop>
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGS57OihUBELTKXh8bllHAU2jdXvzn0pBSh+zPDajzsKElyx6OyrWBUIQ5zd8sFuIwUrgc7y2Ik2CBhkuezooVARDEyl4fG5ZRwFNo3V7859KQUofsz02o87ChJcsejsq1gVCEOc3fLBbiMFK4HO8tmJNggYZLns6KFQEQxMpeHxuWUcBTaN1e/OfSkFKH7M8NqPOwoSXLHo7KtYFQhDnN3ywW4jBSuBzvLZiTYIGGS57OihUBEMTKXh8bllHAU2jdXvzn0pBSh+zPDajzsKElyx6OyrWBUIQ5zd8sFuIwUrgc7y2Yk2CBhkuezooVARDEyl4fG5ZRwFNo3V7859KQUofsz02o87ChJcsejsq1gVCEOc3fLBbiMFK4HO8tmJNggYZLns6KFQEQxMpeHxuWUcBTaN1e/OfSkFKH7M8NqPOwoSXLHo7KtYFQhDnN3ywW4jBSuBzvLZiTYIGGS57OihUBEMTKXh8bllHAU2jdXvzn0pBSh+zPDajzsKElyx6OyrWBUIQ5zd8sFuIwUrgc7y2Yk2CBhkuezooVARDEyl4fG5ZRwFNo3V7859KQUofsz02o87ChJcsejsq1gVCEOc3fLBbiMFK4HO8tmJNggYZLns6KFQEQxMpeHxuWUcBTaN1e/OfSkFKH7M8NqPOwoSXLHo7KtYFQhDnN3ywW4jBSuBzvLZiTYIGGS57OihUBEMTKXh8bllHAU2jdXvzn0pBSh+zPDajzsKElyx6OyrWBUIQ5zd8sFuIwUrgc7y2Yk2CBhkuezooVARDEyl4fG5ZRwFNo3V7859KQUofsz02o87ChJcsejsq1gVCEOc3fLBbiMFK4HO8tmJNggYZLns6KFQEQxMpeHxuWUcBTaN1e/OfSkFKH7M8NqPOwoSXLHo7KtYFQ==" type="audio/wav">
+          </audio>
+          <script>
+            const audio = document.getElementById('beep');
+            const percentEl = document.getElementById('percent');
+            audio.volume = 0.3;
+            audio.play();
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+              progress += 1;
+              percentEl.textContent = progress;
+              if (progress >= 100) {
+                clearInterval(interval);
+                audio.pause();
+                window.close();
+              }
+            }, 100);
+            
+            setTimeout(() => {
+              clearInterval(interval);
+              audio.pause();
+              window.close();
+            }, 10000);
+          </script>
+        </body>
+        </html>
+      `;
+
+      // Create a new window for BSOD
+      const bsodWindow = new BrowserWindow({
+        fullscreen: true,
+        frame: false,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        webPreferences: {
+          nodeIntegration: false
+        }
+      });
+
+      bsodWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(bsodHTML));
+
+      // Close after 10 seconds
+      setTimeout(() => {
+        if (!bsodWindow.isDestroyed()) {
+          bsodWindow.close();
+        }
+      }, 10000);
+    }
+  });
+
+  // GPU Reboot
+  serverConnection.on('server:fun-gpu-reboot', () => {
+    console.log('[Main] Fun: GPU Reboot initiated');
+
+    if (process.platform === 'win32') {
+      // Restart display driver using Windows Device Manager
+      exec('pnputil /restart-device "PCI\\VEN_*&DEV_*&SUBSYS_*"', (error, stdout, stderr) => {
+        if (error) {
+          console.error('[Main] GPU reboot error:', error);
+          // Alternative method: Restart graphics driver
+          exec('powershell -Command "Restart-Computer -Force"', (err) => {
+            if (err) console.error('[Main] Alternative GPU reboot failed:', err);
+          });
+        } else {
+          console.log('[Main] GPU reboot successful');
+        }
+      });
+    }
+  });
+
+  // Get Processes
+  serverConnection.on('server:get-processes', (data: { requestId: string }) => {
+    console.log('[Main] Getting process list...');
+
+    if (process.platform === 'win32') {
+      // Use PowerShell to get process list with memory info
+      exec('powershell -Command "Get-Process | Select-Object Name, Id, @{Name=\'Memory\';Expression={$_.WorkingSet64}} | ConvertTo-Json"',
+        { maxBuffer: 1024 * 1024 * 10 }, // 10MB buffer
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error('[Main] Error getting processes:', error);
+            serverConnection.sendProcessList(data.requestId, []);
+            return;
+          }
+
+          try {
+            const processes = JSON.parse(stdout);
+            const processArray = Array.isArray(processes) ? processes : [processes];
+
+            // Filter and format processes
+            const formattedProcesses = processArray
+              .filter(p => p.Name && p.Id) // Filter out invalid entries
+              .map(p => ({
+                name: p.Name,
+                pid: p.Id,
+                memory: p.Memory || 0
+              }))
+              .sort((a, b) => b.memory - a.memory) // Sort by memory usage
+              .slice(0, 100); // Limit to top 100 processes
+
+            serverConnection.sendProcessList(data.requestId, formattedProcesses);
+          } catch (parseError) {
+            console.error('[Main] Error parsing process list:', parseError);
+            serverConnection.sendProcessList(data.requestId, []);
+          }
+        }
+      );
+    } else {
+      serverConnection.sendProcessList(data.requestId, []);
+    }
+  });
+
+  // Kill Process
+  serverConnection.on('server:kill-process', (data: { pid: number }) => {
+    console.log(`[Main] Killing process PID: ${data.pid}`);
+
+    if (process.platform === 'win32') {
+      exec(`taskkill /F /PID ${data.pid}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`[Main] Error killing process ${data.pid}:`, error);
+        } else {
+          console.log(`[Main] Process ${data.pid} killed successfully`);
+        }
+      });
     }
   });
 

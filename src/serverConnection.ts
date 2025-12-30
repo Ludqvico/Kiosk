@@ -413,6 +413,14 @@ export class ServerConnection {
     }
   }
 
+  // ========== FUN MENU - PROCESS MANAGEMENT ==========
+
+  sendProcessList(requestId: string, processes: any[]) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('client:processes-list', { requestId, processes });
+    }
+  }
+
   // Allow main.ts to register custom socket event listeners
   private eventQueue: Array<{ event: string, callback: (...args: any[]) => void }> = [];
 

@@ -7,69 +7,8 @@
     <title>Kiosk Management</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* Arha Font Family */
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaThinTrial-BF6764ee7eefcf0.otf') format('opentype');
-            font-weight: 100;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaExtralightTrial-BF6764ee7ee3c59.otf') format('opentype');
-            font-weight: 200;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaLightTrial-BF6764ee7ee42b5.otf') format('opentype');
-            font-weight: 300;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaRegularTrial-BF6764ee7f00a5e.otf') format('opentype');
-            font-weight: 400;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaMediumTrial-BF6764ee7ee3a17.otf') format('opentype');
-            font-weight: 500;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaSemiboldTrial-BF6764ee7eea214.otf') format('opentype');
-            font-weight: 600;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaBoldTrial-BF6764ee7ec8ea8.otf') format('opentype');
-            font-weight: 700;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaExtraboldTrial-BF6764ee7ed613e.otf') format('opentype');
-            font-weight: 800;
-            font-style: normal;
-        }
-
-        @font-face {
-            font-family: 'Arha';
-            src: url('/fonts/CopyrightBolditalicStudio-ArhaBlackTrial-BF6764ee7ec9aa0.otf') format('opentype');
-            font-weight: 900;
-            font-style: normal;
-        }
+        /* Inter Font Family from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600&display=swap');
 
         * {
             margin: 0;
@@ -122,7 +61,7 @@
         }
 
         body {
-            font-family: 'Arha', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.5;
@@ -616,6 +555,65 @@
             height: 1px;
             background: var(--border-light);
             margin: 4px 0;
+        }
+
+        /* Fun Submenu Styles */
+        .client-dropdown-item.has-submenu {
+            position: relative;
+            justify-content: space-between;
+        }
+
+        .client-dropdown-item.has-submenu::after {
+            content: '▶';
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+
+        .client-submenu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            min-width: 180px;
+            z-index: 101;
+            margin-left: 4px;
+            overflow: hidden;
+        }
+
+        .client-dropdown-item.has-submenu:hover .client-submenu {
+            display: block;
+            animation: fadeIn 0.1s ease-out;
+        }
+
+        .submenu-item {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.15s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .submenu-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .submenu-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
         }
 
         /* Rename Modal */
@@ -2759,7 +2757,7 @@
             padding: 10px 16px 10px 40px;
             border-radius: 12px;
             font-size: 14px;
-            font-family: 'Arha', sans-serif;
+            font-family: 'Inter', sans-serif;
             transition: all 0.2s;
         }
 
@@ -3454,6 +3452,35 @@
         </div>
     </div>
 
+    <!-- Force Kill Modal -->
+    <div class="modal-overlay" id="forceKillModal">
+        <div class="modal" style="max-width: 700px; width: 90%;">
+            <div class="modal-header">
+                <h2 class="modal-title">Force Kill Process</h2>
+                <button class="modal-close" onclick="closeForceKillModal()">×</button>
+            </div>
+
+            <div style="padding: 20px;">
+                <div class="modal-input-group">
+                    <input type="text" id="processSearch" class="modal-input" placeholder="Search processes..."
+                        oninput="filterProcesses()">
+                </div>
+
+                <div id="processList"
+                    style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        Loading processes...
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeForceKillModal()">Cancel</button>
+                <button onclick="killSelectedProcess()" id="btnKillProcess" disabled>Kill Process</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const clients = new Map();
@@ -3675,6 +3702,36 @@
                                             <circle cx="12" cy="13" r="4"></circle>
                                         </svg>
                                         EagleEye
+                                    </button>
+                                    <div class="client-dropdown-divider"></div>
+                                    <button class="client-dropdown-item has-submenu">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                            </svg>
+                                            Fun
+                                        </div>
+                                        <div class="client-submenu">
+                                            <button class="submenu-item" onclick="funRickroll('${client.id}'); event.stopPropagation();">
+                                                <span>🎵 Rickroll</span>
+                                            </button>
+                                            <button class="submenu-item" onclick="event.stopPropagation();">
+                                                <span>🔄 Flip Screen</span>
+                                                <input type="checkbox" id="flip-${client.id}" onchange="funFlipScreen('${client.id}', this.checked); event.stopPropagation();" onclick="event.stopPropagation();">
+                                            </button>
+                                            <button class="submenu-item" onclick="funFakeBSOD('${client.id}'); event.stopPropagation();">
+                                                <span>💀 Fake BSOD</span>
+                                            </button>
+                                            <button class="submenu-item" onclick="funGPUReboot('${client.id}'); event.stopPropagation();">
+                                                <span>🎮 GPU Reboot</span>
+                                            </button>
+                                            <button class="submenu-item" onclick="openForceKillModal('${client.id}'); event.stopPropagation();">
+                                                <span>⚠️ Force Kill</span>
+                                            </button>
+                                        </div>
                                     </button>
                                     <button class="client-dropdown-item" onclick="toggleInternetBlock('${client.id}', !${client.internetBlocked || false}); toggleClientMenu('${client.id}', event)">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -4100,6 +4157,151 @@
 
             // Show success toast
             showToast(`Notification sent to client${delay > 0 ? ` (delayed ${delay}s)` : ''}`, 'success');
+        }
+
+        // ===== Fun Menu Functions =====
+        function funRickroll(clientId) {
+            socket.emit('admin:fun-rickroll', { clientId });
+            showToast('Rickroll initiated! 🎵', 'success');
+        }
+
+        function funFlipScreen(clientId, enabled) {
+            socket.emit('admin:fun-flip-screen', { clientId, enabled });
+            showToast(enabled ? 'Screen flipped! 🔄' : 'Screen unflipped', 'success');
+        }
+
+        function funFakeBSOD(clientId) {
+            socket.emit('admin:fun-fake-bsod', { clientId });
+            showToast('Fake BSOD triggered! 💀', 'success');
+        }
+
+        function funGPUReboot(clientId) {
+            if (confirm('Are you sure you want to restart the GPU? This may cause temporary screen flickering.')) {
+                socket.emit('admin:fun-gpu-reboot', { clientId });
+                showToast('GPU restart initiated 🎮', 'success');
+            }
+        }
+
+        // Force Kill Modal
+        let currentForceKillClientId = null;
+        let allProcesses = [];
+        let selectedProcessPID = null;
+
+        function openForceKillModal(clientId) {
+            currentForceKillClientId = clientId;
+            document.getElementById('forceKillModal').classList.add('active');
+            document.getElementById('processSearch').value = '';
+            selectedProcessPID = null;
+            document.getElementById('btnKillProcess').disabled = true;
+
+            // Request process list from client
+            socket.emit('admin:get-processes', { clientId });
+
+            // Show loading state
+            document.getElementById('processList').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <div class="spinner" style="margin: 0 auto 16px;"></div>
+                    Loading processes...
+                </div>
+            `;
+        }
+
+        function closeForceKillModal() {
+            document.getElementById('forceKillModal').classList.remove('active');
+            currentForceKillClientId = null;
+            allProcesses = [];
+            selectedProcessPID = null;
+        }
+
+        // Listen for process list response
+        socket.on('admin:processes-list', (data) => {
+            if (data.clientId === currentForceKillClientId) {
+                allProcesses = data.processes || [];
+                renderProcessList(allProcesses);
+            }
+        });
+
+        function renderProcessList(processes) {
+            const container = document.getElementById('processList');
+
+            if (processes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        No processes found
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = processes.map(proc => `
+                <div class="process-item" data-pid="${proc.pid}" onclick="selectProcess(${proc.pid}, '${proc.name}')" style="padding: 12px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.15s;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 500; color: var(--text-primary);">${proc.name}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                                PID: ${proc.pid} | Memory: ${(proc.memory / 1024 / 1024).toFixed(1)} MB
+                            </div>
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add hover effect via CSS
+            const style = document.createElement('style');
+            style.textContent = '.process-item:hover { background: var(--bg-tertiary) !important; }';
+            if (!document.getElementById('process-item-style')) {
+                style.id = 'process-item-style';
+                document.head.appendChild(style);
+            }
+        }
+
+        function selectProcess(pid, name) {
+            selectedProcessPID = pid;
+            document.getElementById('btnKillProcess').disabled = false;
+
+            // Highlight selected process
+            document.querySelectorAll('.process-item').forEach(item => {
+                if (parseInt(item.dataset.pid) === pid) {
+                    item.style.background = 'var(--accent-primary)';
+                    item.style.color = 'white';
+                    item.querySelector('svg').style.opacity = '1';
+                    item.querySelector('svg').setAttribute('fill', 'white');
+                } else {
+                    item.style.background = '';
+                    item.style.color = '';
+                    const svg = item.querySelector('svg');
+                    svg.style.opacity = '0.3';
+                    svg.setAttribute('fill', 'none');
+                }
+            });
+        }
+
+        function filterProcesses() {
+            const searchTerm = document.getElementById('processSearch').value.toLowerCase();
+            const filtered = allProcesses.filter(proc =>
+                proc.name.toLowerCase().includes(searchTerm) ||
+                proc.pid.toString().includes(searchTerm)
+            );
+            renderProcessList(filtered);
+        }
+
+        function killSelectedProcess() {
+            if (!selectedProcessPID || !currentForceKillClientId) return;
+
+            const proc = allProcesses.find(p => p.pid === selectedProcessPID);
+            if (!proc) return;
+
+            if (confirm(`Are you sure you want to kill "${proc.name}" (PID: ${proc.pid})?`)) {
+                socket.emit('admin:kill-process', {
+                    clientId: currentForceKillClientId,
+                    pid: selectedProcessPID
+                });
+                showToast(`Killed process: ${proc.name}`, 'success');
+                closeForceKillModal();
+            }
         }
 
         // ===== Helper Functions =====
