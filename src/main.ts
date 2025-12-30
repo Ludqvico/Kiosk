@@ -440,10 +440,17 @@ function lockKiosk(customMedia?: any) {
     mainWindow.focus();
     mainWindow.moveTop();
 
-    // Send custom media to renderer if provided
-    if (customMedia) {
-      mainWindow.webContents.send('lock-screen-media', customMedia);
-    }
+    // Load blocked.html associated with lock screen
+    const blockedPagePath = path.join(__dirname, '../renderer/blocked.html');
+    mainWindow.loadFile(blockedPagePath).then(() => {
+      // Send custom media to renderer if provided
+      if (customMedia && mainWindow) {
+        // Short delay to ensure page is ready
+        setTimeout(() => {
+          mainWindow.webContents.send('lock-screen-media', customMedia);
+        }, 500);
+      }
+    });
   }
 
   isLocked = true;
@@ -472,6 +479,10 @@ function unlockKiosk() {
     mainWindow.setKiosk(false);
     mainWindow.setFullScreen(false);
     mainWindow.hide();
+
+    // Restore index.html
+    const indexPagePath = path.join(__dirname, '../renderer/index.html');
+    mainWindow.loadFile(indexPagePath);
   }
 
   isLocked = false;
