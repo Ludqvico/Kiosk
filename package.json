@@ -5,11 +5,10 @@
   "main": "dist/main.js",
   "scripts": {
     "rebuild": "node-gyp rebuild",
-    "build": "npx tsc && npm run copy-renderer && npm run copy-scripts",
+    "build": "npx tsc && npm run copy-renderer",
     "copy-renderer": "node -e \"require('fs').cpSync('src/renderer', 'renderer', {recursive: true})\"",
-    "copy-scripts": "node -e \"require('fs').cpSync('scripts', 'scripts', {recursive: true})\"",
     "start": "npm run build && electron .",
-    "dev": "npx tsc && npm run copy-renderer && npm run copy-scripts && electron .",
+    "dev": "npx tsc && npm run copy-renderer && electron .",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win"
   },
