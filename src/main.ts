@@ -469,7 +469,7 @@ function lockKiosk(customMedia?: any) {
       #kiosk-lock-overlay video {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: fill;
       }
       #kiosk-lock-msg {
         font-family: system-ui, sans-serif;
