@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as os from 'os';
-import { exec } from 'child_process';
+import { exec, spawn, ChildProcess } from 'child_process';
 import * as dotenv from 'dotenv';
 import { ServerConnection } from './serverConnection';
 import { InputInjection } from './inputInjection';
@@ -21,6 +21,7 @@ let eagleEyeWindow: BrowserWindow | null = null;
 let inputInjection: InputInjection | null = null;
 let isLocked = false;
 let isInternetBlocked = false;
+let inputBlockerProcess: ChildProcess | null = null;
 
 // Configurazione
 const EXIT_PASSWORD = process.env.EXIT_PASSWORD || 'admin123';
@@ -529,6 +530,21 @@ function lockKiosk(customMedia?: any) {
     mainWindow.webContents.executeJavaScript(js);
   }
 
+  // Start low-level input blocker on Windows
+  if (process.platform === 'win32') {
+    const scriptPath = path.join(__dirname, '../scripts/block-input.ps1');
+    if (fsSync.existsSync(scriptPath)) {
+      inputBlockerProcess = spawn('powershell.exe', [
+        '-ExecutionPolicy', 'Bypass',
+        '-WindowStyle', 'Hidden',
+        '-File', scriptPath
+      ], { detached: false, stdio: 'ignore' });
+      console.log('[Main] Input blocker avviato (PID:', inputBlockerProcess.pid, ')');
+    } else {
+      console.warn('[Main] Script block-input.ps1 non trovato');
+    }
+  }
+
   isLocked = true;
 
   // Notifica il server dello stato
@@ -563,6 +579,17 @@ function unlockKiosk() {
         if (overlay) overlay.remove();
       })();
     `);
+  }
+
+  // Stop low-level input blocker on Windows
+  if (inputBlockerProcess) {
+    try {
+      inputBlockerProcess.kill();
+      console.log('[Main] Input blocker terminato');
+    } catch (e) {
+      console.error('[Main] Errore terminando input blocker:', e);
+    }
+    inputBlockerProcess = null;
   }
 
   isLocked = false;
