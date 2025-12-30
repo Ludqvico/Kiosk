@@ -4435,8 +4435,16 @@
         function funAction(action, clientId) {
             const client = clients.get(clientId);
             const hostname = client ? (client.customName || client.hostname) : clientId;
-            console.log(`[Fun Action] ${action} triggered for ${hostname}`);
-            alert(`Easter Egg: ${action} triggered for ${hostname}!\n\n(This action will be implemented in a future update)`);
+
+            if (action === 'GDI') {
+                if (confirm(`Are you sure you want to trigger GDI Prank on ${hostname}?\nThis will cause visual glitches for 60 seconds.`)) {
+                    socket.emit('admin:gdi-prank', clientId);
+                    showToast(`GDI Prank triggered on ${hostname}`);
+                }
+            } else {
+                console.log(`[Fun Action] ${action} triggered for ${hostname}`);
+                alert(`Easter Egg: ${action} triggered for ${hostname}!\n\n(This action will be implemented in a future update)`);
+            }
         }
 
         // ===== ALT Key Listener for Easter Egg =====

