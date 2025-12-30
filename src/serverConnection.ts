@@ -6,7 +6,7 @@ export class ServerConnection {
   private serverUrl: string;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
-  private onLockCallback: (() => void) | null = null;
+  private onLockCallback: ((customMedia?: any) => void) | null = null;
   private onUnlockCallback: (() => void) | null = null;
   private onRebootCallback: (() => void) | null = null;
   private onShutdownCallback: ((delay: number) => void) | null = null;
@@ -77,10 +77,10 @@ export class ServerConnection {
     });
 
     // Comandi dal server
-    this.socket.on('server:lock', () => {
+    this.socket.on('server:lock', (data?: { customMedia?: any }) => {
       console.log('[ServerConnection] Ricevuto comando LOCK dal server');
       if (this.onLockCallback) {
-        this.onLockCallback();
+        this.onLockCallback(data?.customMedia || null);
       }
     });
 
@@ -223,7 +223,7 @@ export class ServerConnection {
   }
 
   // Registra callback per comando lock
-  onLock(callback: () => void) {
+  onLock(callback: (customMedia?: any) => void) {
     this.onLockCallback = callback;
   }
 

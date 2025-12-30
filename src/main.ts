@@ -418,13 +418,13 @@ app.on('will-quit', (e) => {
   }
 });
 
-function lockKiosk() {
+function lockKiosk(customMedia?: any) {
   if (isLocked) {
     console.log('[Main] Kiosk già bloccato');
     return;
   }
 
-  console.log('[Main] BLOCCO KIOSK');
+  console.log('[Main] BLOCCO KIOSK', customMedia ? '(with custom media)' : '');
 
   // Blocca TUTTE le shortcut globali PRIMA di mostrare la finestra
   blockGlobalShortcuts();
@@ -439,6 +439,11 @@ function lockKiosk() {
     mainWindow.show();
     mainWindow.focus();
     mainWindow.moveTop();
+
+    // Send custom media to renderer if provided
+    if (customMedia) {
+      mainWindow.webContents.send('lock-screen-media', customMedia);
+    }
   }
 
   isLocked = true;
@@ -582,9 +587,9 @@ function connectToServer() {
   serverConnection = new ServerConnection(SERVER_URL);
 
   // Registra callback per comandi dal server
-  serverConnection.onLock(() => {
-    console.log('[Main] Ricevuto comando LOCK dal server');
-    lockKiosk();
+  serverConnection.onLock((customMedia?: any) => {
+    console.log('[Main] Ricevuto comando LOCK dal server', customMedia ? '(with custom media)' : '');
+    lockKiosk(customMedia);
   });
 
   serverConnection.onUnlock(() => {

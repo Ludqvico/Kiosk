@@ -357,16 +357,27 @@ io.on('connection', (socket) => {
   });
 
   // Comandi dall'admin ai client
-  socket.on('admin:lock-client', (clientId: string) => {
-    console.log(`[Admin] Richiesta lock per client: ${clientId}`);
+  socket.on('admin:lock-client', (data: string | { clientId: string; customMedia?: any }) => {
+    let clientId: string;
+    let customMedia: any = null;
+
+    // Handle both old string format and new object format
+    if (typeof data === 'string') {
+      clientId = data;
+    } else {
+      clientId = data.clientId;
+      customMedia = data.customMedia;
+    }
+
+    console.log(`[Admin] Richiesta lock per client: ${clientId}${customMedia ? ' (with custom media)' : ''}`);
 
     const client = connectedClients.get(clientId);
     if (client) {
       // Update client state
       client.locked = true;
 
-      // Send command to client
-      io.to(clientId).emit('server:lock');
+      // Send command to client with optional media
+      io.to(clientId).emit('server:lock', { customMedia });
       console.log(`[Server] Comando LOCK inviato a ${client.hostname}`);
 
       // Broadcast status to all admins
@@ -381,7 +392,7 @@ io.on('connection', (socket) => {
         clientId: clientId,
         clientHostname: client.hostname,
         adminId: socket.id,
-        details: `Locked by admin`
+        details: customMedia ? 'Locked with custom media' : 'Locked by admin'
       });
     }
   });
@@ -415,15 +426,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('admin:lock-all', () => {
-    console.log('[Admin] Richiesta LOCK per tutti i client');
+  socket.on('admin:lock-all', (data?: { customMedia?: any }) => {
+    const customMedia = data?.customMedia || null;
+    console.log(`[Admin] Richiesta LOCK per tutti i client${customMedia ? ' (with custom media)' : ''}`);
 
     // Update state and broadcast for each client
     connectedClients.forEach((client, clientId) => {
       client.locked = true;
 
-      // Send command to client
-      io.to(clientId).emit('server:lock');
+      // Send command to client with optional media
+      io.to(clientId).emit('server:lock', { customMedia });
 
       // Broadcast status to all admins
       io.emit('admin:client-lock-status', {
@@ -436,7 +448,7 @@ io.on('connection', (socket) => {
     logActivity({
       type: 'lock_all',
       adminId: socket.id,
-      details: `Locked all clients (${connectedClients.size} total)`
+      details: `Locked all clients (${connectedClients.size} total)${customMedia ? ' with custom media' : ''}`
     });
   });
 

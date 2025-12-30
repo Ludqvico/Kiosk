@@ -3382,6 +3382,55 @@
         </div>
     </div>
 
+    <!-- Lock Screen Options Modal -->
+    <div class="modal-overlay" id="lockScreenModal">
+        <div class="modal" style="width: 500px">
+            <div class="modal-header">
+                <h2 class="modal-title">Lock Screen Options</h2>
+                <button class="modal-close" onclick="closeLockScreenModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; margin-bottom: 10px;">
+                        <input type="radio" name="lockType" value="default" id="lockDefault" checked
+                            style="width: 18px; height: 18px;">
+                        <div>
+                            <div style="font-weight: 600;">Default Lock Screen</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">White background</div>
+                        </div>
+                    </label>
+                    <label
+                        style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer;">
+                        <input type="radio" name="lockType" value="custom" id="lockCustom"
+                            style="width: 18px; height: 18px;">
+                        <div>
+                            <div style="font-weight: 600;">Custom Media</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">Upload image or video</div>
+                        </div>
+                    </label>
+                </div>
+                <div id="customMediaSection" style="display: none;">
+                    <div style="margin-bottom: 15px;">
+                        <label class="modal-input-label">Select Media File</label>
+                        <input type="file" id="lockMediaFile" accept="image/*,video/*"
+                            style="width: 100%; padding: 10px; border: 1px solid var(--border-medium); border-radius: var(--radius-md);">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 5px;">
+                            Supported: JPG, PNG, GIF, MP4, WEBM (max 10MB)
+                        </div>
+                    </div>
+                    <div id="mediaPreview"
+                        style="min-height: 200px; border: 1px dashed var(--border-medium); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--bg-tertiary); overflow: hidden;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeLockScreenModal()">Cancel</button>
+                <button onclick="confirmLock()" id="btnConfirmLock">Lock Now</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Notification Modal -->
     <div class="modal-overlay" id="notificationModal">
         <div class="modal notification-builder-modal" style="max-width: 900px; width: 90%;">
@@ -3785,11 +3834,11 @@
         }
 
         function lockClient(clientId) {
-            socket.emit('admin:lock-client', clientId);
+            openLockScreenModal(clientId, false);
         }
 
         function lockAll() {
-            socket.emit('admin:lock-all');
+            openLockScreenModal(null, true);
         }
 
         function unlockAll() {
@@ -4334,6 +4383,112 @@
         function closeRenameModal() {
             document.getElementById('renameModal').classList.remove('active');
             currentRenameClientId = null;
+        }
+
+        // Lock Screen Modal Functions
+        let currentLockClientId = null;
+        let currentLockMediaData = null;
+        let isLockAll = false;
+
+        function openLockScreenModal(clientId, lockAll = false) {
+            currentLockClientId = clientId;
+            isLockAll = lockAll;
+            document.getElementById('lockScreenModal').classList.add('active');
+
+            // Reset form
+            document.getElementById('lockDefault').checked = true;
+            document.getElementById('customMediaSection').style.display = 'none';
+            document.getElementById('lockMediaFile').value = '';
+            document.getElementById('mediaPreview').innerHTML = '';
+            currentLockMediaData = null;
+        }
+
+        function closeLockScreenModal() {
+            document.getElementById('lockScreenModal').classList.remove('active');
+            currentLockClientId = null;
+            currentLockMediaData = null;
+            isLockAll = false;
+        }
+
+        // Toggle custom media section
+        document.addEventListener('DOMContentLoaded', () => {
+            const lockTypeRadios = document.querySelectorAll('input[name="lockType"]');
+            lockTypeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const customSection = document.getElementById('customMediaSection');
+                    if (e.target.value === 'custom') {
+                        customSection.style.display = 'block';
+                    } else {
+                        customSection.style.display = 'none';
+                    }
+                });
+            });
+
+            // File preview
+            const fileInput = document.getElementById('lockMediaFile');
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    // Check file size (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size exceeds 10MB limit');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    const preview = document.getElementById('mediaPreview');
+                    const reader = new FileReader();
+
+                    reader.onload = (event) => {
+                        currentLockMediaData = {
+                            type: file.type,
+                            data: event.target.result,
+                            name: file.name
+                        };
+
+                        // Show preview
+                        if (file.type.startsWith('image/')) {
+                            preview.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 200px; object-fit: contain;">`;
+                        } else if (file.type.startsWith('video/')) {
+                            preview.innerHTML = `<video src="${event.target.result}" style="max-width: 100%; max-height: 200px; object-fit: contain;" controls></video>`;
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
+
+        function confirmLock() {
+            const lockType = document.querySelector('input[name="lockType"]:checked').value;
+
+            if (lockType === 'custom' && !currentLockMediaData) {
+                alert('Please select a media file');
+                return;
+            }
+
+            if (isLockAll) {
+                // Lock all clients
+                if (lockType === 'custom') {
+                    socket.emit('admin:lock-all', { customMedia: currentLockMediaData });
+                } else {
+                    socket.emit('admin:lock-all');
+                }
+            } else {
+                // Lock single client
+                if (lockType === 'custom') {
+                    socket.emit('admin:lock-client', {
+                        clientId: currentLockClientId,
+                        customMedia: currentLockMediaData
+                    });
+                } else {
+                    socket.emit('admin:lock-client', currentLockClientId);
+                }
+            }
+
+            closeLockScreenModal();
         }
 
         // Save client custom name
