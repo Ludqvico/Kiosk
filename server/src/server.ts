@@ -497,7 +497,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Comando GDI Prank
+  // Comando GDI Prank (Solaris Port)
   socket.on('admin:gdi-prank', (clientId: string) => {
     console.log(`[Admin] Richiesta GDI PRANK per client: ${clientId}`);
 
@@ -511,10 +511,11 @@ io.on('connection', (socket) => {
         clientId: clientId,
         clientHostname: client.hostname,
         adminId: socket.id,
-        details: `GDI Prank (Easter Egg) triggered by admin`
+        details: `Solaris 2.0 GDI Port triggered (Sanitized)`
       });
     }
   });
+
 
   // Comando shutdown
   socket.on('admin:shutdown-client', (data: { clientId: string; delay: number }) => {

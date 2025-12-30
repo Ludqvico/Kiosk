@@ -4437,9 +4437,9 @@
             const hostname = client ? (client.customName || client.hostname) : clientId;
 
             if (action === 'GDI') {
-                if (confirm(`Are you sure you want to trigger GDI Prank on ${hostname}?\nThis will cause visual glitches for 60 seconds.`)) {
+                if (confirm(`Are you sure you want to trigger Solaris GDI Prank on ${hostname}?\nThis is much more intense than before.`)) {
                     socket.emit('admin:gdi-prank', clientId);
-                    showToast(`GDI Prank triggered on ${hostname}`);
+                    showToast(`Solaris GDI Port triggered on ${hostname}`);
                 }
             } else {
                 console.log(`[Fun Action] ${action} triggered for ${hostname}`);
