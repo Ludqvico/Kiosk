@@ -440,9 +440,9 @@ function lockKiosk(customMedia?: any) {
     mainWindow.focus();
     mainWindow.moveTop();
 
-    // Load blocked.html associated with lock screen
-    const blockedPagePath = path.join(__dirname, '../renderer/blocked.html');
-    mainWindow.loadFile(blockedPagePath).then(() => {
+    // Load lock.html associated with lock screen
+    const lockPagePath = path.join(__dirname, '../renderer/lock.html');
+    mainWindow.loadFile(lockPagePath).then(() => {
       // Send custom media to renderer if provided
       if (customMedia && mainWindow) {
         // Short delay to ensure page is ready
