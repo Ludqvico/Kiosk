@@ -45,7 +45,7 @@ VOID WINAPI CircleInvert(int a1, int a2, int a3, int a4)
     HRGN hrgn; // [rsp+58h] [rbp-28h]
     HDC hdc; // [rsp+60h] [rbp-20h]
 
-    hdc = GetDC(0i64);
+    hdc = GetDC(0);
     hrgn = CreateEllipticRgn(a1, a2, a1 + a3, a4 + a2);
     SelectClipRgn(hdc, hrgn);
     v4 = (unsigned __int8)(rand() % 255);
@@ -56,7 +56,7 @@ VOID WINAPI CircleInvert(int a1, int a2, int a3, int a4)
     SelectObject(hdc, v8);
     BitBlt(hdc, a1, a2, a3, a4, hdc, a1, a2, 0x2837E28u);
     DeleteObject(hrgn);
-    ReleaseDC(0i64, hdc);
+    ReleaseDC(0, hdc);
 }
 
 DWORD WINAPI Circle(LPVOID)
@@ -83,7 +83,7 @@ DWORD WINAPI Circle(LPVOID)
         {
             CircleInvert(j - v7, v6 - v7 / 2, j, j);
             Sleep(0xAu);
-            InvalidateRect(0i64, 0i64, 0);
+            InvalidateRect(0, 0, 0);
         }
     }
 }
@@ -93,11 +93,11 @@ int __fastcall CircleInvert2(int a1, int a2, int a3, int a4)
     HRGN ho; // [rsp+58h] [rbp-18h]
     HDC hdc; // [rsp+60h] [rbp-10h]
 
-    hdc = GetDC(0i64);
+    hdc = GetDC(0);
     ho = CreateEllipticRgn(a1, a2, a1 + a3, a4 + a2);
     BitBlt(hdc, a1, a2, a3, a4, hdc, a1, a2, 0x5A0049u);
     DeleteObject(ho);
-    ReleaseDC(0i64, hdc);
+    ReleaseDC(0, hdc);
 }
 
 DWORD WINAPI Circle2(LPVOID)
@@ -126,7 +126,7 @@ DWORD WINAPI Circle2(LPVOID)
             CircleInvert2(v7 - j / 2, v6 - j / 2, j, j);
         Sleep(0x64u);
         if (!i)
-            InvalidateRect(0i64, 0i64, 0);
+            InvalidateRect(0, 0, 0);
         ++i;
     }
 }
@@ -194,13 +194,13 @@ __int64 Right()
     int v10; // [rsp+94h] [rbp-Ch]
     HDC hdcDest; // [rsp+98h] [rbp-8h]
 
-    hdcDest = GetDC(0i64);
+    hdcDest = GetDC(0);
     v10 = 10;
-    v9 = 5i64;
-    v8 = time(0i64);
+    v9 = 5;
+    v8 = time(0);
     while (1)
     {
-        result = time(0i64) - v8;
+        result = time(0) - v8;
         if (result >= v9)
             break;
         v0 = GetDesktopWindow();
@@ -211,7 +211,7 @@ __int64 Right()
         v4 = Rect.top - v10;
         v5 = Rect.left + v10;
         v6 = Rect.bottom + v10;
-        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0i64, 0, 0);
+        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0, 0, 0);
     }
     return 0;
 }
@@ -231,13 +231,13 @@ __int64 Left()
     int v10; // [rsp+94h] [rbp-Ch]
     HDC hdcDest; // [rsp+98h] [rbp-8h]
 
-    hdcDest = GetDC(0i64);
+    hdcDest = GetDC(0);
     v10 = 10;
-    v9 = 5i64;
-    v8 = time(0i64);
+    v9 = 5;
+    v8 = time(0);
     while (1)
     {
-        result = time(0i64) - v8;
+        result = time(0) - v8;
         if (result >= v9)
             break;
         v0 = GetDesktopWindow();
@@ -248,7 +248,7 @@ __int64 Left()
         v4 = Rect.top + v10;
         v5 = Rect.left - v10;
         v6 = Rect.bottom - v10;
-        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0i64, 0, 0);
+        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0, 0, 0);
     }
     return 0;
 }
@@ -278,7 +278,7 @@ DWORD WINAPI h2(LPVOID)
 
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         w = GetSystemMetrics(0);
         v9 = GetSystemMetrics(1);
         y = rand() % v9;
@@ -310,7 +310,7 @@ DWORD WINAPI h1(LPVOID)
 
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         v6 = GetSystemMetrics(0);
         v5 = GetSystemMetrics(1);
         x = rand() % v6;
@@ -403,12 +403,12 @@ DWORD WINAPI FIRST(LPVOID)
     v13 = GetTickCount();
     nWidth = GetSystemMetrics(0);
     nHeight = GetSystemMetrics(1);
-    lpvBits = VirtualAlloc(0i64, 4i64 * nWidth * (nHeight + 1), 0x3000u, 4u);
+    lpvBits = VirtualAlloc(0, 4 * nWidth * (nHeight + 1), 0x3000u, 4u);
     for (i = 0; ; i = (i + 1) % 3)
     {
         if (!i)
-            RedrawWindow(0i64, 0i64, 0i64, 0x85u);
-        hdc = GetDC(0i64);
+            RedrawWindow(0, 0, 0, 0x85u);
+        hdc = GetDC(0);
         hdcSrc = CreateCompatibleDC(hdc);
         h = CreateBitmap(nWidth, nHeight, 1u, 0x20u, lpvBits);
         SelectObject(hdcSrc, h);
@@ -438,13 +438,13 @@ DWORD WINAPI Cubes(LPVOID)
     int hSrc; // [rsp+60h] [rbp-10h]
     int wSrc; // [rsp+64h] [rbp-Ch]
     HDC hdcDest; // [rsp+68h] [rbp-8h]
-    GetDC(0i64);
+    GetDC(0);
     wSrc = GetSystemMetrics(0);
     for (hSrc = GetSystemMetrics(1);
         ;
         StretchBlt(hdcDest, -10, -10, wSrc + 20, hSrc + 20, hdcDest, 0, 0, wSrc, hSrc, 0xCC0020u))
     {
-        hdcDest = GetDC(0i64);
+        hdcDest = GetDC(0);
         SetStretchBltMode(hdcDest, 4);
         StretchBlt(hdcDest, 10, 10, wSrc - 20, hSrc - 20, hdcDest, 0, 0, wSrc, hSrc, 0xCC0020u);
     }
@@ -468,12 +468,12 @@ DWORD WINAPI Squares(LPVOID)
     HDC hdc; // [rsp+68h] [rbp-18h]
     v3 = GetConsoleWindow();
     ShowWindow(v3, 0);
-    GetDC(0i64);
+    GetDC(0);
     v16 = GetSystemMetrics(0);
     v15 = GetSystemMetrics(1);
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         x = rand() % v16;
         y = rand() % v15;
         v4 = (unsigned __int8)(rand() % 255);
@@ -504,12 +504,12 @@ DWORD WINAPI Squares2(LPVOID)
     int v13; // [rsp+60h] [rbp-20h]
     int v14; // [rsp+64h] [rbp-1Ch]
     HDC hdc; // [rsp+68h] [rbp-18h]
-    GetDC(0i64);
+    GetDC(0);
     v14 = GetSystemMetrics(0);
     v13 = GetSystemMetrics(1);
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         x = rand() % v14;
         y = rand() % v13;
         v3 = (unsigned __int8)(rand() % 244);
@@ -535,12 +535,12 @@ DWORD WINAPI Squares3(LPVOID)
     int v9; // [rsp+60h] [rbp-20h]
     int v10; // [rsp+64h] [rbp-1Ch]
     HDC hdc; // [rsp+68h] [rbp-18h]
-    GetDC(0i64);
+    GetDC(0);
     v10 = GetSystemMetrics(0);
     v9 = GetSystemMetrics(1);
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         x = rand() % v10;
         y = rand() % v9;
         y1 = rand() % 21 + y - 10;
@@ -576,7 +576,7 @@ DWORD WINAPI Dun(LPVOID)
     for (i = 0; ; i = (i + 1) % 9)
     {
         if (!i)
-            RedrawWindow(0i64, 0i64, 0i64, 0x85u);
+            RedrawWindow(0, 0, 0, 0x85u);
         for (j = 0; rand() % 3 > j; ++j)
         {
             for (k = 0; rand() % 10 > k; ++k)
@@ -584,7 +584,7 @@ DWORD WINAPI Dun(LPVOID)
                 y = rand() % w;
                 v13 = v15 - rand() % v15 + 58 - v15 / 2;
                 v12 = rand() % 3;
-                hdc = GetDC(0i64);
+                hdc = GetDC(0);
                 if (!v12)
                 {
                     v4 = rand();
@@ -637,7 +637,7 @@ DWORD WINAPI Dun2(LPVOID)
     for (i = 0; ; i = (i + 1) % 9)
     {
         if (!i)
-            RedrawWindow(0i64, 0i64, 0i64, 0x85u);
+            RedrawWindow(0, 0, 0, 0x85u);
         for (j = 0; rand() % 3 > j; ++j)
         {
             for (k = 0; rand() % 10 > k; ++k)
@@ -645,7 +645,7 @@ DWORD WINAPI Dun2(LPVOID)
                 y = rand() % v17;
                 cy = v16 - rand() % v16 + 58 - v16 / 2;
                 v13 = rand() % 3;
-                hdc = GetDC(0i64);
+                hdc = GetDC(0);
                 if (!v13)
                 {
                     v4 = rand();
@@ -704,7 +704,7 @@ void __stdcall move()
     for (i = 0; ; i = (i + 1) % 9)
     {
         if (!i)
-            RedrawWindow(0i64, 0i64, 0i64, 0x85u);
+            RedrawWindow(0, 0, 0, 0x85u);
         for (j = 0; rand() % 3 > j; ++j)
         {
             for (k = 0; rand() % 10 > k; ++k)
@@ -712,7 +712,7 @@ void __stdcall move()
                 y = rand() % v20;
                 cy = v19 - rand() % v19 + 58 - v19 / 2;
                 v16 = rand() % 3;
-                hdc = GetDC(0i64);
+                hdc = GetDC(0);
                 if (!v16)
                 {
                     v1 = rand();
@@ -761,12 +761,12 @@ VOID WINAPI whiteness()
     int v3; // [rsp+64h] [rbp-Ch]
     HDC hdc; // [rsp+68h] [rbp-8h]
 
-    GetDC(0i64);
+    GetDC(0);
     v3 = GetSystemMetrics(0);
     cy = GetSystemMetrics(1);
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         x = rand() % v3;
         if ((rand() & 1) != 0)
         {
@@ -791,7 +791,7 @@ VOID WINAPI rotate()
     struct tagRECT Rect; // [rsp+70h] [rbp-20h] BYREF
     HDC hdcDest; // [rsp+88h] [rbp-8h]
 
-    for (hdcDest = GetDC(0i64);
+    for (hdcDest = GetDC(0);
         ;
         PlgBlt(
             hdcDest,
@@ -801,11 +801,11 @@ VOID WINAPI rotate()
             Rect.top,
             Rect.right - Rect.left,
             Rect.top - Rect.bottom,
-            0i64,
+            0,
             0,
             0))
     {
-        hdcDest = GetDC(0i64);
+        hdcDest = GetDC(0);
         v1 = GetDesktopWindow();
         GetWindowRect(v1, &Rect);
         Point.x = Rect.left + 10;
@@ -822,7 +822,7 @@ VOID WINAPI rotate()
             Rect.top,
             Rect.right - Rect.left,
             Rect.top - Rect.bottom,
-            0i64,
+            0,
             0,
             0);
     }
@@ -830,9 +830,9 @@ VOID WINAPI rotate()
 
 DWORD WINAPI LAST(LPVOID)
 {
-    CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)move, 0i64, 0, 0i64);
-    CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)rotate, 0i64, 0, 0i64);
-    CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)whiteness, 0i64, 0, 0i64);
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)move, 0, 0, 0);
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)rotate, 0, 0, 0);
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)whiteness, 0, 0, 0);
     Sleep(0xFFFFFFFF);
     return 0;
 }
@@ -842,9 +842,9 @@ DWORD WINAPI LAST2(LPVOID)
     HANDLE v4; // [rsp+38h] [rbp-18h]
     HANDLE hObject; // [rsp+40h] [rbp-10h]
     HANDLE hThread; // [rsp+48h] [rbp-8h]
-    hThread = CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)move, 0i64, 0, 0i64);
-    hObject = CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)rotate, 0i64, 0, 0i64);
-    v4 = CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)whiteness, 0i64, 0, 0i64);
+    hThread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)move, 0, 0, 0);
+    hObject = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)rotate, 0, 0, 0);
+    v4 = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)whiteness, 0, 0, 0);
     Sleep(0x7530u);
     TerminateThread(hThread, 0);
     TerminateThread(hObject, 0);
@@ -862,11 +862,11 @@ DWORD WINAPI Purple(LPVOID)
     int h; // [rsp+30h] [rbp-10h]
     int w; // [rsp+34h] [rbp-Ch]
     HDC hdc; // [rsp+38h] [rbp-8h]
-    GetDC(0i64);
+    GetDC(0);
     w = GetSystemMetrics(0);
     for (h = GetSystemMetrics(1); ; PatBlt(hdc, 0, 0, w, h, PATINVERT))
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         v3 = (void*)(65280);
         SelectObject(hdc, v3);
     }
@@ -882,12 +882,12 @@ DWORD WINAPI COLOR_RGB(LPVOID)
     int h; // [rsp+30h] [rbp-50h]
     int w; // [rsp+34h] [rbp-4Ch]
     HDC hdc; // [rsp+38h] [rbp-48h]
-    GetDC(0i64);
+    GetDC(0);
     w = GetSystemMetrics(0);
     h = GetSystemMetrics(1);
     while (1)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         v3 = (unsigned __int8)(rand() % 255);
         v4 = rand();
         v5 = v3 | ((unsigned __int8)(v4 - v4 / -255) << 8);
@@ -917,10 +917,10 @@ DWORD WINAPI COLOR_RGB2(LPVOID)
     v12 = GetTickCount();
     nWidth = GetSystemMetrics(0);
     nHeight = GetSystemMetrics(1);
-    lpvBits = VirtualAlloc(0i64, 4i64 * nWidth * (nHeight + 1), 0x3000u, 4u);
+    lpvBits = VirtualAlloc(0, 4 * nWidth * (nHeight + 1), 0x3000u, 4u);
     for (i = 0; ; i = (i + 1) % 2)
     {
-        hdc = GetDC(0i64);
+        hdc = GetDC(0);
         hdcSrc = CreateCompatibleDC(hdc);
         h = CreateBitmap(nWidth, nHeight, 1u, 0x20u, lpvBits);
         SelectObject(hdcSrc, h);
@@ -950,7 +950,7 @@ void TaskDesk()
     int cy; // [rsp+64h] [rbp-Ch]
     HDC hdc; // [rsp+68h] [rbp-8h]
 
-    hdc = GetDC(0i64);
+    hdc = GetDC(0);
     cy = GetSystemMetrics(1);
     v1 = GetSystemMetrics(0);
     y1 = rand() % cy;
@@ -968,9 +968,9 @@ VOID WINAPI killscreen(LPVOID lpThreadParameter)
     time_t v5; // [rsp+68h] [rbp-18h]
     HDC hdc; // [rsp+78h] [rbp-8h]
 
-    hdc = GetDC(0i64);
-    v5 = time(0i64);
-    while (time(0i64) - v5 < 120)
+    hdc = GetDC(0);
+    v5 = time(0);
+    while (time(0) - v5 < 120)
     {
         v4 = GetSystemMetrics(0);
         v3 = GetSystemMetrics(1);
@@ -1004,13 +1004,13 @@ __int64 Right1()
     int v10; // [rsp+94h] [rbp-Ch]
     HDC hdcDest; // [rsp+98h] [rbp-8h]
 
-    hdcDest = GetDC(0i64);
+    hdcDest = GetDC(0);
     v10 = 10;
-    v9 = 5i64;
-    v8 = time(0i64);
+    v9 = 5;
+    v8 = time(0);
     while (1)
     {
-        result = time(0i64) - v8;
+        result = time(0) - v8;
         if (result >= v9)
             break;
         v0 = GetDesktopWindow();
@@ -1021,7 +1021,7 @@ __int64 Right1()
         v4 = Rect.top - v10;
         v5 = Rect.left + v10;
         v6 = Rect.bottom + v10;
-        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0i64, 0, 0);
+        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0, 0, 0);
     }
     return 0;
 }
@@ -1041,13 +1041,13 @@ __int64 Left1()
     int v10; // [rsp+94h] [rbp-Ch]
     HDC hdcDest; // [rsp+98h] [rbp-8h]
 
-    hdcDest = GetDC(0i64);
+    hdcDest = GetDC(0);
     v10 = 10;
-    v9 = 5i64;
-    v8 = time(0i64);
+    v9 = 5;
+    v8 = time(0);
     while (1)
     {
-        result = time(0i64) - v8;
+        result = time(0) - v8;
         if (result >= v9)
             break;
         v0 = GetDesktopWindow();
@@ -1058,7 +1058,7 @@ __int64 Left1()
         v4 = Rect.top + v10;
         v5 = Rect.left - v10;
         v6 = Rect.bottom - v10;
-        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0i64, 0, 0);
+        PlgBlt(hdcDest, &Point, hdcDest, Rect.left, Rect.top, Rect.right - Rect.left, Rect.bottom - Rect.top, 0, 0, 0);
     }
     return 0;
 }
@@ -1072,11 +1072,11 @@ __int64 w4()
     time_t v4; // [rsp+68h] [rbp-18h]
     HDC hdc; // [rsp+78h] [rbp-8h]
 
-    hdc = GetDC(0i64);
-    v4 = time(0i64);
+    hdc = GetDC(0);
+    v4 = time(0);
     while (1)
     {
-        result = time(0i64) - v4;
+        result = time(0) - v4;
         if (result >= 15)
             break;
         v3 = GetSystemMetrics(1);
@@ -1097,11 +1097,11 @@ __int64 w3()
     time_t v4; // [rsp+68h] [rbp-18h]
     HDC hdc; // [rsp+78h] [rbp-8h]
 
-    hdc = GetDC(0i64);
-    v4 = time(0i64);
+    hdc = GetDC(0);
+    v4 = time(0);
     while (1)
     {
-        result = time(0i64) - v4;
+        result = time(0) - v4;
         if (result >= 10)
             break;
         v3 = GetSystemMetrics(1);
@@ -1122,11 +1122,11 @@ __int64 w2()
     time_t v4; // [rsp+68h] [rbp-18h]
     HDC hdc; // [rsp+78h] [rbp-8h]
 
-    hdc = GetDC(0i64);
-    v4 = time(0i64);
+    hdc = GetDC(0);
+    v4 = time(0);
     while (1)
     {
-        result = time(0i64) - v4;
+        result = time(0) - v4;
         if (result >= 10)
             break;
         v3 = GetSystemMetrics(1);
@@ -1147,11 +1147,11 @@ __int64 w1()
     time_t v4; // [rsp+68h] [rbp-18h]
     HDC hdc; // [rsp+78h] [rbp-8h]
 
-    hdc = GetDC(0i64);
-    v4 = time(0i64);
+    hdc = GetDC(0);
+    v4 = time(0);
     while (1)
     {
-        result = time(0i64) - v4;
+        result = time(0) - v4;
         if (result >= 10)
             break;
         v3 = GetSystemMetrics(1);
@@ -1170,26 +1170,26 @@ DWORD WINAPI rotate(LPVOID)
     time_t v6; // [rsp+48h] [rbp-28h]
     HANDLE hObject; // [rsp+58h] [rbp-18h]
     time_t v8; // [rsp+60h] [rbp-10h]
-    v8 = time(0i64);
-    while (time(0i64) - v8 < 180)
+    v8 = time(0);
+    while (time(0) - v8 < 180)
     {
         w1();
         w2();
         w3();
         w4();
     }
-    hObject = CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)killscreen, 0i64, 0, 0i64);
-    v6 = time(0i64);
-    while (time(0i64) - v6 < 120)
+    hObject = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)killscreen, 0, 0, 0);
+    v6 = time(0);
+    while (time(0) - v6 < 120)
     {
         Left1();
         Right1();
     }
     CloseHandle(hObject);
-    v5 = time(0i64);
+    v5 = time(0);
     while (1)
     {
-        v3 = time(0i64) - v5;
+        v3 = time(0) - v5;
         if (v3 >= 120)
             break;
         TaskDesk();
@@ -1204,7 +1204,7 @@ DWORD WINAPI wave(LPVOID)
     int v6; // [rsp+60h] [rbp-10h]
     int v7; // [rsp+64h] [rbp-Ch]
     HDC hdc; // [rsp+68h] [rbp-8h]
-    hdc = GetDC(0i64);
+    hdc = GetDC(0);
     while (1)
     {
         v7 = GetSystemMetrics(1);
