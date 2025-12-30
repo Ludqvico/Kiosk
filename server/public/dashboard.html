@@ -247,7 +247,7 @@
         button {
             background: var(--accent-primary);
             color: white;
-            border: 1px solid transparent;
+            border: none;
             padding: 10px 18px;
             border-radius: var(--radius-md);
             font-size: 13px;
@@ -257,11 +257,16 @@
             font-family: inherit;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            box-shadow: none;
+        }
+
+        button.primary {
             box-shadow: var(--shadow-sm);
         }
 
-        button:hover {
+        button.primary:hover {
             background: var(--accent-secondary);
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
@@ -730,6 +735,11 @@
 
         .client-menu-button:active {
             transform: none;
+            box-shadow: none;
+        }
+
+        .client-menu-button {
+            box-shadow: none !important;
         }
 
         .client-header-info {
@@ -4357,6 +4367,13 @@
 
         function toggleInternetBlock(clientId, block) {
             socket.emit('admin:block-internet', { clientId, block });
+        }
+
+        function toggleInternet(clientId) {
+            const client = clients.get(clientId);
+            if (client) {
+                toggleInternetBlock(clientId, !client.internetBlocked);
+            }
         }
 
         function unlockClient(clientId) {
