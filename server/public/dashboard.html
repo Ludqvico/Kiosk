@@ -304,6 +304,103 @@
             transform: translateY(-1px);
         }
 
+        /* Modern Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 20px;
+        }
+
+        .modal-tab {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-tab.active {
+            color: var(--accent-primary);
+        }
+
+        .modal-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+        }
+
+        /* Process Item Styling */
+        .process-item {
+            display: grid;
+            grid-template-columns: 48px 1fr 80px 100px 80px;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.1s;
+        }
+
+        .process-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .process-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .process-name-container {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .process-main-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .process-pid-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .process-stat {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .process-stat.cpu-high {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .process-action {
+            text-align: right;
+        }
+
         /* Elegant Client Grid */
         .clients-grid {
             display: grid;
@@ -331,6 +428,103 @@
         .client-card.locked {
             border-color: var(--danger);
             background: linear-gradient(to bottom, var(--bg-secondary), var(--danger-light));
+        }
+
+        /* Modern Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 20px;
+        }
+
+        .modal-tab {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-tab.active {
+            color: var(--accent-primary);
+        }
+
+        .modal-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+        }
+
+        /* Process Item Styling */
+        .process-item {
+            display: grid;
+            grid-template-columns: 48px 1fr 80px 100px 80px;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.1s;
+        }
+
+        .process-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .process-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .process-name-container {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .process-main-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .process-pid-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .process-stat {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .process-stat.cpu-high {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .process-action {
+            text-align: right;
         }
 
         /* Card Header */
@@ -3520,53 +3714,67 @@
 
     <!-- Force Kill Modal -->
     <div class="modal-overlay" id="forceKillModal">
-        <div class="modal" style="width: 700px; max-height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <h2 class="modal-title">Force Kill Process</h2>
+        <div class="modal"
+            style="width: 800px; padding: 0; overflow: hidden; display: flex; flex-direction: column; border-radius: 12px; max-height: 85vh;">
+            <div class="modal-header"
+                style="padding: 24px; margin: 0; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="modal-title" style="margin: 0; font-size: 20px;">Force Kill Process</h2>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-secondary);">Manage active
+                        applications and system tasks</p>
+                </div>
                 <button class="modal-close" onclick="closeForceKillModal()">×</button>
             </div>
-            <div
-                style="padding: 15px 20px; border-bottom: 1px solid var(--border-light); background: var(--bg-secondary);">
-                <div class="search-box" style="margin-bottom: 0;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+
+            <div class="modal-tabs" style="margin-top: 10px;">
+                <div class="modal-tab active" id="tab-apps" onclick="switchProcessTab('apps')">Apps Only</div>
+                <div class="modal-tab" id="tab-all" onclick="switchProcessTab('all')">All Processes</div>
+            </div>
+
+            <div style="padding: 0 20px 16px;">
+                <div class="search-box" style="margin: 0; width: 100%;">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" id="processSearchInput" placeholder="Filter processes..."
-                        onkeyup="filterProcessList()"
-                        style="background:transparent; border:none; outline:none; color:white; width:100%; margin-left:10px;">
+                    <input type="text" id="processSearchInput" class="search-input"
+                        placeholder="Search processes by name or PID..." onkeyup="filterProcessList()"
+                        style="padding-left: 42px;">
                 </div>
             </div>
-            <div class="modal-body" style="overflow-y: auto; padding: 0; flex: 1;">
-                <div id="processListLoading" style="padding: 60px 40px; text-align: center;">
+
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 0;">
+                <div id="processListHeader"
+                    style="display: grid; grid-template-columns: 48px 1fr 80px 100px 80px; padding: 10px 20px; background: var(--bg-tertiary); font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
+                    <span></span>
+                    <span>Process Name</span>
+                    <span>CPU</span>
+                    <span>Memory</span>
+                    <span style="text-align: right;">Action</span>
+                </div>
+
+                <div id="processListLoading" style="padding: 80px 40px; text-align: center;">
                     <div class="spinner" style="margin: 0 auto 15px;"></div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">Fetching live process list from
-                        station...</div>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Establishing connection to station...
+                    </div>
                 </div>
-                <div id="processListContainer" style="display: none;">
-                    <table class="activity-table" style="margin: 0; width: 100%; border-collapse: collapse;">
-                        <thead style="position: sticky; top: 0; background: var(--bg-primary); z-index: 10;">
-                            <tr>
-                                <th style="padding-left: 20px; text-align: left;">Process Name</th>
-                                <th style="text-align: left;">PID</th>
-                                <th style="text-align: left;">Memory</th>
-                                <th style="text-align: right; padding-right: 20px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="processListTableBody">
-                            <!-- Processes will be injected here -->
-                        </tbody>
-                    </table>
+
+                <div id="processListContent">
+                    <!-- Processes will be injected here -->
                 </div>
             </div>
+
             <div class="modal-footer"
-                style="padding: 15px 20px; border-top: 1px solid var(--border-light); text-align: right; background: var(--bg-secondary);">
-                <button class="secondary" onclick="closeForceKillModal()">Close</button>
-                <button onclick="refreshProcessList()" id="btnRefreshProcesses" class="secondary"
-                    style="margin-left: 10px;">
-                    Refresh List
-                </button>
+                style="padding: 20px; border-top: 1px solid var(--border-light); background: var(--bg-secondary); display: flex; justify-content: space-between; align-items: center;">
+                <div id="processCountLabel" style="font-size: 12px; color: var(--text-tertiary);">Showing 0 processes
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="secondary" onclick="closeForceKillModal()">Cancel</button>
+                    <button onclick="refreshProcessList()" id="btnRefreshProcesses">
+                        Refresh
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -3671,10 +3879,13 @@
         // ===== Force Kill / Process Management =====
         let activeForceKillClientId = null;
         let currentProcessList = [];
+        let processViewMode = 'apps'; // 'apps' or 'all'
 
         function openForceKillModal(clientId) {
             activeForceKillClientId = clientId;
             document.getElementById('forceKillModal').classList.add('active');
+            processViewMode = 'apps';
+            updateProcessTabsUI();
             refreshProcessList();
         }
 
@@ -3684,11 +3895,23 @@
             currentProcessList = [];
         }
 
+        function switchProcessTab(mode) {
+            processViewMode = mode;
+            updateProcessTabsUI();
+            renderProcessList(filterProcessData());
+        }
+
+        function updateProcessTabsUI() {
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            const tab = document.getElementById(`tab-${processViewMode}`);
+            if (tab) tab.classList.add('active');
+        }
+
         function refreshProcessList() {
             if (!activeForceKillClientId) return;
 
             document.getElementById('processListLoading').style.display = 'block';
-            document.getElementById('processListContainer').style.display = 'none';
+            document.getElementById('processListContent').innerHTML = '';
             document.getElementById('processSearchInput').value = '';
 
             const btn = document.getElementById('btnRefreshProcesses');
@@ -3700,58 +3923,100 @@
 
         socket.on('admin:processes-list', (data) => {
             currentProcessList = data.processes || [];
-            renderProcessList(currentProcessList);
+            renderProcessList(filterProcessData());
 
             document.getElementById('processListLoading').style.display = 'none';
-            document.getElementById('processListContainer').style.display = 'block';
 
             const btn = document.getElementById('btnRefreshProcesses');
-            btn.innerHTML = 'Refresh List';
+            btn.innerHTML = 'Refresh';
             btn.disabled = false;
         });
 
+        function filterProcessData() {
+            const searchTerm = (document.getElementById('processSearchInput')?.value || '').toLowerCase();
+
+            return currentProcessList.filter(p => {
+                // Search filter
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm) || p.pid.toString().includes(searchTerm);
+                if (!matchesSearch) return false;
+
+                // Tab filter
+                if (processViewMode === 'apps') {
+                    return p.isApp;
+                }
+                return true;
+            });
+        }
+
+        function getProcessIcon(name) {
+            const n = name.toLowerCase();
+            if (n.includes('chrome')) return '🌐';
+            if (n.includes('edge')) return '🌍';
+            if (n.includes('notepad')) return '📝';
+            if (n.includes('word')) return '📄';
+            if (n.includes('excel')) return '📊';
+            if (n.includes('powerp')) return '📉';
+            if (n.includes('vlc')) return '🎬';
+            if (n.includes('spotify')) return '🎵';
+            if (n.includes('discord')) return '💬';
+            if (n.includes('teams')) return '👥';
+            if (n.includes('code') || n.includes('visual')) return '💻';
+            if (n.includes('explorer')) return '📁';
+            if (n.includes('settings') || n.includes('control')) return '⚙️';
+            if (n.includes('cmd') || n.includes('powershell')) return '🐚';
+            return '📦';
+        }
+
         function renderProcessList(processes) {
-            const tbody = document.getElementById('processListTableBody');
+            const container = document.getElementById('processListContent');
+            const countLabel = document.getElementById('processCountLabel');
+
+            if (!container || !countLabel) return;
+            countLabel.textContent = `Showing ${processes.length} processes`;
 
             if (processes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; color: var(--text-secondary);">No processes found or error fetching list.</td></tr>`;
+                container.innerHTML = `<div style="padding: 60px; text-align: center; color: var(--text-tertiary);">No processes found matching your criteria.</div>`;
                 return;
             }
 
-            tbody.innerHTML = processes.map(p => `
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                    <td style="padding: 12px 20px; font-weight: 600; font-size: 13px;">${p.name}</td>
-                    <td style="padding: 12px; font-size: 13px; color: var(--text-secondary);">${p.pid}</td>
-                    <td style="padding: 12px; font-size: 13px; color: var(--text-secondary);">${(p.memory / 1024 / 1024).toFixed(1)} MB</td>
-                    <td style="padding: 12px 20px; text-align: right;">
-                        <button class="danger-small" onclick="killProcess(${p.pid}, '${p.name}')">
+            container.innerHTML = processes.map(p => {
+                const cpuValue = Math.round(p.cpu / 100); // 
+                const isCpuHigh = cpuValue > 20;
+
+                return `
+                <div class="process-item">
+                    <div class="process-icon">${getProcessIcon(p.name)}</div>
+                    <div class="process-name-container">
+                        <div class="process-main-name" title="${p.title || p.name}">${p.title || p.name}</div>
+                        <div class="process-pid-label">${p.name} • PID: ${p.pid}</div>
+                    </div>
+                    <div class="process-stat ${isCpuHigh ? 'cpu-high' : ''}">${cpuValue}%</div>
+                    <div class="process-stat">${(p.memory / 1024 / 1024).toFixed(1)} MB</div>
+                    <div class="process-action">
+                        <button class="danger-small" onclick="killProcess(event, ${p.pid}, '${p.name}')">
                             Kill
                         </button>
-                    </td>
-                </tr>
-            `).join('');
+                    </div>
+                </div>
+            `}).join('');
         }
 
         function filterProcessList() {
-            const term = document.getElementById('processSearchInput').value.toLowerCase();
-            const filtered = currentProcessList.filter(p =>
-                p.name.toLowerCase().includes(term) ||
-                p.pid.toString().includes(term)
-            );
-            renderProcessList(filtered);
+            renderProcessList(filterProcessData());
         }
 
-        function killProcess(pid, name) {
+        function killProcess(event, pid, name) {
             if (confirm(`Are you sure you want to FORCE KILL "${name}" (PID: ${pid})?`)) {
                 socket.emit('admin:kill-process', {
                     clientId: activeForceKillClientId,
                     pid: pid
                 });
 
-                // Temporary feedback
-                const row = event.target.closest('tr');
-                row.style.opacity = '0.4';
-                row.style.pointerEvents = 'none';
+                const item = event.currentTarget.closest('.process-item') || event.target.closest('tr');
+                if (item) {
+                    item.style.opacity = '0.4';
+                    item.style.pointerEvents = 'none';
+                }
 
                 setTimeout(() => {
                     refreshProcessList();
