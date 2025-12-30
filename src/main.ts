@@ -782,6 +782,14 @@ function connectToServer() {
     }
   });
 
+  // Toggle Microphone
+  serverConnection.on('server:toggle-mic', (data: { enabled: boolean }) => {
+    console.log('[Main] Toggle Mic:', data.enabled);
+    if (webrtcWindow && !webrtcWindow.isDestroyed()) {
+      webrtcWindow.webContents.send('webrtc:toggle-mic', data.enabled);
+    }
+  });
+
   // Registra callback per EagleEye
   serverConnection.onStartEagleEye(() => {
     console.log('[Main] Ricevuto comando START EAGLE EYE dal server');
@@ -1294,7 +1302,8 @@ async function startRemoteDesktop() {
         }
       });
 
-      webrtcWindow.loadFile(path.join(__dirname, '../renderer/webrtc-capture.html'));
+      // Load the updated WebRTC capture file from root
+      webrtcWindow.loadFile(path.join(__dirname, '../src/renderer/webrtc-capture.html'));
 
       // Setup IPC handlers for WebRTC window (only once)
       setupWebRTCHandlers();

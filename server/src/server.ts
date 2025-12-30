@@ -797,6 +797,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Toggle Microphone
+  socket.on('admin:toggle-mic', (data: { clientId: string; enabled: boolean }) => {
+    const client = connectedClients.get(data.clientId);
+    if (client && activeWebRTCSessions.get(data.clientId) === socket.id) {
+      console.log(`[WebRTC] Toggle Mic for client ${client.hostname}: ${data.enabled}`);
+      io.to(data.clientId).emit('server:toggle-mic', { enabled: data.enabled });
+    }
+  });
+
   // WebRTC signaling: Client -> Admin
   socket.on('client:webrtc-signal', (signal: any) => {
     const clientId = socket.id;

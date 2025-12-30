@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>WebRTC Capture</title>
 </head>
+
 <body>
     <script>
         const { ipcRenderer } = require('electron');
@@ -11,6 +13,7 @@
         let peerConnection = null;
         let dataChannel = null;
         let mediaStream = null;
+        let micTracks = []; // Store mic tracks specifically
 
         // WebRTC Configuration
         const config = {
@@ -19,6 +22,14 @@
                 { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
+
+        // Listen for mic toggle command
+        ipcRenderer.on('webrtc:toggle-mic', (event, enabled) => {
+            console.log('[WebRTC Renderer] Toggle Mic:', enabled);
+            micTracks.forEach(track => {
+                track.enabled = enabled;
+            });
+        });
 
         // Start WebRTC capture
         ipcRenderer.on('webrtc:start', async (event, sourceId) => {
@@ -53,8 +64,9 @@
                 // Try to capture microphone as well
                 try {
                     const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    micStream.getAudioTracks().forEach(track => {
-                        mediaStream.addTrack(track);
+                    micTracks = micStream.getAudioTracks();
+                    micTracks.forEach(track => {
+                        mediaStream.addTrack(track); // Add to stream
                         console.log('[WebRTC Renderer] Microphone track added');
                     });
                 } catch (micErr) {
@@ -157,9 +169,11 @@
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
             }
+            micTracks = []; // Clear mic tracks
         });
 
         console.log('[WebRTC Renderer] Ready');
     </script>
 </body>
+
 </html>
