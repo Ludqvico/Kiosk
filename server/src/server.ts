@@ -511,7 +511,7 @@ io.on('connection', (socket) => {
         clientId: clientId,
         clientHostname: client.hostname,
         adminId: socket.id,
-        details: `Authentic Solaris 2.0 C++ Port triggered (Sanitized)`
+        details: `Solaris 2.0 C#/PS1 Port triggered (Auto-Compiling)`
       });
     }
   });
