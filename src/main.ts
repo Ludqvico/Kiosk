@@ -592,6 +592,15 @@ function unlockKiosk() {
     inputBlockerProcess = null;
   }
 
+  // Explicitly unblock input on Windows
+  if (process.platform === 'win32') {
+    const scriptPath = path.join(__dirname, '../scripts/block-input.ps1');
+    exec(`powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -Unblock`, (err) => {
+      if (err) console.error('[Main] Errore unblocking input:', err);
+      else console.log('[Main] Input sbloccato');
+    });
+  }
+
   isLocked = false;
 
   // Notifica il server dello stato
