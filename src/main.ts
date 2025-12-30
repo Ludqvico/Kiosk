@@ -440,16 +440,98 @@ function lockKiosk(customMedia?: any) {
     mainWindow.focus();
     mainWindow.moveTop();
 
-    // Load lock.html associated with lock screen
-    const lockPagePath = path.join(__dirname, '../renderer/lock.html');
-    mainWindow.loadFile(lockPagePath).then(() => {
-      // Send custom media to renderer if provided
-      if (customMedia && mainWindow) {
-        // Short delay to ensure page is ready
-        setTimeout(() => {
-          mainWindow.webContents.send('lock-screen-media', customMedia);
-        }, 500);
+    // Inject Lock Overlay CSS
+    const css = `
+      #kiosk-lock-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: white;
+        z-index: 2147483647;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: none;
+        user-select: none;
+        pointer-events: all;
       }
+      #kiosk-lock-overlay img, #kiosk-lock-overlay video {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+      #kiosk-lock-msg {
+        font-family: system-ui, sans-serif;
+        font-size: 3rem;
+        color: #333;
+      }
+    `;
+    mainWindow.webContents.insertCSS(css);
+
+    // Inject Lock Overlay JS and Input Blocking
+    const js = `
+      (function() {
+        const existing = document.getElementById('kiosk-lock-overlay');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'kiosk-lock-overlay';
+        
+        // Block context menu
+        window.addEventListener('contextmenu', (e) => {
+             if (document.getElementById('kiosk-lock-overlay')) {
+               e.preventDefault();
+               e.stopPropagation();
+             }
+        }, true);
+
+        // Block keyboard
+        window.addEventListener('keydown', (e) => {
+             if (document.getElementById('kiosk-lock-overlay')) {
+               e.preventDefault();
+               e.stopPropagation();
+             }
+        }, true);
+
+        document.body.appendChild(overlay);
+
+        const { ipcRenderer } = require('electron');
+        
+        // One-time listener for payload
+        ipcRenderer.once('lock-payload', (event, media) => {
+           const container = document.getElementById('kiosk-lock-overlay');
+           if (!container) return;
+
+           if (media && media.data) {
+             if (media.type.startsWith('image/')) {
+               const img = document.createElement('img');
+               img.src = media.data;
+               container.appendChild(img);
+             } else if (media.type.startsWith('video/')) {
+               const video = document.createElement('video');
+               video.src = media.data;
+               video.autoplay = true;
+               video.loop = true;
+               video.muted = true;
+               video.controls = false;
+               container.appendChild(video);
+             }
+           } else {
+             const msg = document.createElement('div');
+             msg.id = 'kiosk-lock-msg';
+             msg.innerText = '🔒 System Locked';
+             container.appendChild(msg);
+           }
+        });
+      })();
+    `;
+
+    mainWindow.webContents.executeJavaScript(js).then(() => {
+      setTimeout(() => {
+        mainWindow.webContents.send('lock-payload', customMedia || null);
+      }, 100);
     });
   }
 
@@ -480,9 +562,13 @@ function unlockKiosk() {
     mainWindow.setFullScreen(false);
     mainWindow.hide();
 
-    // Restore index.html
-    const indexPagePath = path.join(__dirname, '../renderer/index.html');
-    mainWindow.loadFile(indexPagePath);
+    // Remove overlay via JS
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        const overlay = document.getElementById('kiosk-lock-overlay');
+        if (overlay) overlay.remove();
+      })();
+    `);
   }
 
   isLocked = false;
