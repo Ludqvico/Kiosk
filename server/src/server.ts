@@ -362,8 +362,18 @@ io.on('connection', (socket) => {
 
     const client = connectedClients.get(clientId);
     if (client) {
+      // Update client state
+      client.locked = true;
+
+      // Send command to client
       io.to(clientId).emit('server:lock');
       console.log(`[Server] Comando LOCK inviato a ${client.hostname}`);
+
+      // Broadcast status to all admins
+      io.emit('admin:client-lock-status', {
+        clientId: clientId,
+        locked: true
+      });
 
       // Log activity
       logActivity({
@@ -381,8 +391,18 @@ io.on('connection', (socket) => {
 
     const client = connectedClients.get(clientId);
     if (client) {
+      // Update client state
+      client.locked = false;
+
+      // Send command to client
       io.to(clientId).emit('server:unlock');
       console.log(`[Server] Comando UNLOCK inviato a ${client.hostname}`);
+
+      // Broadcast status to all admins
+      io.emit('admin:client-lock-status', {
+        clientId: clientId,
+        locked: false
+      });
 
       // Log activity
       logActivity({
