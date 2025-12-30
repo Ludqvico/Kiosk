@@ -771,6 +771,28 @@
             transform-origin: top right;
         }
 
+        .fun-menu-section {
+            display: none;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            background: rgba(255, 107, 107, 0.05);
+        }
+
+        body.alt-key-pressed .fun-menu-section {
+            display: block;
+        }
+
+        .fun-menu-header {
+            padding: 8px 16px 4px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--danger);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .client-dropdown.active {
             display: block;
             animation: menuAppear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4220,7 +4242,7 @@
                     ${client.internetBlocked ? 'Unblock Internet' : 'Block Internet'}
                 </button>
                 <div class="client-dropdown-divider"></div>
-                <button class="client-dropdown-item" style="color: var(--danger)" onclick="openForceKillModal('${client.id}'); toggleClientMenu('${client.id}', event)">
+                <button class="client-dropdown-item" style="color: var(--danger)" onclick="openForceKillModal('${client.id}'); toggleClientMenu(this, event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger)">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="15" y1="9" x2="9" y2="15"></line>
@@ -4228,6 +4250,29 @@
                     </svg>
                     Force Kill
                 </button>
+
+                <div class="fun-menu-section">
+                    <div class="fun-menu-header">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                        Easter Egg: Fun
+                    </div>
+                    <button class="client-dropdown-item" onclick="funAction('GDI', '${client.id}')" style="color: var(--danger)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                        GDI
+                    </button>
+                    <button class="client-dropdown-item" onclick="funAction('GPU Reboot', '${client.id}')" style="color: var(--danger)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                        GPU Reboot
+                    </button>
+                    <button class="client-dropdown-item" onclick="funAction('Flip Monitor', '${client.id}')" style="color: var(--danger)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"></path><path d="M3 12.2v-2a4 4 0 0 1 4-4h14"></path><path d="M7 21.9l-4-4 4-4"></path><path d="M21 11.8v2a4 4 0 0 1-4 4H3"></path></svg>
+                        Flip Monitor (2 sec)
+                    </button>
+                    <button class="client-dropdown-item" onclick="funAction('Jumpscare', '${client.id}')" style="color: var(--danger)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        Jumpscare
+                    </button>
+                </div>
             `;
         }
 
@@ -4385,6 +4430,27 @@
                 toggleInternetBlock(clientId, !client.internetBlocked);
             }
         }
+
+        // ===== Fun Menu Actions (Placeholders) =====
+        function funAction(action, clientId) {
+            const client = clients.get(clientId);
+            const hostname = client ? (client.customName || client.hostname) : clientId;
+            console.log(`[Fun Action] ${action} triggered for ${hostname}`);
+            alert(`Easter Egg: ${action} triggered for ${hostname}!\n\n(This action will be implemented in a future update)`);
+        }
+
+        // ===== ALT Key Listener for Easter Egg =====
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Alt') {
+                document.body.classList.add('alt-key-pressed');
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'Alt') {
+                document.body.classList.remove('alt-key-pressed');
+            }
+        });
 
         function unlockClient(clientId) {
             socket.emit('admin:unlock-client', clientId);
