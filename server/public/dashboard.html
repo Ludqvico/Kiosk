@@ -894,8 +894,9 @@
             background: var(--bg-secondary);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
-            overflow: hidden;
             box-shadow: var(--shadow-sm);
+            /* overflow: visible to allow action menu to float outside */
+            position: relative;
         }
 
         .clients-table-container.active {
@@ -921,6 +922,14 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border-light);
+        }
+
+        .clients-table th:first-child {
+            border-top-left-radius: var(--radius-lg);
+        }
+
+        .clients-table th:last-child {
+            border-top-right-radius: var(--radius-lg);
         }
 
         .clients-table td {
