@@ -4410,8 +4410,9 @@
             isLockAll = false;
         }
 
-        // Toggle custom media section
-        document.addEventListener('DOMContentLoaded', () => {
+        // Toggle custom media section and file preview
+        // Setup listeners immediately (not waiting for DOMContentLoaded since page is already loaded)
+        setTimeout(() => {
             const lockTypeRadios = document.querySelectorAll('input[name="lockType"]');
             lockTypeRadios.forEach(radio => {
                 radio.addEventListener('change', (e) => {
@@ -4429,12 +4430,18 @@
             if (fileInput) {
                 fileInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
-                    if (!file) return;
+                    if (!file) {
+                        currentLockMediaData = null;
+                        return;
+                    }
+
+                    console.log('[Lock Modal] File selected:', file.name, file.type, file.size);
 
                     // Check file size (10MB limit)
                     if (file.size > 10 * 1024 * 1024) {
                         alert('File size exceeds 10MB limit');
                         e.target.value = '';
+                        currentLockMediaData = null;
                         return;
                     }
 
@@ -4448,6 +4455,8 @@
                             name: file.name
                         };
 
+                        console.log('[Lock Modal] Media data loaded:', currentLockMediaData.type, 'size:', currentLockMediaData.data.length);
+
                         // Show preview
                         if (file.type.startsWith('image/')) {
                             preview.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 200px; object-fit: contain;">`;
@@ -4456,13 +4465,23 @@
                         }
                     };
 
+                    reader.onerror = (error) => {
+                        console.error('[Lock Modal] Error reading file:', error);
+                        alert('Error reading file');
+                        currentLockMediaData = null;
+                    };
+
                     reader.readAsDataURL(file);
                 });
+            } else {
+                console.error('[Lock Modal] File input not found!');
             }
-        });
+        }, 100);
 
         function confirmLock() {
             const lockType = document.querySelector('input[name="lockType"]:checked').value;
+
+            console.log('[Lock Modal] Confirm lock - Type:', lockType, 'Media data:', currentLockMediaData ? 'present' : 'null');
 
             if (lockType === 'custom' && !currentLockMediaData) {
                 alert('Please select a media file');
@@ -4472,18 +4491,22 @@
             if (isLockAll) {
                 // Lock all clients
                 if (lockType === 'custom') {
+                    console.log('[Lock Modal] Sending lock-all with custom media');
                     socket.emit('admin:lock-all', { customMedia: currentLockMediaData });
                 } else {
+                    console.log('[Lock Modal] Sending lock-all default');
                     socket.emit('admin:lock-all');
                 }
             } else {
                 // Lock single client
                 if (lockType === 'custom') {
+                    console.log('[Lock Modal] Sending lock-client with custom media to:', currentLockClientId);
                     socket.emit('admin:lock-client', {
                         clientId: currentLockClientId,
                         customMedia: currentLockMediaData
                     });
                 } else {
+                    console.log('[Lock Modal] Sending lock-client default to:', currentLockClientId);
                     socket.emit('admin:lock-client', currentLockClientId);
                 }
             }
