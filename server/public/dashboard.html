@@ -4157,10 +4157,8 @@
                 renderClients();
             }
         });
-
-        function renderClients() {
-            function getClientMenuHtml(client) {
-                return `
+        function getClientMenuHtml(client) {
+            return `
                 <button class="client-dropdown-item" onclick="openRenameModal('${client.id}', '${client.customName || client.hostname}')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -4222,7 +4220,9 @@
                     Force Kill
                 </button>
             `;
-            }
+        }
+
+        function renderClients() {
 
             // Apply custom names to all clients
             applyCustomNames();
