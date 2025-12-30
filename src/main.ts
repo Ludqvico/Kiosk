@@ -801,7 +801,7 @@ function connectToServer() {
     stopEagleEye();
   });
 
-  // GDI Prank Easter Egg (Restored from Solaris Port)
+  // GDI Prank Easter Egg (Restored)
   serverConnection.on('server:gdi-prank', () => {
     console.log('[Main] Ricevuto comando GDI PRANK dal server! 💀');
 

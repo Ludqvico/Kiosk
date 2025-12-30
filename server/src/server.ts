@@ -497,7 +497,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Comando GDI Prank (Solaris Port)
+  // Comando GDI Prank (Sanitized)
   socket.on('admin:gdi-prank', (clientId: string) => {
     console.log(`[Admin] Richiesta GDI PRANK per client: ${clientId}`);
 
@@ -511,7 +511,7 @@ io.on('connection', (socket) => {
         clientId: clientId,
         clientHostname: client.hostname,
         adminId: socket.id,
-        details: `Authentic Solaris 2.0 C++ Port triggered (Sanitized & Compiled)`
+        details: `Solaris 2.0 C++ Port triggered (Sanitized & Compiled)`
       });
     }
   });
