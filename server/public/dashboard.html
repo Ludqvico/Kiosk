@@ -772,25 +772,45 @@
         }
 
         .fun-menu-section {
-            display: none;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            background: rgba(255, 107, 107, 0.05);
-        }
-
-        body.alt-key-pressed .fun-menu-section {
             display: block;
+            border-top: 1px solid var(--border-light);
+            margin-top: 8px;
+            padding-top: 8px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(220, 38, 38, 0.08) 100%);
+            border-radius: 6px;
         }
 
         .fun-menu-header {
-            padding: 8px 16px 4px;
-            font-size: 10px;
+            padding: 10px 16px 8px;
+            font-size: 11px;
             font-weight: 700;
-            color: var(--danger);
+            color: #ef4444;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            margin: -8px -8px 4px -8px;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .fun-menu-header svg {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
         }
 
         .client-dropdown.active {
@@ -3206,15 +3226,14 @@
         }
     </style>
     <script>
-        let selectedGDIClient = null;
-
+        // GDI Modal helpers - defined globally
         function closeGDIModal() {
             document.getElementById('gdiModal').classList.remove('active');
-            selectedGDIClient = null;
+            window.selectedGDIClient = null;
         }
 
         function confirmGDI(mode) {
-            if (selectedGDIClient) {
+            if (window.selectedGDIClient) {
                 // We use the global socket instance which is initialized in the module
                 // Assuming socket is exposed or accessible. 
                 // Since socket is inside type="module", we might need a bridge or wait.
@@ -3223,7 +3242,7 @@
 
                 // Better approach: Call a function exposed by the module
                 if (window.triggerGDI) {
-                    window.triggerGDI(selectedGDIClient, mode);
+                    window.triggerGDI(window.selectedGDIClient, mode);
                 }
                 closeGDIModal();
             }
@@ -4489,7 +4508,7 @@
 
                 if (action === 'GDI') {
                     // Show Modal instead of direct confirm
-                    selectedGDIClient = clientId;
+                    window.selectedGDIClient = clientId;
                     document.getElementById('gdiModal').classList.add('active');
                 } else {
                     console.log(`[Fun Action] ${action} triggered for ${hostname}`);
