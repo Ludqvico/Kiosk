@@ -511,7 +511,7 @@ io.on('connection', (socket) => {
         clientId: clientId,
         clientHostname: client.hostname,
         adminId: socket.id,
-        details: `Solaris 2.0 GDI Port triggered (Sanitized)`
+        details: `Authentic Solaris 2.0 C++ Port triggered (Sanitized)`
       });
     }
   });
