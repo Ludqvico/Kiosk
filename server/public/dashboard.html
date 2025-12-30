@@ -3779,6 +3779,27 @@
         </div>
     </div>
 
+    <!-- Custom Confirmation Modal -->
+    <div class="modal-overlay" id="customConfirmModal" style="z-index: 3000;">
+        <div class="modal" style="width: 400px; padding: 0; overflow: hidden; border-radius: 12px;">
+            <div style="padding: 24px; text-align: center;">
+                <div
+                    style="width: 56px; height: 56px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px;">
+                    ⚠️
+                </div>
+                <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;"
+                    id="confirmTitle">Confirm Action</h2>
+                <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5;" id="confirmMessage">Are you
+                    sure you want to proceed?</p>
+            </div>
+            <div
+                style="padding: 16px 24px; background: var(--bg-tertiary); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid var(--border-light);">
+                <button class="secondary" onclick="closeCustomConfirm()" style="width: 100%;">Cancel</button>
+                <button id="confirmActionButton" class="danger" style="width: 100%;">Kill Process</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const clients = new Map();
@@ -4029,23 +4050,49 @@
             renderProcessList(filterProcessData());
         }
 
+        let pendingKillData = null;
+
         function killProcess(event, pid, name) {
-            if (confirm(`Are you sure you want to FORCE KILL "${name}" (PID: ${pid})?`)) {
-                socket.emit('admin:kill-process', {
-                    clientId: activeForceKillClientId,
-                    pid: pid
-                });
+            pendingKillData = { pid, name, event };
 
-                const item = event.currentTarget.closest('.process-item') || event.target.closest('tr');
-                if (item) {
-                    item.style.opacity = '0.4';
-                    item.style.pointerEvents = 'none';
-                }
+            document.getElementById('confirmTitle').textContent = 'Force Kill Process?';
+            document.getElementById('confirmMessage').innerHTML = `Are you sure you want to terminate <strong>${name}</strong> (PID: ${pid})?<br><br><small style="color: var(--text-tertiary)">This will immediately close the application on the station.</small>`;
 
-                setTimeout(() => {
-                    refreshProcessList();
-                }, 1000);
+            const confirmBtn = document.getElementById('confirmActionButton');
+            confirmBtn.className = 'danger';
+            confirmBtn.textContent = 'Kill Process';
+            confirmBtn.onclick = executeKill;
+
+            document.getElementById('customConfirmModal').classList.add('active');
+        }
+
+        function closeCustomConfirm() {
+            document.getElementById('customConfirmModal').classList.remove('active');
+            pendingKillData = null;
+        }
+
+        function executeKill() {
+            if (!pendingKillData) return;
+
+            const { pid, name, event } = pendingKillData;
+
+            socket.emit('admin:kill-process', {
+                clientId: activeForceKillClientId,
+                pid: pid
+            });
+
+            // UI Feedback in the list
+            const item = event.currentTarget.closest('.process-item') || event.target.closest('tr');
+            if (item) {
+                item.style.opacity = '0.4';
+                item.style.pointerEvents = 'none';
             }
+
+            closeCustomConfirm();
+
+            setTimeout(() => {
+                refreshProcessList();
+            }, 1000);
         }
 
         // ===== Stations Management =====
