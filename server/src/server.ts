@@ -417,7 +417,20 @@ io.on('connection', (socket) => {
 
   socket.on('admin:lock-all', () => {
     console.log('[Admin] Richiesta LOCK per tutti i client');
-    io.emit('server:lock');
+
+    // Update state and broadcast for each client
+    connectedClients.forEach((client, clientId) => {
+      client.locked = true;
+
+      // Send command to client
+      io.to(clientId).emit('server:lock');
+
+      // Broadcast status to all admins
+      io.emit('admin:client-lock-status', {
+        clientId: clientId,
+        locked: true
+      });
+    });
 
     // Log activity
     logActivity({
@@ -429,7 +442,20 @@ io.on('connection', (socket) => {
 
   socket.on('admin:unlock-all', () => {
     console.log('[Admin] Richiesta UNLOCK per tutti i client');
-    io.emit('server:unlock');
+
+    // Update state and broadcast for each client
+    connectedClients.forEach((client, clientId) => {
+      client.locked = false;
+
+      // Send command to client
+      io.to(clientId).emit('server:unlock');
+
+      // Broadcast status to all admins
+      io.emit('admin:client-lock-status', {
+        clientId: clientId,
+        locked: false
+      });
+    });
 
     // Log activity
     logActivity({
