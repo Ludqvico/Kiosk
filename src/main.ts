@@ -1662,6 +1662,9 @@ app.whenReady().then(() => {
 
   // Connetti al server (se non in modalità standalone)
   connectToServer();
+}).catch((error) => {
+  console.error('[Main] Fatal error during app initialization:', error);
+  app.quit();
 });
 
 app.on('window-all-closed', () => {
