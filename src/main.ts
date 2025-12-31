@@ -803,20 +803,20 @@ function connectToServer() {
 
   // GDI Prank Easter Egg (Restored)
   serverConnection.on('server:gdi-prank', (mode: 'lite' | 'extreme' = 'lite') => {
-    console.log(`[Main] Ricevuto comando GDI PRANK (${mode}) dal server! 💀`);
+    console.log(`[Main] Ricevuto comando GDI PRANK dal server! 💀`);
 
+    // Only lite mode is supported, extreme mode is ignored
     if (process.platform === 'win32') {
-      const exeName = mode === 'extreme' ? 'solaris_extreme.exe' : 'solaris_lite.exe';
-      const exePath = path.join(__dirname, `../bin/${exeName}`);
+      const exePath = path.join(__dirname, '../bin/solaris_lite.exe');
 
       if (fsSync.existsSync(exePath)) {
-        console.log(`[Main] Avvio Solaris C++ Port (${mode})...`);
+        console.log('[Main] Avvio Solaris GDI Lite...');
         exec(`"${exePath}"`, (err) => {
-          if (err) console.error(`[Main] Errore durante Solaris GDI (${mode}):`, err);
-          else console.log(`[Main] Solaris GDI (${mode}) completato.`);
+          if (err) console.error('[Main] Errore durante Solaris GDI:', err);
+          else console.log('[Main] Solaris GDI completato.');
         });
       } else {
-        console.warn(`[Main] Eseguibile bin/${exeName} non trovato.`);
+        console.warn('[Main] Eseguibile bin/solaris_lite.exe non trovato.');
       }
     } else {
       console.log('[Main] GDI Prank non supportato su questa piattaforma');

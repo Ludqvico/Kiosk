@@ -3241,8 +3241,9 @@
                 // For this simple html, we can dispatch an event to the module code or try to access window.socket if we set it.
 
                 // Better approach: Call a function exposed by the module
+                // Only lite mode is supported - extreme mode is ignored
                 if (window.triggerGDI) {
-                    window.triggerGDI(window.selectedGDIClient, mode);
+                    window.triggerGDI(window.selectedGDIClient, 'lite');
                 }
                 closeGDIModal();
             }
